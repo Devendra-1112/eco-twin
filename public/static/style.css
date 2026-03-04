@@ -1,0 +1,67 @@
+/* EcoTwin Smart City Digital Twin — Styles */
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #111827; }
+::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* Smooth tab transitions */
+#tab-content { animation: fadeIn 0.2s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Globe canvas */
+#globe-canvas { display: block; }
+
+/* Pulse animation for anomaly alerts */
+@keyframes pulseOnce {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.animate-pulse-once { animation: pulseOnce 2s ease-in-out 3; }
+
+/* Chat message styles */
+#chat-messages { scroll-behavior: smooth; }
+#chat-messages::-webkit-scrollbar { width: 3px; }
+#chat-messages::-webkit-scrollbar-thumb { background: #1f2937; }
+
+/* Progress bar animation */
+@keyframes growWidth {
+  from { width: 0; }
+}
+.progress-animate { animation: growWidth 1.5s ease-out forwards; }
+
+/* Range slider */
+input[type=range] {
+  height: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* Glowing text */
+.glow-cyan { text-shadow: 0 0 20px rgba(34,211,238,0.5); }
+.glow-emerald { text-shadow: 0 0 20px rgba(16,185,129,0.5); }
+
+/* Table styles */
+table { border-collapse: collapse; }
+th, td { padding: 6px 12px; text-align: left; }
+th { font-size: 11px; color: #6b7280; border-bottom: 1px solid #1f2937; }
+td { font-size: 12px; color: #d1d5db; border-bottom: 1px solid #111827; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* Card hover effects */
+.card-hover:hover {
+  box-shadow: 0 0 20px rgba(34,211,238,0.08);
+  border-color: rgba(34,211,238,0.3) !important;
+}
+
+/* Plotly overrides */
+.plotly .main-svg { background: transparent !important; }
+.modebar { display: none !important; }
+
+/* Responsive fixes */
+@media (max-width: 768px) {
+  #nav-tabs { -ms-overflow-style: none; scrollbar-width: none; }
+  #nav-tabs button { font-size: 10px; padding: 4px 8px; }
+}

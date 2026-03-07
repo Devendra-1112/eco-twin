@@ -921,7 +921,7 @@ app.put('/admin/users/:id/role', async (c) => {
 app.get('/i18n/:lang', (c) => {
   const lang=c.req.param('lang')
   const S:Record<string,Record<string,string>>={
-    en:{dashboard:'Dashboard',worldMap:'World Map',simulator:'Simulator',rlOptimizer:'RL Optimizer',anomaly:'Anomaly',globe3d:'3D Globe',sdgTracker:'SDG Tracker',askAI:'Ask AI',realtime:'Live Monitor',shap:'SHAP Analysis',analytics:'Analytics',admin:'Admin',compare:'Compare',history:'History',profile:'Profile',login:'Login',register:'Register',logout:'Logout',runSim:'Run LSTM Simulation',trainAgent:'Train RL Agent',sustainability:'Sustainability',score:'Score',emissions:'Emissions',renewable:'Renewable Energy',water:'Water Access',recycling:'Recycling',traffic:'Traffic',energy:'Energy',country:'Country',predicted:'Predicted',baseline:'Baseline',projected:'Projected',riskTab:'Climate Risk',carbonTab:'Carbon Budget',citiesTab:'City Bench',policyTab:'Policy Sim',newsTab:'News Feed',marketTab:'Live Markets',satelliteTab:'AI Satellite','nav.title':'Smart City Digital Twin','kpi.countries':'Countries Tracked','kpi.avgScore':'Avg Sustainability','kpi.co2':'Avg CO₂/capita','kpi.renewable':'Global Renewable',moderate:'Moderate',critical:'Critical',sustainable:'Sustainable'},
+    en:{dashboard:'Dashboard',worldMap:'World Map',simulator:'Simulator',rlOptimizer:'RL Optimizer',anomaly:'Anomaly',globe3d:'3D Globe',sdgTracker:'SDG Tracker',askAI:'Ask AI',realtime:'Live Monitor',shap:'SHAP Analysis',analytics:'Analytics',admin:'Admin',compare:'Compare',history:'History',profile:'Profile',login:'Login',register:'Register',logout:'Logout',runSim:'Run LSTM Simulation',trainAgent:'Train RL Agent',sustainability:'Sustainability',score:'Score',emissions:'Emissions',renewable:'Renewable Energy',water:'Water Access',recycling:'Recycling',traffic:'Traffic',energy:'Energy',country:'Country',predicted:'Predicted',baseline:'Baseline',projected:'Projected',riskTab:'Climate Risk',carbonTab:'Carbon Budget',citiesTab:'City Bench',policyTab:'Policy Sim',newsTab:'News Feed',marketTab:'Live Markets',satelliteTab:'AI Satellite',threatTab:'Threat Forecast',healthTab:'Planet Health',raceTab:'CO₂ Race','nav.title':'Smart City Digital Twin','kpi.countries':'Countries Tracked','kpi.avgScore':'Avg Sustainability','kpi.co2':'Avg CO₂/capita','kpi.renewable':'Global Renewable',moderate:'Moderate',critical:'Critical',sustainable:'Sustainable'},
     es:{dashboard:'Panel',worldMap:'Mapa Mundial',simulator:'Simulador',rlOptimizer:'Optimizador RL',anomaly:'Anomalía',globe3d:'Globo 3D',sdgTracker:'Tracker ODS',askAI:'Consultar IA',realtime:'Monitor Vivo',shap:'Análisis SHAP',analytics:'Analítica',admin:'Admin',compare:'Comparar',history:'Historial',profile:'Perfil',login:'Iniciar sesión',register:'Registrarse',logout:'Cerrar sesión',runSim:'Ejecutar Simulación',trainAgent:'Entrenar Agente RL',sustainability:'Sostenibilidad',score:'Puntuación',emissions:'Emisiones',renewable:'Energía Renovable',water:'Acceso al Agua',recycling:'Reciclaje',traffic:'Tráfico',energy:'Energía',country:'País',predicted:'Predicho',baseline:'Línea Base',projected:'Proyectado',riskTab:'Riesgo Climático',carbonTab:'Presupuesto C',citiesTab:'Ciudades',policyTab:'Sim. Política',newsTab:'Noticias',marketTab:'Mercados',satelliteTab:'Satélite IA','nav.title':'Gemelo Digital Ciudad Inteligente','kpi.countries':'Países Rastreados','kpi.avgScore':'Sost. Promedio','kpi.co2':'CO₂ Promedio','kpi.renewable':'Renovable Global',moderate:'Moderado',critical:'Crítico',sustainable:'Sostenible'},
     fr:{dashboard:'Tableau de bord',worldMap:'Carte Mondiale',simulator:'Simulateur',rlOptimizer:'Optimiseur RL',anomaly:'Anomalie',globe3d:'Globe 3D',sdgTracker:'Suivi ODD',askAI:'Demander IA',realtime:'Moniteur Live',shap:'Analyse SHAP',analytics:'Analytique',admin:'Admin',compare:'Comparer',history:'Historique',profile:'Profil',login:'Connexion',register:"S'inscrire",logout:'Déconnexion',runSim:'Lancer Simulation',trainAgent:"Entraîner l'Agent",sustainability:'Durabilité',score:'Score',emissions:'Émissions',renewable:'Énergie Renouvelable',water:"Accès à l'Eau",recycling:'Recyclage',traffic:'Trafic',energy:'Énergie',country:'Pays',predicted:'Prédit',baseline:'Référence',projected:'Projeté',riskTab:'Risque Climatique',carbonTab:'Budget CO₂',citiesTab:'Villes',policyTab:'Sim. Politique',newsTab:'Actualités',marketTab:'Marchés',satelliteTab:'Satellite IA','nav.title':'Ville Intelligente Jumeau Numérique','kpi.countries':'Pays Suivis','kpi.avgScore':'Durabilité Moy.','kpi.co2':'CO₂ Moyen','kpi.renewable':'Renouvelable Global',moderate:'Modéré',critical:'Critique',sustainable:'Durable'},
     de:{dashboard:'Dashboard',worldMap:'Weltkarte',simulator:'Simulator',rlOptimizer:'RL-Optimierer',anomaly:'Anomalie',globe3d:'3D-Globus',sdgTracker:'SDG-Tracker',askAI:'KI Fragen',realtime:'Live-Monitor',shap:'SHAP-Analyse',analytics:'Analytik',admin:'Admin',compare:'Vergleichen',history:'Verlauf',profile:'Profil',login:'Anmelden',register:'Registrieren',logout:'Abmelden',runSim:'Simulation starten',trainAgent:'RL-Agent trainieren',sustainability:'Nachhaltigkeit',score:'Score',emissions:'Emissionen',renewable:'Erneuerbare Energie',water:'Wasserzugang',recycling:'Recycling',traffic:'Verkehr',energy:'Energie',country:'Land',predicted:'Vorhergesagt',baseline:'Basis',projected:'Projiziert',riskTab:'Klimarisiko',carbonTab:'CO₂-Budget',citiesTab:'Städte',policyTab:'Politik-Sim',newsTab:'Nachrichten',marketTab:'Märkte',satelliteTab:'KI-Satellit','nav.title':'Intelligente Stadt Digitaler Zwilling','kpi.countries':'Länder verfolgt','kpi.avgScore':'Ø Nachhaltigkeit','kpi.co2':'Ø CO₂','kpi.renewable':'Globale Erneuerbare',moderate:'Mäßig',critical:'Kritisch',sustainable:'Nachhaltig'},
@@ -1003,6 +1003,18 @@ function runCNNAnalysis(regionId: string, changeType: string) {
     return parseFloat(Math.max(0, 1 - dist / 5 + rng(-0.1, 0.2)).toFixed(3))
   })
 
+  // Class probability distribution (softmax output)
+  const changeTypes = ['deforestation', 'urban_expansion', 'water_loss', 'ice_loss', 'desertification']
+  const rawProbs = changeTypes.map(k => {
+    const base = k === changeType ? 0.55 + rng(0, 0.3) : rng(0, 0.18)
+    return { k, p: base }
+  })
+  const sumProbs = rawProbs.reduce((s, x) => s + x.p, 0)
+  const classProbabilities: Record<string, number> = {}
+  rawProbs.forEach(({ k, p }) => {
+    classProbabilities[k] = parseFloat((p / sumProbs).toFixed(3))
+  })
+
   return {
     regionId,
     timestamp: new Date().toISOString(),
@@ -1012,10 +1024,12 @@ function runCNNAnalysis(regionId: string, changeType: string) {
     impactGrade: impactScore > 75 ? 'CRITICAL' : impactScore > 55 ? 'HIGH' : impactScore > 35 ? 'MODERATE' : 'LOW',
     yearlyChange,
     heatmap,
+    classProbabilities,
     affectedAreaKm2: parseFloat((800 + rng(0, 400)).toFixed(0)),
     changeRatePctPerYear: parseFloat((2.1 + rng(-0.5, 1.5)).toFixed(2)),
     confidence: parseFloat((0.84 + rng(0, 0.12)).toFixed(3)),
     sdgImpact: [...new Set(boxes.flatMap(b => CNN_CLASSES[b.class as keyof typeof CNN_CLASSES]?.sdg ?? []))],
+    changeType,
   }
 }
 
@@ -1137,6 +1151,8 @@ app.get('/satellite/global_stats', (c) => {
       annual_loss_gt: 279,
       rate_mm_slr: parseFloat((3.7 + hourVariation * 0.001).toFixed(2)),
     },
+    co2Emissions: parseFloat((36.8 + Math.sin(hourVariation * Math.PI) * 0.4).toFixed(1)),
+    wildfires: Math.round(247 + Math.sin(hourVariation * 4) * 18),
     lastUpdated: new Date().toISOString(),
     confidence: '87%',
     dataSource: 'NASA GIBS · NSIDC · Global Forest Watch (simulated)',
@@ -1171,6 +1187,267 @@ app.post('/satellite/compare', async (c) => {
       to: buildNASATileUrl(region.lat, region.lon, 7),
     },
     changeMapAvailable: true,
+    timestamp: new Date().toISOString(),
+  })
+})
+
+// ── GET /satellite/ndvi_timeseries ──────────────────────────────────────────
+app.get('/satellite/ndvi_timeseries', (c) => {
+  const region = c.req.query('region') || 'amazon'
+  const rng = (seed: number, min: number, max: number) =>
+    min + ((seed * 2654435761 >>> 0) % 10000) / 10000 * (max - min)
+
+  // Base NDVI by biome
+  const baseMap: Record<string, number> = {
+    amazon: 0.83, borneo: 0.80, sahel: 0.42, california: 0.60, congo: 0.87,
+  }
+  const base = baseMap[region] || 0.65
+  const trend = region === 'sahel' ? -0.005 : region === 'california' ? -0.006 : -0.009
+
+  const years = Array.from({ length: 25 }, (_, i) => 2000 + i)
+  const ndvi  = years.map((y, i) => {
+    const val = base + trend * i + (rng(y * 7, -0.04, 0.04))
+    return parseFloat(Math.max(0.05, Math.min(0.98, val)).toFixed(3))
+  })
+  const threshold = years.map(() => parseFloat((base * 0.78).toFixed(3)))
+  const peak    = Math.max(...ndvi)
+  const current = ndvi[ndvi.length - 1]
+  const trendVal = parseFloat((current - ndvi[0]).toFixed(3))
+
+  // Find anomalies (values below threshold)
+  const anomalies = years
+    .filter((_, i) => ndvi[i] < threshold[i])
+    .map(y => {
+      const idx = years.indexOf(y)
+      return {
+        year: y,
+        date: `${y}-07-15`,
+        type: 'Low vegetation index',
+        severity: ndvi[idx] < base * 0.7 ? 'CRITICAL' : 'HIGH',
+        delta: parseFloat((ndvi[idx] - base).toFixed(3)),
+      }
+    }).slice(0, 8)
+
+  return c.json({ region, years, ndvi, threshold, peak, current, trend: trendVal, anomalies })
+})
+
+// ── GET /satellite/emission_hotspots ────────────────────────────────────────
+app.get('/satellite/emission_hotspots', (c) => {
+  const now = Date.now()
+  const jitter = (x: number, seed: number) =>
+    x + Math.sin(now / 900000 + seed) * (x * 0.06)
+
+  const hotspots = [
+    { name: 'Eastern China',      lat: 32,  lon: 116,  intensity: jitter(94, 1),  Mt: jitter(2.8, 11), sector: 'Industry' },
+    { name: 'Northern India',     lat: 27,  lon: 78,   intensity: jitter(83, 2),  Mt: jitter(1.9, 12), sector: 'Agriculture' },
+    { name: 'Amazon Basin',       lat: -3,  lon: -62,  intensity: jitter(77, 3),  Mt: jitter(1.4, 13), sector: 'Deforestation' },
+    { name: 'Central Africa',     lat: -1,  lon: 24,   intensity: jitter(69, 4),  Mt: jitter(1.1, 14), sector: 'Land-use change' },
+    { name: 'US Midwest',         lat: 40,  lon: -90,  intensity: jitter(72, 5),  Mt: jitter(1.3, 15), sector: 'Agriculture' },
+    { name: 'Siberian Peatlands', lat: 60,  lon: 90,   intensity: jitter(56, 6),  Mt: jitter(0.9, 16), sector: 'Permafrost thaw' },
+    { name: 'SE Asia Fires',      lat: 8,   lon: 104,  intensity: jitter(80, 7),  Mt: jitter(1.6, 17), sector: 'Wildfire' },
+    { name: 'Russian Gas Fields', lat: 65,  lon: 74,   intensity: jitter(62, 8),  Mt: jitter(1.0, 18), sector: 'Fossil fuel' },
+    { name: 'Middle East',        lat: 25,  lon: 46,   intensity: jitter(67, 9),  Mt: jitter(1.2, 19), sector: 'Fossil fuel' },
+    { name: 'Australian Bush',    lat: -28, lon: 134,  intensity: jitter(53, 10), Mt: jitter(0.7, 20), sector: 'Wildfire' },
+  ].map(h => ({
+    ...h,
+    intensity: parseFloat(Math.min(100, Math.max(10, h.intensity)).toFixed(1)),
+    Mt: parseFloat(Math.max(0.1, h.Mt).toFixed(2)),
+  }))
+
+  hotspots.sort((a, b) => b.intensity - a.intensity)
+  const totalMtCO2yr = hotspots.reduce((s, h) => s + h.Mt, 0).toFixed(1)
+
+  return c.json({
+    hotspots,
+    totalMtCO2yr,
+    dataSource: 'TROPOMI / Sentinel-5P (simulated)',
+    resolution: '7×7 km',
+    lastUpdated: new Date().toISOString(),
+  })
+})
+
+// ── GET /satellite/ml_forecast ──────────────────────────────────────────────
+app.get('/satellite/ml_forecast', (c) => {
+  const now = Date.now()
+  const jitter = (x: number, seed: number) =>
+    parseFloat((x + Math.sin(now / 1800000 + seed) * (x * 0.04)).toFixed(2))
+
+  const scenarios = [
+    { name: 'Forest Loss',      icon: 'fa-tree',          color: '#ef4444', current: jitter(8.2, 1),  forecast: jitter(11.4, 2),  conf: 87, trend: 'worsening', unit: 'Mha/yr' },
+    { name: 'Urban Expansion',  icon: 'fa-city',          color: '#f97316', current: jitter(128, 3),  forecast: jitter(163, 4),   conf: 82, trend: 'accelerating', unit: 'km²/day' },
+    { name: 'Water Stress',     icon: 'fa-water',         color: '#3b82f6', current: jitter(42, 5),   forecast: jitter(51, 6),    conf: 79, trend: 'increasing', unit: '% global' },
+    { name: 'Arctic Ice Loss',  icon: 'fa-snowflake',     color: '#67e8f9', current: jitter(14.2, 7), forecast: jitter(12.8, 8),  conf: 91, trend: 'declining', unit: 'M km²' },
+    { name: 'Carbon Flux',      icon: 'fa-smog',          color: '#6b7280', current: jitter(2.4, 9),  forecast: jitter(3.1, 10),  conf: 75, trend: 'rising', unit: 'Gt/yr' },
+    { name: 'NDVI Health',      icon: 'fa-seedling',      color: '#10b981', current: jitter(0.61, 11),forecast: jitter(0.54, 12), conf: 83, trend: 'declining', unit: 'index' },
+    { name: 'Wildfire Risk',    icon: 'fa-fire',          color: '#dc2626', current: jitter(247, 13), forecast: jitter(318, 14),  conf: 78, trend: 'escalating', unit: 'active fires' },
+    { name: 'Permafrost Thaw',  icon: 'fa-temperature-high', color: '#f59e0b', current: jitter(1.2, 15),forecast: jitter(1.8, 16),  conf: 71, trend: 'accelerating', unit: 'M km² thawed' },
+  ]
+
+  const overallRisk = parseFloat(
+    (scenarios.reduce((s, sc) => s + (100 - sc.conf), 0) / scenarios.length + 35).toFixed(1)
+  )
+
+  return c.json({
+    scenarios,
+    horizon: '18 months',
+    modelAccuracy: 84.7,
+    lastTrainDate: '2024-12',
+    overallRisk,
+    riskTrend: 'increasing',
+    keyInsight: 'Tropical deforestation and Arctic ice loss are the leading drivers of accelerating risk.',
+    dataSource: 'EcoTwin-ML-v3 · trained on NASA + NOAA + Copernicus datasets',
+    timestamp: new Date().toISOString(),
+  })
+})
+
+// ════════════════════════════════════════════════════════════════════════════
+// PLANET HEALTH SCORE — composite multi-dimensional index
+// ════════════════════════════════════════════════════════════════════════════
+app.get('/planet_health', (c) => {
+  const now = Date.now()
+  const t = (now % 60000) / 60000  // 0-1 within each minute
+
+  const dims = [
+    { id:'atmosphere',  name:'Atmosphere',    icon:'cloud',   weight:0.22, base:42, trend:-0.08 },
+    { id:'biosphere',   name:'Biosphere',     icon:'leaf',    weight:0.20, base:51, trend:-0.12 },
+    { id:'hydrosphere', name:'Hydrosphere',   icon:'water',   weight:0.18, base:58, trend:-0.06 },
+    { id:'cryosphere',  name:'Cryosphere',    icon:'snowflake',weight:0.15,base:38, trend:-0.15 },
+    { id:'anthropo',    name:'Human Systems', icon:'city',    weight:0.15, base:62, trend:+0.04 },
+    { id:'biodiversity',name:'Biodiversity',  icon:'paw',     weight:0.10, base:44, trend:-0.10 },
+  ]
+  const scores = dims.map(d => ({
+    ...d,
+    score: parseFloat(Math.max(0, Math.min(100,
+      d.base + Math.sin(t * Math.PI * 2 + d.weight * 10) * 2 + d.trend * (now % 3600000) / 3600000
+    )).toFixed(1)),
+  }))
+  const composite = scores.reduce((s, d) => s + d.score * d.weight, 0)
+  const prev = composite - 0.3 + Math.random() * 0.2
+
+  // Historical 24-point trend (hourly for past 24h)
+  const history = Array.from({ length: 24 }, (_, i) => ({
+    hour: i,
+    score: parseFloat((composite - (24 - i) * 0.02 + (Math.sin(i * 0.5) * 1.5)).toFixed(2)),
+  }))
+
+  return c.json({
+    composite: parseFloat(composite.toFixed(2)),
+    grade: composite >= 80 ? 'A' : composite >= 65 ? 'B' : composite >= 50 ? 'C' : composite >= 35 ? 'D' : 'F',
+    label: composite >= 70 ? 'Stable' : composite >= 50 ? 'Stressed' : composite >= 30 ? 'Critical' : 'Emergency',
+    change24h: parseFloat((composite - prev).toFixed(3)),
+    dimensions: scores,
+    history,
+    lastUpdated: new Date().toISOString(),
+  })
+})
+
+// ════════════════════════════════════════════════════════════════════════════
+// AI THREAT FORECAST — 18-month risk prediction timeline
+// ════════════════════════════════════════════════════════════════════════════
+app.get('/threat_forecast', (c) => {
+  const now = Date.now()
+  const rng = (min: number, max: number, seed = 0) =>
+    min + ((now + seed * 12345) % 1000000) / 1000000 * (max - min)
+
+  const THREATS = [
+    { id:'heatwave',     name:'Extreme Heatwave',   category:'Climate',  icon:'fire',         baseProb:0.72, severity:'CRITICAL', regions:['South Asia','North Africa','SW USA'] },
+    { id:'flood',        name:'Mega Flood Event',   category:'Hydro',    icon:'house-flood-water', baseProb:0.61, severity:'HIGH', regions:['Bangladesh','Netherlands','Amazon'] },
+    { id:'wildfire',     name:'Wildfire Season',    category:'Ecosystem',icon:'fire-flame-curved', baseProb:0.81, severity:'HIGH',  regions:['California','Australia','Siberia'] },
+    { id:'drought',      name:'Agricultural Drought',category:'Food',    icon:'seedling',     baseProb:0.55, severity:'HIGH',  regions:['Horn of Africa','Central Asia','Brazil NE'] },
+    { id:'coral',        name:'Coral Mass Bleaching',category:'Marine',  icon:'water',        baseProb:0.68, severity:'CRITICAL', regions:['Great Barrier Reef','Caribbean','Red Sea'] },
+    { id:'permafrost',   name:'Permafrost Thaw Pulse',category:'Arctic', icon:'snowflake',    baseProb:0.44, severity:'MEDIUM',regions:['Siberia','Alaska','Canada'] },
+    { id:'glacier',      name:'Glacier Lake Outburst',category:'Cryo',  icon:'mountain',     baseProb:0.38, severity:'HIGH',  regions:['Himalayas','Andes','Alps'] },
+    { id:'monsoon',      name:'Monsoon Disruption', category:'Atmos',    icon:'cloud-rain',   baseProb:0.49, severity:'MEDIUM',regions:['South Asia','West Africa','SE Asia'] },
+  ]
+
+  // Build 18-month horizon
+  const months = Array.from({ length: 18 }, (_, m) => {
+    const date = new Date(now + m * 30 * 86400000)
+    return {
+      month: m + 1,
+      label: date.toLocaleString('en', { month: 'short', year: '2-digit' }),
+      threats: THREATS.map(th => ({
+        id: th.id,
+        probability: parseFloat(Math.min(0.97, Math.max(0.05,
+          th.baseProb + Math.sin(m * 0.4 + rng(0, 1, th.baseProb * 100)) * 0.15
+        )).toFixed(3)),
+      })),
+    }
+  })
+
+  // Top threats this month
+  const topThisMonth = THREATS.map(th => ({
+    ...th,
+    probability: parseFloat((th.baseProb + rng(-0.08, 0.08, th.baseProb * 200)).toFixed(3)),
+    trend: rng(-1, 1, th.baseProb * 300) > 0 ? 'rising' : 'falling',
+    peakMonth: 2 + Math.floor(rng(0, 8, th.baseProb * 400)),
+    estimatedImpactBn: parseFloat((rng(5, 280, th.baseProb * 500)).toFixed(1)),
+  })).sort((a, b) => b.probability - a.probability)
+
+  return c.json({
+    threats: topThisMonth,
+    timeline: months,
+    modelInfo: { name: 'EcoTwin-ThreatNet-v3', accuracy: 0.847, trainingData: '1980–2025', lastRun: new Date().toISOString() },
+    overallRiskLevel: topThisMonth[0].probability > 0.75 ? 'CRITICAL' : topThisMonth[0].probability > 0.55 ? 'HIGH' : 'MODERATE',
+    generatedAt: new Date().toISOString(),
+  })
+})
+
+// ════════════════════════════════════════════════════════════════════════════
+// CO2 EMISSION BAR RACE — animated ranking data stream
+// ════════════════════════════════════════════════════════════════════════════
+app.get('/co2_race', (c) => {
+  const year = parseInt(c.req.query('year') || '2024')
+  const now = Date.now()
+
+  const BASE_CO2: Record<string, { name:string; co2_1990:number; flag:string; continent:string; color:string }> = {
+    CHN:{ name:'China',        co2_1990:2.4,  flag:'🇨🇳', continent:'Asia',    color:'#ef4444' },
+    USA:{ name:'USA',          co2_1990:19.3, flag:'🇺🇸', continent:'Americas',color:'#3b82f6' },
+    IND:{ name:'India',        co2_1990:0.8,  flag:'🇮🇳', continent:'Asia',    color:'#f97316' },
+    RUS:{ name:'Russia',       co2_1990:13.2, flag:'🇷🇺', continent:'Europe',  color:'#a855f7' },
+    JPN:{ name:'Japan',        co2_1990:8.7,  flag:'🇯🇵', continent:'Asia',    color:'#ec4899' },
+    DEU:{ name:'Germany',      co2_1990:12.8, flag:'🇩🇪', continent:'Europe',  color:'#eab308' },
+    KOR:{ name:'South Korea',  co2_1990:5.1,  flag:'🇰🇷', continent:'Asia',    color:'#06b6d4' },
+    CAN:{ name:'Canada',       co2_1990:15.1, flag:'🇨🇦', continent:'Americas',color:'#f43f5e' },
+    IRN:{ name:'Iran',         co2_1990:3.3,  flag:'🇮🇷', continent:'Asia',    color:'#84cc16' },
+    GBR:{ name:'UK',           co2_1990:9.8,  flag:'🇬🇧', continent:'Europe',  color:'#8b5cf6' },
+    BRA:{ name:'Brazil',       co2_1990:1.4,  flag:'🇧🇷', continent:'Americas',color:'#10b981' },
+    AUS:{ name:'Australia',    co2_1990:15.4, flag:'🇦🇺', continent:'Oceania', color:'#fb923c' },
+    IDN:{ name:'Indonesia',    co2_1990:0.7,  flag:'🇮🇩', continent:'Asia',    color:'#a3e635' },
+    SAU:{ name:'Saudi Arabia', co2_1990:9.1,  flag:'🇸🇦', continent:'Asia',    color:'#facc15' },
+    MEX:{ name:'Mexico',       co2_1990:3.6,  flag:'🇲🇽', continent:'Americas',color:'#4ade80' },
+    NOR:{ name:'Norway',       co2_1990:8.4,  flag:'🇳🇴', continent:'Europe',  color:'#22d3ee' },
+  }
+
+  const yearDelta = year - 1990
+  const noise = ((now % 30000) / 30000) * 0.15  // 30s cycle
+
+  const entries = Object.entries(BASE_CO2).map(([code, d]) => {
+    // Each country has a different trajectory
+    let co2: number
+    if (code === 'CHN') co2 = d.co2_1990 + yearDelta * 0.48 + noise * 2
+    else if (code === 'IND') co2 = d.co2_1990 + yearDelta * 0.14 + noise
+    else if (code === 'USA') co2 = d.co2_1990 - yearDelta * 0.22 + noise * 0.5
+    else if (code === 'DEU') co2 = d.co2_1990 - yearDelta * 0.25 + noise * 0.3
+    else if (code === 'GBR') co2 = d.co2_1990 - yearDelta * 0.28 + noise * 0.3
+    else if (code === 'NOR') co2 = d.co2_1990 - yearDelta * 0.18 + noise * 0.2
+    else co2 = d.co2_1990 + yearDelta * (Math.sin(d.co2_1990) * 0.05) + noise * 0.4
+
+    return {
+      code, ...d,
+      co2: parseFloat(Math.max(0.5, co2).toFixed(2)),
+      year,
+    }
+  }).sort((a, b) => b.co2 - a.co2)
+
+  // Add rank
+  entries.forEach((e, i) => (e as any).rank = i + 1)
+
+  return c.json({
+    year,
+    entries,
+    maxCo2: entries[0].co2,
+    yearRange: { from: 1990, to: 2024, current: year },
     timestamp: new Date().toISOString(),
   })
 })

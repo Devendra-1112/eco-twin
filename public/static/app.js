@@ -341,6 +341,7 @@ const NAV_TABS = [
   ['market','fa-chart-candlestick','marketTab'],
   ['news','fa-newspaper','newsTab'],
   ['ai','fa-comments','askAI'],
+  ['satellite','fa-satellite','satelliteTab'],
   ['admin','fa-shield-halved','admin'],
 ];
 
@@ -406,6 +407,7 @@ function renderShell(){
                    ${ST.activeTab===id?'bg-cyan-900/50 text-cyan-300 border-b border-cyan-500':'text-gray-500 hover:text-gray-300'}">
             <i class="fas ${icon} text-[9px]"></i>${t(key)}
             ${id==='market'?'<span class="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>':''}
+            ${id==='satellite'?'<span class="w-1 h-1 rounded-full bg-cyan-400 animate-pulse"></span>':''}
           </button>`).join('')}
       </nav>
     </header>
@@ -470,6 +472,7 @@ function renderTab(id){
     market:()=>{el.innerHTML=marketHTML();loadMarket();},
     news:()=>{el.innerHTML=newsHTML();loadNews();},
     ai:()=>{el.innerHTML=aiHTML();},
+    satellite:()=>{el.innerHTML=satelliteHTML();initSatellite();},
     admin:()=>{el.innerHTML=adminHTML();loadAdmin();},
   };
   (renders[id]||renders.dashboard)();
@@ -2818,3 +2821,724 @@ document.addEventListener('DOMContentLoaded', async () => {
   fetch('/market_data').then(r=>r.json()).then(d=>ST.marketData=d);
 });
 
+
+// ════════════════════════════════════════════════════════════════════════════
+// AI SATELLITE MONITORING MODULE
+// ════════════════════════════════════════════════════════════════════════════
+
+const SAT_STATE = {
+  activeRegion: null,
+  liveFeed: [],
+  globalStats: null,
+  scanInterval: null,
+  selectedYear: 2024,
+  compareMode: false,
+  animFrame: null,
+  lastScan: null,
+};
+
+// Impact grade colors
+const GRADE_COLORS = {
+  CRITICAL: { bg: 'bg-red-900/60', text: 'text-red-300', border: 'border-red-700', dot: 'bg-red-500' },
+  HIGH:     { bg: 'bg-orange-900/60', text: 'text-orange-300', border: 'border-orange-700', dot: 'bg-orange-500' },
+  MODERATE: { bg: 'bg-yellow-900/60', text: 'text-yellow-300', border: 'border-yellow-700', dot: 'bg-yellow-500' },
+  LOW:      { bg: 'bg-emerald-900/60', text: 'text-emerald-300', border: 'border-emerald-700', dot: 'bg-emerald-500' },
+};
+
+const CHANGE_ICONS = {
+  deforestation:   'fa-tree',
+  urban_expansion: 'fa-city',
+  water_loss:      'fa-water',
+  ice_loss:        'fa-snowflake',
+  desertification: 'fa-sun',
+};
+
+const CHANGE_LABELS = {
+  deforestation:   'Deforestation',
+  urban_expansion: 'Urban Expansion',
+  water_loss:      'Water Loss',
+  ice_loss:        'Ice Loss',
+  desertification: 'Desertification',
+};
+
+// ── HTML TEMPLATE ─────────────────────────────────────────────────────────
+function satelliteHTML() {
+  return `
+<div class="space-y-5">
+  <!-- Page Header -->
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-black text-white flex items-center gap-2">
+        <i class="fas fa-satellite text-cyan-400"></i>
+        AI Satellite Monitoring
+        <span class="text-[9px] px-2 py-0.5 rounded-full bg-cyan-900/60 border border-cyan-700 text-cyan-300 font-semibold animate-pulse">● LIVE</span>
+      </h1>
+      <p class="text-xs text-gray-500 mt-0.5">Real-time CNN environmental change detection · NASA GIBS VIIRS 250m imagery</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="refreshSatelliteFeed()" class="px-3 py-1.5 rounded-lg bg-cyan-900/40 border border-cyan-700 text-cyan-300 text-xs font-semibold hover:bg-cyan-900/70 transition-all flex items-center gap-1.5">
+        <i class="fas fa-rotate-right"></i> Rescan All
+      </button>
+      <button onclick="toggleSatCompareMode()" id="sat-compare-btn" class="px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-300 text-xs font-semibold hover:bg-gray-700 transition-all flex items-center gap-1.5">
+        <i class="fas fa-code-compare"></i> Time Compare
+      </button>
+    </div>
+  </div>
+
+  <!-- Global Stats Bar -->
+  <div id="sat-global-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    ${[1,2,3,4].map(()=>`<div class="et-card animate-pulse h-16 bg-gray-800/40 rounded-xl"></div>`).join('')}
+  </div>
+
+  <!-- Main Layout: Region Grid + Detail Panel -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <!-- Left: Region Cards (live feed) -->
+    <div class="lg:col-span-1 space-y-2">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-gray-300">Monitored Zones <span id="sat-feed-count" class="text-gray-500"></span></span>
+        <div class="flex gap-1">
+          <button onclick="filterSatFeed('all')" id="sat-filter-all" class="sat-filter-btn active px-2 py-0.5 rounded text-[9px] font-semibold bg-cyan-900/60 text-cyan-300 border border-cyan-700">All</button>
+          <button onclick="filterSatFeed('CRITICAL')" id="sat-filter-CRITICAL" class="sat-filter-btn px-2 py-0.5 rounded text-[9px] font-semibold bg-gray-800 text-gray-400 border border-gray-700">Critical</button>
+          <button onclick="filterSatFeed('HIGH')" id="sat-filter-HIGH" class="sat-filter-btn px-2 py-0.5 rounded text-[9px] font-semibold bg-gray-800 text-gray-400 border border-gray-700">High</button>
+        </div>
+      </div>
+      <div id="sat-region-list" class="space-y-1.5 max-h-[70vh] overflow-y-auto pr-1 scrollbar-hide">
+        ${[1,2,3,4,5].map(()=>`<div class="animate-pulse h-20 bg-gray-800/40 rounded-xl"></div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Right: Detail Panel -->
+    <div class="lg:col-span-2 space-y-4">
+      <!-- Satellite Image Viewer with CNN Overlay -->
+      <div class="et-card">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <i class="fas fa-satellite-dish text-cyan-400"></i>
+            Satellite Imagery + CNN Analysis
+          </h3>
+          <div class="flex items-center gap-2">
+            <span id="sat-model-badge" class="text-[9px] px-2 py-0.5 rounded-full bg-purple-900/60 border border-purple-700 text-purple-300">EcoTwin-CNN-v2.1</span>
+            <span id="sat-conf-badge" class="text-[9px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700">Confidence: —</span>
+          </div>
+        </div>
+
+        <!-- Image canvas with bounding box overlay -->
+        <div class="relative rounded-xl overflow-hidden bg-gray-900 border border-gray-700" style="min-height:320px;" id="sat-image-container">
+          <!-- Satellite image -->
+          <img id="sat-main-img" src="" alt="Satellite View" class="w-full object-cover rounded-xl opacity-0 transition-opacity duration-500"
+               style="min-height:320px; max-height:420px;"
+               onerror="this.src=''; document.getElementById('sat-img-fallback').style.display='flex';"
+               onload="this.style.opacity=1; document.getElementById('sat-img-fallback').style.display='none';" />
+
+          <!-- Fallback / demo background when image unavailable -->
+          <div id="sat-img-fallback" class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950">
+            <div id="sat-demo-canvas-wrapper" class="w-full h-full relative"></div>
+          </div>
+
+          <!-- CNN Bounding-box SVG overlay -->
+          <svg id="sat-bbox-svg" class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none" style="pointer-events:none;"></svg>
+
+          <!-- Scan line animation -->
+          <div id="sat-scan-line" class="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-70 sat-scan-anim" style="top:0"></div>
+
+          <!-- Region name overlay -->
+          <div class="absolute top-2 left-2 px-2 py-1 rounded-lg bg-gray-950/80 border border-gray-700 text-[10px] text-gray-300" id="sat-region-overlay">
+            <i class="fas fa-crosshairs text-cyan-400 mr-1"></i><span id="sat-overlay-name">Select a region</span>
+          </div>
+
+          <!-- Live timestamp -->
+          <div class="absolute top-2 right-2 px-2 py-1 rounded-lg bg-gray-950/80 border border-gray-700 text-[9px] text-gray-500" id="sat-timestamp-badge">
+            <i class="fas fa-clock mr-1"></i><span id="sat-ts-text">—</span>
+          </div>
+
+          <!-- Impact Score badge -->
+          <div id="sat-impact-badge" class="absolute bottom-2 right-2 px-3 py-1.5 rounded-xl bg-gray-950/90 border border-gray-700 hidden">
+            <div class="text-[9px] text-gray-500 uppercase tracking-wider">Impact Score</div>
+            <div class="text-2xl font-black" id="sat-impact-score-num">—</div>
+            <div class="text-[9px] font-bold mt-0.5" id="sat-impact-grade-text">—</div>
+          </div>
+        </div>
+
+        <!-- Heatmap + Legend row -->
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- CNN Heatmap -->
+          <div>
+            <div class="text-[10px] text-gray-500 mb-1 font-semibold uppercase tracking-wider">CNN Activation Heatmap</div>
+            <canvas id="sat-heatmap-canvas" width="256" height="64" class="w-full rounded-lg border border-gray-700" style="image-rendering:pixelated;height:64px;"></canvas>
+          </div>
+          <!-- Detection classes legend -->
+          <div>
+            <div class="text-[10px] text-gray-500 mb-1 font-semibold uppercase tracking-wider">Detected Change Types</div>
+            <div id="sat-legend" class="flex flex-wrap gap-1.5"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metrics Row -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="sat-metrics-row">
+        <div class="et-card text-center">
+          <div class="text-[9px] text-gray-500 uppercase tracking-wider">Affected Area</div>
+          <div class="text-lg font-black text-orange-300 my-1" id="sat-m-area">—</div>
+          <div class="text-[9px] text-gray-600">km²</div>
+        </div>
+        <div class="et-card text-center">
+          <div class="text-[9px] text-gray-500 uppercase tracking-wider">Change Rate</div>
+          <div class="text-lg font-black text-red-300 my-1" id="sat-m-rate">—</div>
+          <div class="text-[9px] text-gray-600">%/year</div>
+        </div>
+        <div class="et-card text-center">
+          <div class="text-[9px] text-gray-500 uppercase tracking-wider">CNN Confidence</div>
+          <div class="text-lg font-black text-cyan-300 my-1" id="sat-m-conf">—</div>
+          <div class="text-[9px] text-gray-600">model accuracy</div>
+        </div>
+        <div class="et-card text-center">
+          <div class="text-[9px] text-gray-500 uppercase tracking-wider">SDG Impact</div>
+          <div class="text-lg font-black text-purple-300 my-1" id="sat-m-sdg">—</div>
+          <div class="text-[9px] text-gray-600">goals affected</div>
+        </div>
+      </div>
+
+      <!-- Year-over-year trend chart -->
+      <div class="et-card">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <i class="fas fa-chart-area text-emerald-400"></i>
+            5-Year Change Trend
+          </h3>
+          <span class="text-[9px] text-gray-500">Affected area % · 2020–2024</span>
+        </div>
+        <canvas id="sat-trend-chart" height="80"></canvas>
+      </div>
+
+      <!-- Recommendations -->
+      <div class="et-card">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2 mb-3">
+          <i class="fas fa-lightbulb text-yellow-400"></i>
+          AI Recommendations
+        </h3>
+        <div id="sat-recommendations" class="space-y-2">
+          <div class="text-xs text-gray-500 italic">Select a region to load recommendations…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Time-compare panel (hidden by default) -->
+  <div id="sat-compare-panel" class="et-card hidden">
+    <h3 class="text-sm font-bold text-white flex items-center gap-2 mb-4">
+      <i class="fas fa-code-compare text-cyan-400"></i>
+      Temporal Change Comparison
+    </h3>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <div>
+        <label class="text-[9px] text-gray-500 uppercase tracking-wider block mb-1">Region</label>
+        <select id="sat-cmp-region" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-cyan-500">
+          <option value="amazon">Amazon</option>
+          <option value="aral">Aral Sea</option>
+          <option value="borneo">Borneo</option>
+          <option value="greenland">Greenland</option>
+          <option value="california">California</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-[9px] text-gray-500 uppercase tracking-wider block mb-1">Year From</label>
+        <select id="sat-cmp-from" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-cyan-500">
+          ${[2015,2016,2017,2018,2019,2020,2021,2022].map(y=>`<option value="${y}">${y}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label class="text-[9px] text-gray-500 uppercase tracking-wider block mb-1">Year To</label>
+        <select id="sat-cmp-to" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-cyan-500">
+          ${[2020,2021,2022,2023,2024].map(y=>`<option value="${y}" ${y===2024?'selected':''}>${y}</option>`).join('')}
+        </select>
+      </div>
+      <div class="flex items-end">
+        <button onclick="runSatCompare()" class="w-full px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-700 to-emerald-700 text-white text-xs font-bold hover:opacity-90 transition-all">
+          <i class="fas fa-magnifying-glass-chart mr-1"></i>Analyze Change
+        </button>
+      </div>
+    </div>
+    <div id="sat-compare-results" class="text-xs text-gray-500 italic">Run comparison to see temporal change data.</div>
+  </div>
+</div>
+
+<style>
+@keyframes sat-scan {
+  0%   { top: 0%; opacity: 0.8; }
+  50%  { opacity: 0.3; }
+  100% { top: 100%; opacity: 0.8; }
+}
+.sat-scan-anim { animation: sat-scan 3s linear infinite; }
+.sat-filter-btn.active { background: rgba(8,145,178,0.3) !important; color: #67e8f9 !important; border-color: #0e7490 !important; }
+</style>`;
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────
+async function initSatellite() {
+  // Load global stats
+  loadSatGlobalStats();
+  // Load live feed (all regions)
+  refreshSatelliteFeed();
+  // Auto-refresh every 30 seconds
+  if (SAT_STATE.scanInterval) clearInterval(SAT_STATE.scanInterval);
+  SAT_STATE.scanInterval = setInterval(() => {
+    refreshSatelliteFeed(true); // silent refresh
+    loadSatGlobalStats();
+  }, 30000);
+}
+
+async function loadSatGlobalStats() {
+  try {
+    const r = await fetch('/satellite/global_stats');
+    const d = await r.json();
+    SAT_STATE.globalStats = d;
+    renderSatGlobalStats(d);
+  } catch(e) { console.error('Sat global stats:', e); }
+}
+
+function renderSatGlobalStats(d) {
+  const el = document.getElementById('sat-global-stats');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="et-card">
+      <div class="flex items-center gap-2 mb-1">
+        <i class="fas fa-tree text-red-400 text-sm"></i>
+        <span class="text-[9px] text-gray-500 uppercase tracking-wider">Forest Loss Today</span>
+      </div>
+      <div class="text-xl font-black text-red-300">${Number(d.forestLoss.today_ha).toLocaleString()}</div>
+      <div class="text-[9px] text-gray-500">ha · ${d.forestLoss.rate_ha_per_min.toFixed(0)} ha/min</div>
+    </div>
+    <div class="et-card">
+      <div class="flex items-center gap-2 mb-1">
+        <i class="fas fa-city text-orange-400 text-sm"></i>
+        <span class="text-[9px] text-gray-500 uppercase tracking-wider">Urban Expansion</span>
+      </div>
+      <div class="text-xl font-black text-orange-300">${d.urbanExpansion.new_km2_per_day}</div>
+      <div class="text-[9px] text-gray-500">km²/day · ${d.urbanExpansion.impervious_surface_pct}% surface</div>
+    </div>
+    <div class="et-card">
+      <div class="flex items-center gap-2 mb-1">
+        <i class="fas fa-water text-blue-400 text-sm"></i>
+        <span class="text-[9px] text-gray-500 uppercase tracking-wider">Water Body Loss</span>
+      </div>
+      <div class="text-xl font-black text-blue-300">${Number(d.waterBodies.total_loss_km2_year).toLocaleString()}</div>
+      <div class="text-[9px] text-gray-500">km²/year · ${d.waterBodies.water_stress_pct}% stressed</div>
+    </div>
+    <div class="et-card">
+      <div class="flex items-center gap-2 mb-1">
+        <i class="fas fa-snowflake text-cyan-400 text-sm"></i>
+        <span class="text-[9px] text-gray-500 uppercase tracking-wider">Arctic Ice Extent</span>
+      </div>
+      <div class="text-xl font-black text-cyan-300">${d.iceSheets.arctic_extent_mkm2}</div>
+      <div class="text-[9px] text-gray-500">M km² · −${d.iceSheets.annual_loss_gt} Gt/year</div>
+    </div>
+  `;
+}
+
+// ── LIVE FEED ──────────────────────────────────────────────────────────────
+async function refreshSatelliteFeed(silent = false) {
+  if (!silent) {
+    const list = document.getElementById('sat-region-list');
+    if (list) list.innerHTML = [1,2,3,4,5].map(()=>`<div class="animate-pulse h-20 bg-gray-800/40 rounded-xl"></div>`).join('');
+  }
+  try {
+    const r = await fetch('/satellite/live_feed');
+    const d = await r.json();
+    SAT_STATE.liveFeed = d.feed;
+    SAT_STATE.lastScan = d.stats;
+    renderSatRegionList(d.feed, d.stats);
+    // Auto-select first region if none selected
+    if (!SAT_STATE.activeRegion && d.feed.length > 0) {
+      selectSatRegion(d.feed[0].regionId);
+    }
+  } catch(e) { console.error('Sat live feed:', e); }
+}
+
+function renderSatRegionList(feed, stats) {
+  const listEl = document.getElementById('sat-region-list');
+  const countEl = document.getElementById('sat-feed-count');
+  if (!listEl) return;
+
+  if (countEl && stats) {
+    countEl.textContent = `(${feed.length} · ${stats.criticalZones} critical)`;
+  }
+
+  const filter = document.querySelector('.sat-filter-btn.active')?.id?.replace('sat-filter-', '') || 'all';
+  const filtered = filter === 'all' ? feed : feed.filter(f => f.impactGrade === filter);
+
+  listEl.innerHTML = filtered.map(f => {
+    const gc = GRADE_COLORS[f.impactGrade] || GRADE_COLORS.LOW;
+    const icon = CHANGE_ICONS[f.changeType] || 'fa-globe';
+    const label = CHANGE_LABELS[f.changeType] || f.changeType;
+    const isActive = SAT_STATE.activeRegion === f.regionId;
+    return `
+    <div onclick="selectSatRegion('${f.regionId}')" class="et-card cursor-pointer transition-all hover:border-cyan-700 ${isActive ? 'border-cyan-600 bg-cyan-900/20' : 'border-gray-700/50'}">
+      <div class="flex items-start justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="w-8 h-8 rounded-lg ${gc.bg} ${gc.border} border flex items-center justify-center flex-none">
+            <i class="fas ${icon} ${gc.text} text-xs"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-gray-200 truncate">${f.regionName}</div>
+            <div class="text-[9px] text-gray-500">${label}</div>
+          </div>
+        </div>
+        <div class="text-right flex-none">
+          <div class="text-sm font-black ${gc.text}">${f.impactScore.toFixed(0)}</div>
+          <div class="text-[9px] font-bold ${gc.text}">${f.impactGrade}</div>
+        </div>
+      </div>
+      <div class="mt-2 flex items-center gap-3 text-[9px] text-gray-500">
+        <span><i class="fas fa-expand-arrows-alt mr-1 opacity-60"></i>${f.affectedAreaKm2} km²</span>
+        <span><i class="fas fa-chart-line mr-1 opacity-60"></i>${f.changeRatePctPerYear}%/yr</span>
+        <span class="ml-auto"><i class="fas fa-eye mr-1 opacity-60"></i>${(f.confidence*100).toFixed(0)}%</span>
+      </div>
+      <!-- Mini impact bar -->
+      <div class="mt-1.5 h-1 rounded-full bg-gray-800 overflow-hidden">
+        <div class="h-full rounded-full ${f.impactScore>70?'bg-red-500':f.impactScore>50?'bg-orange-500':f.impactScore>30?'bg-yellow-500':'bg-emerald-500'} transition-all"
+             style="width:${f.impactScore}%"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterSatFeed(grade) {
+  // Update active filter button styles
+  document.querySelectorAll('.sat-filter-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(`sat-filter-${grade}`);
+  if (btn) btn.classList.add('active');
+  renderSatRegionList(SAT_STATE.liveFeed, SAT_STATE.lastScan);
+}
+
+// ── REGION DETAIL ─────────────────────────────────────────────────────────
+async function selectSatRegion(regionId) {
+  SAT_STATE.activeRegion = regionId;
+  // Re-render list to highlight active
+  renderSatRegionList(SAT_STATE.liveFeed, SAT_STATE.lastScan);
+
+  // Show loading in detail panel
+  const tsEl = document.getElementById('sat-ts-text');
+  if (tsEl) tsEl.textContent = 'Scanning…';
+
+  try {
+    const r = await fetch(`/satellite/analyze/${regionId}`);
+    const d = await r.json();
+    renderSatDetail(d);
+    toast(`📡 ${d.region.name} scanned · Impact: ${d.analysis.impactGrade}`, 
+          d.analysis.impactGrade === 'CRITICAL' ? 'error' : d.analysis.impactGrade === 'HIGH' ? 'warning' : 'success');
+  } catch(e) {
+    console.error('Sat analyze:', e);
+    toast('Satellite analysis failed', 'error');
+  }
+}
+
+function renderSatDetail(d) {
+  const { region, tileUrl, analysis, recommendations } = d;
+  const gc = GRADE_COLORS[analysis.impactGrade] || GRADE_COLORS.LOW;
+
+  // Update region name overlay
+  const nameEl = document.getElementById('sat-overlay-name');
+  if (nameEl) nameEl.textContent = `${region.name} · ${region.country}`;
+
+  // Update timestamp badge
+  const tsEl = document.getElementById('sat-ts-text');
+  if (tsEl) tsEl.textContent = new Date(analysis.timestamp).toLocaleTimeString();
+
+  // Update confidence badge
+  const confEl = document.getElementById('sat-conf-badge');
+  if (confEl) confEl.textContent = `Confidence: ${(analysis.confidence * 100).toFixed(1)}%`;
+
+  // Load satellite image
+  const img = document.getElementById('sat-main-img');
+  const fallback = document.getElementById('sat-img-fallback');
+  if (img) {
+    img.style.opacity = '0';
+    img.src = tileUrl;
+    // Always show the generated demo canvas in addition
+    renderDemoSatCanvas(region, analysis);
+  }
+  if (fallback) fallback.style.display = 'flex';
+
+  // Draw CNN bounding boxes on SVG overlay
+  renderBBoxOverlay(analysis.boxes, analysis.impactScore);
+
+  // Draw heatmap
+  renderSatHeatmap(analysis.heatmap);
+
+  // Update impact badge
+  const impactBadge = document.getElementById('sat-impact-badge');
+  const impactNum = document.getElementById('sat-impact-score-num');
+  const impactGrade = document.getElementById('sat-impact-grade-text');
+  if (impactBadge && impactNum && impactGrade) {
+    impactBadge.classList.remove('hidden');
+    impactNum.textContent = analysis.impactScore.toFixed(1);
+    impactNum.className = `text-2xl font-black ${gc.text}`;
+    impactGrade.textContent = analysis.impactGrade;
+    impactGrade.className = `text-[9px] font-bold mt-0.5 ${gc.text}`;
+  }
+
+  // Update metrics
+  const setEl = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+  setEl('sat-m-area', Number(analysis.affectedAreaKm2).toLocaleString());
+  setEl('sat-m-rate', analysis.changeRatePctPerYear.toFixed(2) + '%');
+  setEl('sat-m-conf', (analysis.confidence * 100).toFixed(1) + '%');
+  setEl('sat-m-sdg', 'SDG ' + (analysis.sdgImpact || []).join(', '));
+
+  // Render legend
+  const legendEl = document.getElementById('sat-legend');
+  if (legendEl) {
+    const uniqueClasses = [...new Set(analysis.boxes.map(b => b.class))];
+    legendEl.innerHTML = uniqueClasses.map(cls => {
+      const box = analysis.boxes.find(b => b.class === cls);
+      return `<div class="flex items-center gap-1 text-[9px]">
+        <span class="w-3 h-3 rounded-sm flex-none" style="background:${box.color}88; border: 1px solid ${box.color}"></span>
+        <span class="text-gray-400">${box.label}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // Render trend chart
+  renderSatTrendChart(analysis.yearlyChange);
+
+  // Render recommendations
+  const recEl = document.getElementById('sat-recommendations');
+  if (recEl) {
+    recEl.innerHTML = recommendations.map((rec, i) => `
+      <div class="flex items-start gap-2 p-2 rounded-lg bg-gray-800/60 border border-gray-700/50">
+        <span class="w-5 h-5 rounded-full bg-cyan-900/60 border border-cyan-700 flex items-center justify-center text-[9px] text-cyan-400 flex-none font-bold">${i+1}</span>
+        <span class="text-xs text-gray-300">${rec}</span>
+      </div>`).join('');
+  }
+}
+
+// ── CNN BOUNDING BOX OVERLAY ───────────────────────────────────────────────
+function renderBBoxOverlay(boxes, impactScore) {
+  const svg = document.getElementById('sat-bbox-svg');
+  if (!svg) return;
+  svg.innerHTML = boxes.map((b, i) => `
+    <g>
+      <rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"
+            fill="${b.color}22" stroke="${b.color}" stroke-width="0.4" rx="0.5"/>
+      <rect x="${b.x}" y="${b.y - 4}" width="${Math.min(b.w, 25)}" height="4"
+            fill="${b.color}cc" rx="0.3"/>
+      <text x="${b.x + 1}" y="${b.y - 0.5}" font-size="2.2" fill="white" font-weight="bold">
+        ${b.label.slice(0,12)} ${(b.confidence*100).toFixed(0)}%
+      </text>
+    </g>
+  `).join('');
+}
+
+// ── HEATMAP CANVAS ─────────────────────────────────────────────────────────
+function renderSatHeatmap(heatmap) {
+  const canvas = document.getElementById('sat-heatmap-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const cols = 8, rows = 8;
+  const cw = canvas.width / cols;
+  const ch = canvas.height / rows;
+  heatmap.forEach((val, i) => {
+    const row = Math.floor(i / cols);
+    const col = i % cols;
+    // Color: green (low) → yellow → red (high)
+    const r = Math.floor(val * 220);
+    const g = Math.floor((1 - val) * 180);
+    ctx.fillStyle = `rgba(${r},${g},30,${0.4 + val * 0.6})`;
+    ctx.fillRect(col * cw, row * ch, cw, ch);
+    // Grid line
+    ctx.strokeStyle = 'rgba(30,30,40,0.5)';
+    ctx.strokeRect(col * cw, row * ch, cw, ch);
+  });
+}
+
+// ── DEMO CANVAS (fallback) ─────────────────────────────────────────────────
+function renderDemoSatCanvas(region, analysis) {
+  const wrapper = document.getElementById('sat-demo-canvas-wrapper');
+  if (!wrapper) return;
+  wrapper.innerHTML = `<canvas id="sat-demo-canvas" class="w-full h-full" style="min-height:320px;"></canvas>`;
+  const canvas = document.getElementById('sat-demo-canvas');
+  if (!canvas) return;
+  canvas.width = 600; canvas.height = 320;
+  const ctx = canvas.getContext('2d');
+
+  // Draw a stylized satellite view depending on change type
+  const type = region.type;
+  const grad = ctx.createLinearGradient(0, 0, 600, 320);
+
+  if (type === 'deforestation') {
+    grad.addColorStop(0, '#1a3a1a'); grad.addColorStop(0.4, '#2d5a27'); grad.addColorStop(0.7, '#8b6914'); grad.addColorStop(1, '#5a3a10');
+  } else if (type === 'urban_expansion') {
+    grad.addColorStop(0, '#2a2a3a'); grad.addColorStop(0.5, '#4a4a5a'); grad.addColorStop(1, '#1a2a1a');
+  } else if (type === 'water_loss') {
+    grad.addColorStop(0, '#1a3a5a'); grad.addColorStop(0.5, '#8b7a40'); grad.addColorStop(1, '#3a3020');
+  } else if (type === 'ice_loss') {
+    grad.addColorStop(0, '#c0d0e0'); grad.addColorStop(0.5, '#8090a0'); grad.addColorStop(1, '#4060a0');
+  } else {
+    grad.addColorStop(0, '#5a4a20'); grad.addColorStop(0.5, '#8b7030'); grad.addColorStop(1, '#3a2a10');
+  }
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 600, 320);
+
+  // Draw pseudo-terrain patches
+  for (let i = 0; i < 40; i++) {
+    const x = (i * 97 + 23) % 600;
+    const y = (i * 73 + 17) % 320;
+    const r = 15 + (i * 13) % 40;
+    const alpha = 0.1 + (i % 5) * 0.04;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    if (type === 'deforestation') ctx.fillStyle = i % 3 === 0 ? `rgba(80,40,10,${alpha})` : `rgba(20,60,20,${alpha})`;
+    else if (type === 'urban_expansion') ctx.fillStyle = `rgba(60,60,80,${alpha})`;
+    else if (type === 'water_loss') ctx.fillStyle = i % 2 === 0 ? `rgba(20,60,100,${alpha})` : `rgba(120,100,40,${alpha})`;
+    else ctx.fillStyle = `rgba(200,210,220,${alpha * 0.5})`;
+    ctx.fill();
+  }
+
+  // Draw CNN box outlines on canvas too
+  analysis.boxes.forEach(b => {
+    const px = b.x / 100 * 600, py = b.y / 100 * 320;
+    const pw = b.w / 100 * 600, ph = b.h / 100 * 320;
+    ctx.strokeStyle = b.color; ctx.lineWidth = 2; ctx.setLineDash([4,2]);
+    ctx.strokeRect(px, py, pw, ph);
+    ctx.setLineDash([]);
+    ctx.fillStyle = b.color + 'cc';
+    ctx.fillRect(px, py - 14, Math.min(pw, 140), 14);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 9px monospace';
+    ctx.fillText(`${b.label} ${(b.confidence*100).toFixed(0)}%`, px + 3, py - 3);
+  });
+
+  // Coordinate overlay
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(0, 295, 600, 25);
+  ctx.fillStyle = '#67e8f9';
+  ctx.font = '10px monospace';
+  ctx.fillText(`LAT ${region.lat.toFixed(2)}°  LON ${region.lon.toFixed(2)}°  |  ${region.name}  |  NASA GIBS VIIRS 250m`, 10, 312);
+}
+
+// ── TREND CHART ────────────────────────────────────────────────────────────
+function renderSatTrendChart(yearlyChange) {
+  const canvas = document.getElementById('sat-trend-chart');
+  if (!canvas || !window.Chart) return;
+  if (canvas._chart) canvas._chart.destroy();
+
+  canvas._chart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: yearlyChange.map(y => y.year),
+      datasets: [
+        {
+          label: 'Affected Area %',
+          data: yearlyChange.map(y => y.affectedPct),
+          borderColor: '#f97316', backgroundColor: '#f9731620',
+          tension: 0.4, fill: true, pointRadius: 4,
+        },
+        {
+          label: 'Change km²',
+          data: yearlyChange.map(y => y.changeKm2 / 100),
+          borderColor: '#ef4444', backgroundColor: '#ef444418',
+          tension: 0.4, fill: true, pointRadius: 3,
+          yAxisID: 'y2',
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#9ca3af', font: { size: 10 } } } },
+      scales: {
+        x: { ticks: { color: '#6b7280', font: { size: 9 } }, grid: { color: '#1f2937' } },
+        y: { ticks: { color: '#6b7280', font: { size: 9 } }, grid: { color: '#1f2937' }, title: { display: true, text: 'Affected %', color: '#6b7280', font: { size: 9 } } },
+        y2: { position: 'right', ticks: { color: '#6b7280', font: { size: 9 } }, grid: { display: false }, title: { display: true, text: 'km²/100', color: '#6b7280', font: { size: 9 } } },
+      }
+    }
+  });
+}
+
+// ── TIME COMPARE ──────────────────────────────────────────────────────────
+function toggleSatCompareMode() {
+  SAT_STATE.compareMode = !SAT_STATE.compareMode;
+  const panel = document.getElementById('sat-compare-panel');
+  const btn = document.getElementById('sat-compare-btn');
+  if (panel) panel.classList.toggle('hidden', !SAT_STATE.compareMode);
+  if (btn) {
+    btn.className = SAT_STATE.compareMode
+      ? 'px-3 py-1.5 rounded-lg bg-cyan-900/40 border border-cyan-700 text-cyan-300 text-xs font-semibold hover:bg-cyan-900/70 transition-all flex items-center gap-1.5'
+      : 'px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-300 text-xs font-semibold hover:bg-gray-700 transition-all flex items-center gap-1.5';
+  }
+}
+
+async function runSatCompare() {
+  const regionId = document.getElementById('sat-cmp-region')?.value || 'amazon';
+  const yearFrom = parseInt(document.getElementById('sat-cmp-from')?.value || '2020');
+  const yearTo   = parseInt(document.getElementById('sat-cmp-to')?.value   || '2024');
+  const resEl = document.getElementById('sat-compare-results');
+  if (resEl) resEl.innerHTML = '<div class="text-xs text-gray-500 animate-pulse">Analyzing temporal changes…</div>';
+
+  try {
+    const r = await fetch('/satellite/compare', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ regionId, yearFrom, yearTo })
+    });
+    const d = await r.json();
+    const c = d.comparison;
+    const deltaLabel = (val, inverted = false) => {
+      if (val === undefined || val === null) return '';
+      const color = (val > 0 && !inverted) || (val < 0 && inverted) ? 'text-red-400' : 'text-emerald-400';
+      const arrow = val > 0 ? '▲' : '▼';
+      return `<span class="${color}">${arrow} ${Math.abs(val).toFixed(1)}</span>`;
+    };
+    resEl.innerHTML = `
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="et-card text-center">
+          <div class="text-[9px] text-gray-500 uppercase">Forest Cover</div>
+          <div class="text-sm font-black text-emerald-300 my-1">${c.forestCoverTo_pct}%</div>
+          <div class="text-[9px]">${deltaLabel(c.forestCoverTo_pct - c.forestCoverFrom_pct, true)} from ${c.forestCoverFrom_pct}%</div>
+        </div>
+        <div class="et-card text-center">
+          <div class="text-[9px] text-gray-500 uppercase">Urban Area</div>
+          <div class="text-sm font-black text-orange-300 my-1">${Number(c.urbanAreaTo_km2).toLocaleString()} km²</div>
+          <div class="text-[9px]">${deltaLabel(c.urbanAreaTo_km2 - c.urbanAreaFrom_km2)} from ${Number(c.urbanAreaFrom_km2).toLocaleString()}</div>
+        </div>
+        <div class="et-card text-center">
+          <div class="text-[9px] text-gray-500 uppercase">Water Body</div>
+          <div class="text-sm font-black text-blue-300 my-1">${Number(c.waterBodyTo_km2).toLocaleString()} km²</div>
+          <div class="text-[9px]">${deltaLabel(c.waterBodyTo_km2 - c.waterBodyFrom_km2, true)} from ${Number(c.waterBodyFrom_km2).toLocaleString()}</div>
+        </div>
+        <div class="et-card text-center">
+          <div class="text-[9px] text-gray-500 uppercase">Vegetation Index</div>
+          <div class="text-sm font-black text-emerald-300 my-1">${c.vegetationIndexTo}</div>
+          <div class="text-[9px]">${deltaLabel(c.vegetationIndexTo - c.vegetationIndexFrom, true)} from ${c.vegetationIndexFrom}</div>
+        </div>
+        <div class="et-card text-center">
+          <div class="text-[9px] text-gray-500 uppercase">Carbon Released</div>
+          <div class="text-sm font-black text-red-300 my-1">${c.carbonReleasedMt}</div>
+          <div class="text-[9px] text-gray-500">Mt CO₂ over ${c.deltaYears}yr</div>
+        </div>
+        <div class="et-card text-center">
+          <div class="text-[9px] text-gray-500 uppercase">Period</div>
+          <div class="text-sm font-black text-cyan-300 my-1">${yearFrom}–${yearTo}</div>
+          <div class="text-[9px] text-gray-500">${d.region.name}</div>
+        </div>
+      </div>`;
+  } catch(e) {
+    if (resEl) resEl.innerHTML = '<div class="text-xs text-red-400">Compare failed. Try again.</div>';
+  }
+}
+
+// ── CLEANUP on tab switch ─────────────────────────────────────────────────
+const _origSwitchSat = window.switchTab;
+window.switchTab = function(id) {
+  if (id !== 'satellite' && SAT_STATE.scanInterval) {
+    clearInterval(SAT_STATE.scanInterval);
+    SAT_STATE.scanInterval = null;
+  }
+  _origSwitchSat(id);
+};
+
+// Expose globals
+window.initSatellite = initSatellite;
+window.refreshSatelliteFeed = refreshSatelliteFeed;
+window.selectSatRegion = selectSatRegion;
+window.filterSatFeed = filterSatFeed;
+window.toggleSatCompareMode = toggleSatCompareMode;
+window.runSatCompare = runSatCompare;

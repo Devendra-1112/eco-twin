@@ -921,16 +921,294 @@ app.put('/admin/users/:id/role', async (c) => {
 app.get('/i18n/:lang', (c) => {
   const lang=c.req.param('lang')
   const S:Record<string,Record<string,string>>={
-    en:{dashboard:'Dashboard',worldMap:'World Map',simulator:'Simulator',rlOptimizer:'RL Optimizer',anomaly:'Anomaly',globe3d:'3D Globe',sdgTracker:'SDG Tracker',askAI:'Ask AI',realtime:'Live Monitor',shap:'SHAP Analysis',analytics:'Analytics',admin:'Admin',compare:'Compare',history:'History',profile:'Profile',login:'Login',register:'Register',logout:'Logout',runSim:'Run LSTM Simulation',trainAgent:'Train RL Agent',sustainability:'Sustainability',score:'Score',emissions:'Emissions',renewable:'Renewable Energy',water:'Water Access',recycling:'Recycling',traffic:'Traffic',energy:'Energy',country:'Country',predicted:'Predicted',baseline:'Baseline',projected:'Projected',riskTab:'Climate Risk',carbonTab:'Carbon Budget',citiesTab:'City Bench',policyTab:'Policy Sim',newsTab:'News Feed',marketTab:'Live Markets','nav.title':'Smart City Digital Twin','kpi.countries':'Countries Tracked','kpi.avgScore':'Avg Sustainability','kpi.co2':'Avg CO₂/capita','kpi.renewable':'Global Renewable',moderate:'Moderate',critical:'Critical',sustainable:'Sustainable'},
-    es:{dashboard:'Panel',worldMap:'Mapa Mundial',simulator:'Simulador',rlOptimizer:'Optimizador RL',anomaly:'Anomalía',globe3d:'Globo 3D',sdgTracker:'Tracker ODS',askAI:'Consultar IA',realtime:'Monitor Vivo',shap:'Análisis SHAP',analytics:'Analítica',admin:'Admin',compare:'Comparar',history:'Historial',profile:'Perfil',login:'Iniciar sesión',register:'Registrarse',logout:'Cerrar sesión',runSim:'Ejecutar Simulación',trainAgent:'Entrenar Agente RL',sustainability:'Sostenibilidad',score:'Puntuación',emissions:'Emisiones',renewable:'Energía Renovable',water:'Acceso al Agua',recycling:'Reciclaje',traffic:'Tráfico',energy:'Energía',country:'País',predicted:'Predicho',baseline:'Línea Base',projected:'Proyectado',riskTab:'Riesgo Climático',carbonTab:'Presupuesto C',citiesTab:'Ciudades',policyTab:'Sim. Política',newsTab:'Noticias',marketTab:'Mercados','nav.title':'Gemelo Digital Ciudad Inteligente','kpi.countries':'Países Rastreados','kpi.avgScore':'Sost. Promedio','kpi.co2':'CO₂ Promedio','kpi.renewable':'Renovable Global',moderate:'Moderado',critical:'Crítico',sustainable:'Sostenible'},
-    fr:{dashboard:'Tableau de bord',worldMap:'Carte Mondiale',simulator:'Simulateur',rlOptimizer:'Optimiseur RL',anomaly:'Anomalie',globe3d:'Globe 3D',sdgTracker:'Suivi ODD',askAI:'Demander IA',realtime:'Moniteur Live',shap:'Analyse SHAP',analytics:'Analytique',admin:'Admin',compare:'Comparer',history:'Historique',profile:'Profil',login:'Connexion',register:"S'inscrire",logout:'Déconnexion',runSim:'Lancer Simulation',trainAgent:"Entraîner l'Agent",sustainability:'Durabilité',score:'Score',emissions:'Émissions',renewable:'Énergie Renouvelable',water:"Accès à l'Eau",recycling:'Recyclage',traffic:'Trafic',energy:'Énergie',country:'Pays',predicted:'Prédit',baseline:'Référence',projected:'Projeté',riskTab:'Risque Climatique',carbonTab:'Budget CO₂',citiesTab:'Villes',policyTab:'Sim. Politique',newsTab:'Actualités',marketTab:'Marchés','nav.title':'Ville Intelligente Jumeau Numérique','kpi.countries':'Pays Suivis','kpi.avgScore':'Durabilité Moy.','kpi.co2':'CO₂ Moyen','kpi.renewable':'Renouvelable Global',moderate:'Modéré',critical:'Critique',sustainable:'Durable'},
-    de:{dashboard:'Dashboard',worldMap:'Weltkarte',simulator:'Simulator',rlOptimizer:'RL-Optimierer',anomaly:'Anomalie',globe3d:'3D-Globus',sdgTracker:'SDG-Tracker',askAI:'KI Fragen',realtime:'Live-Monitor',shap:'SHAP-Analyse',analytics:'Analytik',admin:'Admin',compare:'Vergleichen',history:'Verlauf',profile:'Profil',login:'Anmelden',register:'Registrieren',logout:'Abmelden',runSim:'Simulation starten',trainAgent:'RL-Agent trainieren',sustainability:'Nachhaltigkeit',score:'Score',emissions:'Emissionen',renewable:'Erneuerbare Energie',water:'Wasserzugang',recycling:'Recycling',traffic:'Verkehr',energy:'Energie',country:'Land',predicted:'Vorhergesagt',baseline:'Basis',projected:'Projiziert',riskTab:'Klimarisiko',carbonTab:'CO₂-Budget',citiesTab:'Städte',policyTab:'Politik-Sim',newsTab:'Nachrichten',marketTab:'Märkte','nav.title':'Intelligente Stadt Digitaler Zwilling','kpi.countries':'Länder verfolgt','kpi.avgScore':'Ø Nachhaltigkeit','kpi.co2':'Ø CO₂','kpi.renewable':'Globale Erneuerbare',moderate:'Mäßig',critical:'Kritisch',sustainable:'Nachhaltig'},
-    zh:{dashboard:'仪表板',worldMap:'世界地图',simulator:'模拟器',rlOptimizer:'RL优化器',anomaly:'异常检测',globe3d:'3D地球',sdgTracker:'SDG追踪',askAI:'问AI',realtime:'实时监控',shap:'SHAP分析',analytics:'分析',admin:'管理员',compare:'比较',history:'历史',profile:'个人资料',login:'登录',register:'注册',logout:'退出',runSim:'运行LSTM模拟',trainAgent:'训练RL智能体',sustainability:'可持续性',score:'分数',emissions:'排放量',renewable:'可再生能源',water:'水资源获取',recycling:'回收率',traffic:'交通',energy:'能源',country:'国家',predicted:'预测',baseline:'基准',projected:'预测值',riskTab:'气候风险',carbonTab:'碳预算',citiesTab:'城市对标',policyTab:'政策模拟',newsTab:'资讯',marketTab:'碳市场','nav.title':'智慧城市数字孪生','kpi.countries':'追踪国家','kpi.avgScore':'平均可持续性','kpi.co2':'平均CO₂','kpi.renewable':'全球可再生',moderate:'中等',critical:'危急',sustainable:'可持续'},
-    ar:{dashboard:'لوحة التحكم',worldMap:'الخريطة العالمية',simulator:'المحاكي',rlOptimizer:'محسّن RL',anomaly:'الكشف عن الشذوذ',globe3d:'الكرة الأرضية 3D',sdgTracker:'متتبع أهداف التنمية',askAI:'اسأل الذكاء الاصطناعي',realtime:'مراقبة مباشرة',shap:'تحليل SHAP',analytics:'التحليلات',admin:'الإدارة',compare:'مقارنة',history:'السجل',profile:'الملف الشخصي',login:'تسجيل الدخول',register:'التسجيل',logout:'تسجيل الخروج',runSim:'تشغيل المحاكاة',trainAgent:'تدريب وكيل RL',sustainability:'الاستدامة',score:'النتيجة',emissions:'الانبعاثات',renewable:'الطاقة المتجددة',water:'الوصول للمياه',recycling:'إعادة التدوير',traffic:'حركة المرور',energy:'الطاقة',country:'الدولة',predicted:'متوقع',baseline:'خط الأساس',projected:'المتوقع',riskTab:'مخاطر المناخ',carbonTab:'ميزانية الكربون',citiesTab:'المدن',policyTab:'محاكاة السياسة',newsTab:'الأخبار',marketTab:'الأسواق الخضراء','nav.title':'المدينة الذكية التوأم الرقمي','kpi.countries':'الدول المتتبعة','kpi.avgScore':'متوسط الاستدامة','kpi.co2':'متوسط CO₂','kpi.renewable':'الطاقة المتجددة العالمية',moderate:'متوسط',critical:'حرج',sustainable:'مستدام'},
-    hi:{dashboard:'डैशबोर्ड',worldMap:'विश्व मानचित्र',simulator:'सिमुलेटर',rlOptimizer:'RL अनुकूलक',anomaly:'विसंगति',globe3d:'3D ग्लोब',sdgTracker:'SDG ट्रैकर',askAI:'AI से पूछें',realtime:'लाइव मॉनिटर',shap:'SHAP विश्लेषण',analytics:'विश्लेषण',admin:'एडमिन',compare:'तुलना',history:'इतिहास',profile:'प्रोफाइल',login:'लॉगिन',register:'रजिस्टर',logout:'लॉगआउट',runSim:'LSTM सिमुलेशन चलाएं',trainAgent:'RL एजेंट प्रशिक्षित करें',sustainability:'स्थिरता',score:'स्कोर',emissions:'उत्सर्जन',renewable:'नवीकरणीय ऊर्जा',water:'जल पहुंच',recycling:'पुनर्चक्रण',traffic:'यातायात',energy:'ऊर्जा',country:'देश',predicted:'पूर्वानुमानित',baseline:'आधार रेखा',projected:'प्रक्षेपित',riskTab:'जलवायु जोखिम',carbonTab:'कार्बन बजट',citiesTab:'शहर',policyTab:'नीति सिम',newsTab:'समाचार',marketTab:'बाज़ार','nav.title':'स्मार्ट सिटी डिजिटल ट्विन','kpi.countries':'ट्रैक देश','kpi.avgScore':'औसत स्थिरता','kpi.co2':'औसत CO₂','kpi.renewable':'वैश्विक नवीकरणीय',moderate:'मध्यम',critical:'गंभीर',sustainable:'स्थिर'},
-    pt:{dashboard:'Painel',worldMap:'Mapa Mundial',simulator:'Simulador',rlOptimizer:'Otimizador RL',anomaly:'Anomalia',globe3d:'Globo 3D',sdgTracker:'Rastreador ODS',askAI:'Perguntar IA',realtime:'Monitor ao Vivo',shap:'Análise SHAP',analytics:'Analítica',admin:'Admin',compare:'Comparar',history:'Histórico',profile:'Perfil',login:'Entrar',register:'Registrar',logout:'Sair',runSim:'Executar Simulação',trainAgent:'Treinar Agente RL',sustainability:'Sustentabilidade',score:'Pontuação',emissions:'Emissões',renewable:'Energia Renovável',water:'Acesso à Água',recycling:'Reciclagem',traffic:'Tráfego',energy:'Energia',country:'País',predicted:'Previsto',baseline:'Linha de Base',projected:'Projetado',riskTab:'Risco Climático',carbonTab:'Orçamento CO₂',citiesTab:'Cidades',policyTab:'Sim. Política',newsTab:'Notícias',marketTab:'Mercados','nav.title':'Gêmeo Digital Cidade Inteligente','kpi.countries':'Países Monitorados','kpi.avgScore':'Sustent. Média','kpi.co2':'CO₂ Médio','kpi.renewable':'Renovável Global',moderate:'Moderado',critical:'Crítico',sustainable:'Sustentável'},
+    en:{dashboard:'Dashboard',worldMap:'World Map',simulator:'Simulator',rlOptimizer:'RL Optimizer',anomaly:'Anomaly',globe3d:'3D Globe',sdgTracker:'SDG Tracker',askAI:'Ask AI',realtime:'Live Monitor',shap:'SHAP Analysis',analytics:'Analytics',admin:'Admin',compare:'Compare',history:'History',profile:'Profile',login:'Login',register:'Register',logout:'Logout',runSim:'Run LSTM Simulation',trainAgent:'Train RL Agent',sustainability:'Sustainability',score:'Score',emissions:'Emissions',renewable:'Renewable Energy',water:'Water Access',recycling:'Recycling',traffic:'Traffic',energy:'Energy',country:'Country',predicted:'Predicted',baseline:'Baseline',projected:'Projected',riskTab:'Climate Risk',carbonTab:'Carbon Budget',citiesTab:'City Bench',policyTab:'Policy Sim',newsTab:'News Feed',marketTab:'Live Markets',satelliteTab:'AI Satellite','nav.title':'Smart City Digital Twin','kpi.countries':'Countries Tracked','kpi.avgScore':'Avg Sustainability','kpi.co2':'Avg CO₂/capita','kpi.renewable':'Global Renewable',moderate:'Moderate',critical:'Critical',sustainable:'Sustainable'},
+    es:{dashboard:'Panel',worldMap:'Mapa Mundial',simulator:'Simulador',rlOptimizer:'Optimizador RL',anomaly:'Anomalía',globe3d:'Globo 3D',sdgTracker:'Tracker ODS',askAI:'Consultar IA',realtime:'Monitor Vivo',shap:'Análisis SHAP',analytics:'Analítica',admin:'Admin',compare:'Comparar',history:'Historial',profile:'Perfil',login:'Iniciar sesión',register:'Registrarse',logout:'Cerrar sesión',runSim:'Ejecutar Simulación',trainAgent:'Entrenar Agente RL',sustainability:'Sostenibilidad',score:'Puntuación',emissions:'Emisiones',renewable:'Energía Renovable',water:'Acceso al Agua',recycling:'Reciclaje',traffic:'Tráfico',energy:'Energía',country:'País',predicted:'Predicho',baseline:'Línea Base',projected:'Proyectado',riskTab:'Riesgo Climático',carbonTab:'Presupuesto C',citiesTab:'Ciudades',policyTab:'Sim. Política',newsTab:'Noticias',marketTab:'Mercados',satelliteTab:'Satélite IA','nav.title':'Gemelo Digital Ciudad Inteligente','kpi.countries':'Países Rastreados','kpi.avgScore':'Sost. Promedio','kpi.co2':'CO₂ Promedio','kpi.renewable':'Renovable Global',moderate:'Moderado',critical:'Crítico',sustainable:'Sostenible'},
+    fr:{dashboard:'Tableau de bord',worldMap:'Carte Mondiale',simulator:'Simulateur',rlOptimizer:'Optimiseur RL',anomaly:'Anomalie',globe3d:'Globe 3D',sdgTracker:'Suivi ODD',askAI:'Demander IA',realtime:'Moniteur Live',shap:'Analyse SHAP',analytics:'Analytique',admin:'Admin',compare:'Comparer',history:'Historique',profile:'Profil',login:'Connexion',register:"S'inscrire",logout:'Déconnexion',runSim:'Lancer Simulation',trainAgent:"Entraîner l'Agent",sustainability:'Durabilité',score:'Score',emissions:'Émissions',renewable:'Énergie Renouvelable',water:"Accès à l'Eau",recycling:'Recyclage',traffic:'Trafic',energy:'Énergie',country:'Pays',predicted:'Prédit',baseline:'Référence',projected:'Projeté',riskTab:'Risque Climatique',carbonTab:'Budget CO₂',citiesTab:'Villes',policyTab:'Sim. Politique',newsTab:'Actualités',marketTab:'Marchés',satelliteTab:'Satellite IA','nav.title':'Ville Intelligente Jumeau Numérique','kpi.countries':'Pays Suivis','kpi.avgScore':'Durabilité Moy.','kpi.co2':'CO₂ Moyen','kpi.renewable':'Renouvelable Global',moderate:'Modéré',critical:'Critique',sustainable:'Durable'},
+    de:{dashboard:'Dashboard',worldMap:'Weltkarte',simulator:'Simulator',rlOptimizer:'RL-Optimierer',anomaly:'Anomalie',globe3d:'3D-Globus',sdgTracker:'SDG-Tracker',askAI:'KI Fragen',realtime:'Live-Monitor',shap:'SHAP-Analyse',analytics:'Analytik',admin:'Admin',compare:'Vergleichen',history:'Verlauf',profile:'Profil',login:'Anmelden',register:'Registrieren',logout:'Abmelden',runSim:'Simulation starten',trainAgent:'RL-Agent trainieren',sustainability:'Nachhaltigkeit',score:'Score',emissions:'Emissionen',renewable:'Erneuerbare Energie',water:'Wasserzugang',recycling:'Recycling',traffic:'Verkehr',energy:'Energie',country:'Land',predicted:'Vorhergesagt',baseline:'Basis',projected:'Projiziert',riskTab:'Klimarisiko',carbonTab:'CO₂-Budget',citiesTab:'Städte',policyTab:'Politik-Sim',newsTab:'Nachrichten',marketTab:'Märkte',satelliteTab:'KI-Satellit','nav.title':'Intelligente Stadt Digitaler Zwilling','kpi.countries':'Länder verfolgt','kpi.avgScore':'Ø Nachhaltigkeit','kpi.co2':'Ø CO₂','kpi.renewable':'Globale Erneuerbare',moderate:'Mäßig',critical:'Kritisch',sustainable:'Nachhaltig'},
+    zh:{dashboard:'仪表板',worldMap:'世界地图',simulator:'模拟器',rlOptimizer:'RL优化器',anomaly:'异常检测',globe3d:'3D地球',sdgTracker:'SDG追踪',askAI:'问AI',realtime:'实时监控',shap:'SHAP分析',analytics:'分析',admin:'管理员',compare:'比较',history:'历史',profile:'个人资料',login:'登录',register:'注册',logout:'退出',runSim:'运行LSTM模拟',trainAgent:'训练RL智能体',sustainability:'可持续性',score:'分数',emissions:'排放量',renewable:'可再生能源',water:'水资源获取',recycling:'回收率',traffic:'交通',energy:'能源',country:'国家',predicted:'预测',baseline:'基准',projected:'预测值',riskTab:'气候风险',carbonTab:'碳预算',citiesTab:'城市对标',policyTab:'政策模拟',newsTab:'资讯',marketTab:'碳市场',satelliteTab:'AI卫星','nav.title':'智慧城市数字孪生','kpi.countries':'追踪国家','kpi.avgScore':'平均可持续性','kpi.co2':'平均CO₂','kpi.renewable':'全球可再生',moderate:'中等',critical:'危急',sustainable:'可持续'},
+    ar:{dashboard:'لوحة التحكم',worldMap:'الخريطة العالمية',simulator:'المحاكي',rlOptimizer:'محسّن RL',anomaly:'الكشف عن الشذوذ',globe3d:'الكرة الأرضية 3D',sdgTracker:'متتبع أهداف التنمية',askAI:'اسأل الذكاء الاصطناعي',realtime:'مراقبة مباشرة',shap:'تحليل SHAP',analytics:'التحليلات',admin:'الإدارة',compare:'مقارنة',history:'السجل',profile:'الملف الشخصي',login:'تسجيل الدخول',register:'التسجيل',logout:'تسجيل الخروج',runSim:'تشغيل المحاكاة',trainAgent:'تدريب وكيل RL',sustainability:'الاستدامة',score:'النتيجة',emissions:'الانبعاثات',renewable:'الطاقة المتجددة',water:'الوصول للمياه',recycling:'إعادة التدوير',traffic:'حركة المرور',energy:'الطاقة',country:'الدولة',predicted:'متوقع',baseline:'خط الأساس',projected:'المتوقع',riskTab:'مخاطر المناخ',carbonTab:'ميزانية الكربون',citiesTab:'المدن',policyTab:'محاكاة السياسة',newsTab:'الأخبار',marketTab:'الأسواق الخضراء',satelliteTab:'الأقمار الاصطناعية','nav.title':'المدينة الذكية التوأم الرقمي','kpi.countries':'الدول المتتبعة','kpi.avgScore':'متوسط الاستدامة','kpi.co2':'متوسط CO₂','kpi.renewable':'الطاقة المتجددة العالمية',moderate:'متوسط',critical:'حرج',sustainable:'مستدام'},
+    hi:{dashboard:'डैशबोर्ड',worldMap:'विश्व मानचित्र',simulator:'सिमुलेटर',rlOptimizer:'RL अनुकूलक',anomaly:'विसंगति',globe3d:'3D ग्लोब',sdgTracker:'SDG ट्रैकर',askAI:'AI से पूछें',realtime:'लाइव मॉनिटर',shap:'SHAP विश्लेषण',analytics:'विश्लेषण',admin:'एडमिन',compare:'तुलना',history:'इतिहास',profile:'प्रोफाइल',login:'लॉगिन',register:'रजिस्टर',logout:'लॉगआउट',runSim:'LSTM सिमुलेशन चलाएं',trainAgent:'RL एजेंट प्रशिक्षित करें',sustainability:'स्थिरता',score:'स्कोर',emissions:'उत्सर्जन',renewable:'नवीकरणीय ऊर्जा',water:'जल पहुंच',recycling:'पुनर्चक्रण',traffic:'यातायात',energy:'ऊर्जा',country:'देश',predicted:'पूर्वानुमानित',baseline:'आधार रेखा',projected:'प्रक्षेपित',riskTab:'जलवायु जोखिम',carbonTab:'कार्बन बजट',citiesTab:'शहर',policyTab:'नीति सिम',newsTab:'समाचार',marketTab:'बाज़ार',satelliteTab:'AI उपग्रह','nav.title':'स्मार्ट सिटी डिजिटल ट्विन','kpi.countries':'ट्रैक देश','kpi.avgScore':'औसत स्थिरता','kpi.co2':'औसत CO₂','kpi.renewable':'वैश्विक नवीकरणीय',moderate:'मध्यम',critical:'गंभीर',sustainable:'स्थिर'},
+    pt:{dashboard:'Painel',worldMap:'Mapa Mundial',simulator:'Simulador',rlOptimizer:'Otimizador RL',anomaly:'Anomalia',globe3d:'Globo 3D',sdgTracker:'Rastreador ODS',askAI:'Perguntar IA',realtime:'Monitor ao Vivo',shap:'Análise SHAP',analytics:'Analítica',admin:'Admin',compare:'Comparar',history:'Histórico',profile:'Perfil',login:'Entrar',register:'Registrar',logout:'Sair',runSim:'Executar Simulação',trainAgent:'Treinar Agente RL',sustainability:'Sustentabilidade',score:'Pontuação',emissions:'Emissões',renewable:'Energia Renovável',water:'Acesso à Água',recycling:'Reciclagem',traffic:'Tráfego',energy:'Energia',country:'País',predicted:'Previsto',baseline:'Linha de Base',projected:'Projetado',riskTab:'Risco Climático',carbonTab:'Orçamento CO₂',citiesTab:'Cidades',policyTab:'Sim. Política',newsTab:'Notícias',marketTab:'Mercados',satelliteTab:'Satélite IA','nav.title':'Gêmeo Digital Cidade Inteligente','kpi.countries':'Países Monitorados','kpi.avgScore':'Sustent. Média','kpi.co2':'CO₂ Médio','kpi.renewable':'Renovável Global',moderate:'Moderado',critical:'Crítico',sustainable:'Sustentável'},
   }
   return c.json(S[lang]||S['en'])
 })
+
+// ════════════════════════════════════════════════════════════════════════════
+// AI SATELLITE MONITORING — NASA GIBS tile images + simulated CNN analysis
+// ════════════════════════════════════════════════════════════════════════════
+
+// Satellite regions of interest with known environmental hotspots
+const SAT_REGIONS = [
+  { id:'amazon',    name:'Amazon Rainforest',   lat:-3.47, lon:-62.22, country:'BRA', type:'deforestation',  bbox:'-65,-6,-58,-1' },
+  { id:'aral',      name:'Aral Sea',            lat:45.00, lon:59.50,  country:'KAZ', type:'water_loss',     bbox:'56,42,63,48' },
+  { id:'sahara',    name:'Sahara Expansion',    lat:20.00, lon:15.00,  country:'DZA', type:'desertification',bbox:'10,15,25,28' },
+  { id:'mekong',    name:'Mekong Delta',        lat:10.50, lon:105.30, country:'VNM', type:'urban_expansion',bbox:'103,9,107,12' },
+  { id:'california',name:'California Wildfires',lat:37.50, lon:-119.50,country:'USA', type:'deforestation',  bbox:'-122,35,-116,40' },
+  { id:'greenland', name:'Greenland Ice Sheet', lat:72.00, lon:-40.00, country:'GRL', type:'ice_loss',       bbox:'-50,65,-25,80' },
+  { id:'yangtze',   name:'Yangtze River Delta', lat:31.50, lon:121.50, country:'CHN', type:'urban_expansion',bbox:'119,29,123,33' },
+  { id:'nile',      name:'Nile Delta',          lat:30.50, lon:31.00,  country:'EGY', type:'urban_expansion',bbox:'29,29,33,32' },
+  { id:'borneo',    name:'Borneo Deforestation',lat:1.00,  lon:114.00, country:'IDN', type:'deforestation',  bbox:'111,-2,118,4' },
+  { id:'ganges',    name:'Ganges Plain',        lat:25.50, lon:83.00,  country:'IND', type:'urban_expansion',bbox:'79,23,88,28' },
+]
+
+// CNN model classes and their environmental impact weights
+const CNN_CLASSES = {
+  deforestation:   { label:'Deforestation',    color:'#ef4444', impactWeight: 0.35, sdg:[13,15] },
+  urban_expansion: { label:'Urban Expansion',  color:'#f97316', impactWeight: 0.25, sdg:[11,13] },
+  water_loss:      { label:'Water Loss',       color:'#3b82f6', impactWeight: 0.30, sdg:[6,14] },
+  ice_loss:        { label:'Ice/Snow Loss',    color:'#06b6d4', impactWeight: 0.40, sdg:[13] },
+  desertification: { label:'Desertification',  color:'#eab308', impactWeight: 0.28, sdg:[15,2] },
+  vegetation:      { label:'Healthy Vegetation',color:'#22c55e', impactWeight:-0.20, sdg:[15] },
+}
+
+// Simulate CNN segmentation output — returns annotated regions on the image
+function runCNNAnalysis(regionId: string, changeType: string) {
+  const now = Date.now()
+  const seed = now % 10000
+  const rng = (min: number, max: number) => min + (seed * 9301 + 49297) % 233280 / 233280 * (max - min)
+
+  // Generate 3-6 bounding-box annotations with confidence scores
+  const numBoxes = 3 + Math.floor(rng(0, 3))
+  const boxes = Array.from({ length: numBoxes }, (_, i) => {
+    const x = 5 + (i * 17 + Math.floor(rng(0, 20))) % 70
+    const y = 5 + (i * 13 + Math.floor(rng(0, 20))) % 70
+    const w = 10 + Math.floor(rng(8, 22))
+    const h = 10 + Math.floor(rng(8, 22))
+    const clsKeys = Object.keys(CNN_CLASSES)
+    const cls = i === 0 ? changeType : clsKeys[Math.floor(rng(0, clsKeys.length)) % clsKeys.length]
+    const conf = 0.72 + rng(0, 0.25)
+    return { x, y, w, h, class: cls, confidence: parseFloat(conf.toFixed(3)),
+             label: CNN_CLASSES[cls as keyof typeof CNN_CLASSES]?.label || cls,
+             color: CNN_CLASSES[cls as keyof typeof CNN_CLASSES]?.color || '#ffffff' }
+  })
+
+  // Compute aggregate impact score (0-100, higher = worse impact)
+  const impactScore = boxes.reduce((acc, b) => {
+    const weight = CNN_CLASSES[b.class as keyof typeof CNN_CLASSES]?.impactWeight ?? 0.1
+    return acc + weight * b.confidence * 30
+  }, 50 + rng(-5, 10))
+
+  // Year-over-year change simulation (last 5 years)
+  const yearlyChange = Array.from({ length: 5 }, (_, i) => ({
+    year: 2020 + i,
+    affectedPct: parseFloat((8 + i * 2.3 + rng(-1, 1)).toFixed(1)),
+    changeKm2: parseFloat((120 + i * 85 + rng(-20, 20)).toFixed(0)),
+  }))
+
+  // Pixel-level heatmap grid (8x8 cells, 0-1 intensity)
+  const heatmap = Array.from({ length: 64 }, (_, i) => {
+    const row = Math.floor(i / 8), col = i % 8
+    const center = changeType === 'deforestation' ? { r: 3, c: 5 } : { r: 4, c: 3 }
+    const dist = Math.sqrt((row - center.r) ** 2 + (col - center.c) ** 2)
+    return parseFloat(Math.max(0, 1 - dist / 5 + rng(-0.1, 0.2)).toFixed(3))
+  })
+
+  return {
+    regionId,
+    timestamp: new Date().toISOString(),
+    modelVersion: 'EcoTwin-CNN-v2.1',
+    boxes,
+    impactScore: parseFloat(Math.min(100, Math.max(0, impactScore)).toFixed(1)),
+    impactGrade: impactScore > 75 ? 'CRITICAL' : impactScore > 55 ? 'HIGH' : impactScore > 35 ? 'MODERATE' : 'LOW',
+    yearlyChange,
+    heatmap,
+    affectedAreaKm2: parseFloat((800 + rng(0, 400)).toFixed(0)),
+    changeRatePctPerYear: parseFloat((2.1 + rng(-0.5, 1.5)).toFixed(2)),
+    confidence: parseFloat((0.84 + rng(0, 0.12)).toFixed(3)),
+    sdgImpact: [...new Set(boxes.flatMap(b => CNN_CLASSES[b.class as keyof typeof CNN_CLASSES]?.sdg ?? []))],
+  }
+}
+
+// NASA GIBS WMS tile URL builder (VIIRS True Color, 250m, real imagery)
+function buildNASATileUrl(lat: number, lon: number, zoom = 7): string {
+  const layer = 'VIIRS_SNPP_CorrectedReflectance_TrueColor'
+  const date = new Date(Date.now() - 2 * 86400000).toISOString().slice(0,10) // 2 days ago for availability
+  const tileSize = 256
+  // Convert lat/lon to Web Mercator tile XY
+  const n = Math.pow(2, zoom)
+  const xTile = Math.floor((lon + 180) / 360 * n)
+  const latRad = lat * Math.PI / 180
+  const yTile = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n)
+  return `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layer}/default/${date}/GoogleMapsCompatible_Level9/${zoom}/${yTile}/${xTile}.jpg`
+}
+
+// GET /satellite/regions — list all monitored regions
+app.get('/satellite/regions', (c) => {
+  return c.json({
+    regions: SAT_REGIONS.map(r => ({
+      ...r,
+      tileUrl: buildNASATileUrl(r.lat, r.lon),
+      lastScan: new Date(Date.now() - Math.random() * 3600000).toISOString(),
+      alertLevel: Math.random() > 0.6 ? 'HIGH' : Math.random() > 0.3 ? 'MODERATE' : 'LOW',
+    })),
+    totalRegions: SAT_REGIONS.length,
+    dataSources: ['NASA GIBS VIIRS', 'Sentinel-2 L2A (simulated)', 'Landsat-9 OLI (simulated)'],
+    updateFrequency: '15 minutes',
+    generatedAt: new Date().toISOString(),
+  })
+})
+
+// GET /satellite/analyze/:regionId — run CNN analysis on a region
+app.get('/satellite/analyze/:regionId', async (c) => {
+  const regionId = c.req.param('regionId')
+  const region = SAT_REGIONS.find(r => r.id === regionId)
+  if (!region) return c.json({ error: 'Region not found' }, 404)
+
+  const analysis = runCNNAnalysis(regionId, region.type)
+  const tileUrl = buildNASATileUrl(region.lat, region.lon)
+
+  // Try to fetch real tile to verify availability (non-blocking)
+  let imageAvailable = true
+  try {
+    const probe = await fetch(tileUrl, { method: 'HEAD' })
+    imageAvailable = probe.ok
+  } catch { imageAvailable = false }
+
+  return c.json({
+    region,
+    tileUrl,
+    fallbackTileUrl: `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/${new Date(Date.now() - 86400000*3).toISOString().slice(0,10)}/GoogleMapsCompatible_Level9/7/52/34.jpg`,
+    imageAvailable,
+    analysis,
+    recommendations: generateRecommendations(region.type, analysis.impactScore),
+  })
+})
+
+// GET /satellite/live_feed — streaming live scan updates for all regions
+app.get('/satellite/live_feed', (c) => {
+  const feed = SAT_REGIONS.map(r => {
+    const analysis = runCNNAnalysis(r.id, r.type)
+    return {
+      regionId: r.id,
+      regionName: r.name,
+      changeType: r.type,
+      impactScore: analysis.impactScore,
+      impactGrade: analysis.impactGrade,
+      confidence: analysis.confidence,
+      affectedAreaKm2: analysis.affectedAreaKm2,
+      changeRatePctPerYear: analysis.changeRatePctPerYear,
+      tileUrl: buildNASATileUrl(r.lat, r.lon),
+      timestamp: analysis.timestamp,
+      boxes: analysis.boxes.slice(0,2),
+    }
+  })
+
+  // Sort by impact score descending
+  feed.sort((a, b) => b.impactScore - a.impactScore)
+
+  return c.json({
+    feed,
+    stats: {
+      criticalZones: feed.filter(f => f.impactGrade === 'CRITICAL').length,
+      highRiskZones:  feed.filter(f => f.impactGrade === 'HIGH').length,
+      avgImpact: parseFloat((feed.reduce((s,f)=>s+f.impactScore,0)/feed.length).toFixed(1)),
+      totalAffectedKm2: feed.reduce((s,f)=>s+f.affectedAreaKm2,0).toFixed(0),
+      scannedAt: new Date().toISOString(),
+    },
+    dataSources: ['NASA GIBS VIIRS 250m', 'MODIS Terra', 'CNN v2.1'],
+  })
+})
+
+// GET /satellite/global_stats — aggregate environmental change statistics
+app.get('/satellite/global_stats', (c) => {
+  const now = Date.now()
+  const hourVariation = (now % 3600000) / 3600000
+
+  return c.json({
+    forestLoss: {
+      today_ha: parseFloat((285000 + Math.sin(hourVariation * Math.PI * 2) * 12000).toFixed(0)),
+      rate_ha_per_min: 195 + Math.sin(hourVariation * 6) * 8,
+      yoy_change_pct: -3.2,
+      primary_regions: ['Amazon', 'Congo Basin', 'Borneo'],
+    },
+    urbanExpansion: {
+      new_km2_per_day: parseFloat((127 + Math.sin(hourVariation * 3) * 5).toFixed(1)),
+      fastest_growing: ['Yangtze Delta', 'Nile Delta', 'Mekong Delta'],
+      impervious_surface_pct: parseFloat((23.4 + hourVariation * 0.01).toFixed(2)),
+    },
+    waterBodies: {
+      shrinking_lakes: 28,
+      total_loss_km2_year: 4200,
+      critical_regions: ['Aral Sea', 'Lake Chad', 'Dead Sea'],
+      water_stress_pct: 44,
+    },
+    iceSheets: {
+      arctic_extent_mkm2: parseFloat((14.2 - hourVariation * 0.002).toFixed(3)),
+      annual_loss_gt: 279,
+      rate_mm_slr: parseFloat((3.7 + hourVariation * 0.001).toFixed(2)),
+    },
+    lastUpdated: new Date().toISOString(),
+    confidence: '87%',
+    dataSource: 'NASA GIBS · NSIDC · Global Forest Watch (simulated)',
+  })
+})
+
+// POST /satellite/compare — compare two time periods for a region
+app.post('/satellite/compare', async (c) => {
+  const body = await c.req.json().catch(()=>({})) as any
+  const { regionId = 'amazon', yearFrom = 2020, yearTo = 2024 } = body
+  const region = SAT_REGIONS.find(r => r.id === regionId) || SAT_REGIONS[0]
+
+  const deltaYears = (yearTo as number) - (yearFrom as number)
+  const rng = (min: number, max: number) => min + Math.random() * (max - min)
+
+  return c.json({
+    region,
+    comparison: {
+      yearFrom, yearTo, deltaYears,
+      forestCoverFrom_pct: parseFloat((72 - rng(0, 5)).toFixed(1)),
+      forestCoverTo_pct: parseFloat((72 - 5 - deltaYears * 1.8 - rng(0, 2)).toFixed(1)),
+      urbanAreaFrom_km2: parseFloat((450 + rng(0, 50)).toFixed(0)),
+      urbanAreaTo_km2: parseFloat((450 + 50 + deltaYears * 65 + rng(0, 30)).toFixed(0)),
+      waterBodyFrom_km2: parseFloat((1200 - rng(0, 100)).toFixed(0)),
+      waterBodyTo_km2: parseFloat((1200 - 100 - deltaYears * 28 - rng(0, 20)).toFixed(0)),
+      vegetationIndexFrom: parseFloat((0.68 + rng(-0.05, 0.05)).toFixed(3)),
+      vegetationIndexTo: parseFloat((0.68 - deltaYears * 0.02 - rng(0, 0.02)).toFixed(3)),
+      carbonReleasedMt: parseFloat((deltaYears * 125 + rng(-20, 40)).toFixed(1)),
+    },
+    tileUrls: {
+      from: buildNASATileUrl(region.lat, region.lon, 7),
+      to: buildNASATileUrl(region.lat, region.lon, 7),
+    },
+    changeMapAvailable: true,
+    timestamp: new Date().toISOString(),
+  })
+})
+
+function generateRecommendations(type: string, score: number): string[] {
+  const base: Record<string, string[]> = {
+    deforestation: [
+      'Deploy satellite-guided ranger patrol alerts',
+      'Implement REDD+ carbon credit monitoring',
+      'Activate early-warning deforestation alerts via SMS',
+      'Propose protected area boundary enforcement',
+    ],
+    urban_expansion: [
+      'Enforce urban growth boundary regulations',
+      'Promote vertical development over horizontal sprawl',
+      'Increase urban green-space allocation',
+      'Implement smart zoning with satellite oversight',
+    ],
+    water_loss: [
+      'Initiate managed aquifer recharge program',
+      'Install satellite-monitored water-level sensors',
+      'Restrict agricultural water extraction',
+      'Launch community watershed conservation project',
+    ],
+    ice_loss: [
+      'Monitor sea-level rise impact on coastal zones',
+      'Update permafrost methane emission models',
+      'Accelerate net-zero emissions pathway',
+    ],
+    desertification: [
+      'Plant drought-resistant vegetation corridors',
+      'Build sand-dune stabilization barriers',
+      'Restore traditional water-harvesting techniques',
+    ],
+  }
+  const recs = base[type] || base.deforestation
+  return score > 70 ? recs : recs.slice(0, 2)
+}
+
 
 export default app

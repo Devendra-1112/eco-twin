@@ -4352,6 +4352,943 @@ window.selectBiome = selectBiome;
 window.scrollToWildfire = scrollToWildfire;
 
 // ════════════════════════════════════════════════════════════════════════════
+// SATELLITE ADVANCED INTERACTIVE FEATURES — v4.0
+// SSE Live Stream | AI Chat | Split Comparison | CO2 Particles | Speedometer
+// Alert Stream | Live Metrics | Pixel Diff | Console Log
+// ════════════════════════════════════════════════════════════════════════════
+
+// ── SSE State ────────────────────────────────────────────────────────────────
+const SAT_SSE = {
+  source: null,
+  connected: false,
+  eventCount: 0,
+  alertCount: 0,
+  consoleLines: [],
+  kpiBuffer: {},
+  splitPos: 50,
+  splitDragging: false,
+  particleAnim: null,
+  particles: [],
+  liveMetricInterval: null,
+  chatHistory: [],
+};
+
+// ── SATELLITE HTML PATCH ─────────────────────────────────────────────────────
+// Adds new panels into satelliteHTML after it renders:
+// 1. SSE Live Console + Status Bar
+// 2. Live Score Speedometer
+// 3. AI Chat Assistant
+// 4. Alert Stream
+// 5. Split-screen Pixel Diff
+// 6. CO2 Particle canvas overlay on image viewer
+// 7. Live waveform metrics
+
+function injectSatelliteExtras() {
+  const container = document.querySelector('#tab-content > div');
+  if (!container || document.getElementById('sat-extras-injected')) return;
+
+  const extrasDiv = document.createElement('div');
+  extrasDiv.id = 'sat-extras-injected';
+  extrasDiv.className = 'space-y-4';
+  extrasDiv.innerHTML = `
+  <!-- ── SSE Status Bar ── -->
+  <div class="glass-panel p-3 flex flex-wrap items-center gap-3" id="sat-sse-bar">
+    <div class="flex items-center gap-2">
+      <div class="w-2 h-2 rounded-full sse-connecting" id="sat-sse-dot"></div>
+      <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider" id="sat-sse-status">Connecting…</span>
+    </div>
+    <div class="flex items-center gap-4 text-[9px] font-mono text-gray-500">
+      <span>Events: <span id="sat-sse-count" class="text-cyan-400">0</span></span>
+      <span>Alerts: <span id="sat-sse-alerts" class="text-red-400">0</span></span>
+      <span>CNN cycles: <span id="sat-sse-cnn" class="text-purple-400">0</span></span>
+      <span>Last: <span id="sat-sse-last" class="text-emerald-400">—</span></span>
+    </div>
+    <button onclick="toggleSatConsole()" class="ml-auto text-[9px] px-2.5 py-1 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-200 transition-all flex items-center gap-1">
+      <i class="fas fa-terminal"></i> Console
+    </button>
+    <button onclick="openAlertStream()" id="sat-alert-btn" class="relative text-[9px] px-2.5 py-1 rounded-lg bg-red-900/30 border border-red-800 text-red-400 hover:bg-red-900/50 transition-all flex items-center gap-1">
+      <i class="fas fa-bell"></i> Alerts
+      <span class="alert-counter hidden" id="sat-alert-counter">0</span>
+    </button>
+  </div>
+
+  <!-- ── SSE Console (hidden by default) ── -->
+  <div id="sat-console-panel" class="hidden">
+    <div class="sat-console">
+      <div class="flex items-center justify-between px-3 py-2 border-b border-gray-800">
+        <span class="text-[9px] font-bold text-cyan-400 flex items-center gap-2">
+          <i class="fas fa-terminal"></i> EcoTwin Satellite Data Stream
+        </span>
+        <button onclick="clearSatConsole()" class="text-[8px] text-gray-600 hover:text-gray-400 transition-all">CLEAR</button>
+      </div>
+      <div id="sat-console-lines" class="overflow-y-auto" style="height:160px; padding: 4px 0;">
+        <div class="sat-console-line info">[INIT] EcoTwin-CNN-v2.1 satellite monitoring system starting…</div>
+        <div class="sat-console-line success">[OK] SSE stream endpoint connected</div>
+        <div class="sat-console-line data">[SYS] Monitoring 10 global environmental hotspots</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Live Metrics Row with waveforms ── -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="sat-live-metrics-row">
+    <div class="live-metric-card" style="--metric-color:#22d3ee;">
+      <div class="text-[8px] text-gray-500 uppercase mb-1">Live CO₂</div>
+      <div class="text-xl font-black text-cyan-300 mono" id="lm-co2">422.5</div>
+      <div class="text-[8px] text-gray-600">ppm</div>
+      <div class="live-sparkline mt-2" id="lm-co2-spark"></div>
+    </div>
+    <div class="live-metric-card" style="--metric-color:#10b981;">
+      <div class="text-[8px] text-gray-500 uppercase mb-1">NDVI Index</div>
+      <div class="text-xl font-black text-emerald-300 mono" id="lm-ndvi">0.610</div>
+      <div class="text-[8px] text-gray-600">vegetation health</div>
+      <div class="live-sparkline mt-2" id="lm-ndvi-spark"></div>
+    </div>
+    <div class="live-metric-card" style="--metric-color:#ef4444;">
+      <div class="text-[8px] text-gray-500 uppercase mb-1">Impact Score</div>
+      <div class="text-xl font-black text-red-300 mono" id="lm-score">—</div>
+      <div class="text-[8px] text-gray-600">current region</div>
+      <div class="live-sparkline mt-2" id="lm-score-spark"></div>
+    </div>
+    <div class="live-metric-card" style="--metric-color:#f97316;">
+      <div class="text-[8px] text-gray-500 uppercase mb-1">Surface Temp</div>
+      <div class="text-xl font-black text-orange-300 mono" id="lm-temp">28.5°C</div>
+      <div class="text-[8px] text-gray-600">land surface</div>
+      <div class="live-sparkline mt-2" id="lm-temp-spark"></div>
+    </div>
+  </div>
+
+  <!-- ── Live Score Speedometer + CNN Inference ── -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <!-- Speedometer -->
+    <div class="et-card p-4">
+      <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+        <i class="fas fa-gauge-high text-cyan-400"></i> Live Impact Gauge
+        <span class="ml-auto text-gray-600 font-normal mono" id="sat-gauge-region">Select region</span>
+      </div>
+      <div class="flex justify-center">
+        <svg id="sat-speedometer" viewBox="0 0 200 130" width="220" height="130">
+          <circle cx="100" cy="100" r="80" class="speedometer-bg" rx="0"/>
+          <!-- Track arc: 210° to 330° (bottom semicircle removed) -->
+          <path d="M 24 124 A 76 76 0 1 1 176 124" fill="none" stroke="rgba(30,58,95,0.4)" stroke-width="14" stroke-linecap="round"/>
+          <!-- Fill arc -->
+          <path id="sat-gauge-arc" d="M 24 124 A 76 76 0 1 1 176 124" fill="none" stroke="#10b981" stroke-width="14"
+                stroke-linecap="round" stroke-dasharray="240" stroke-dashoffset="240"
+                style="transition: stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1), stroke 0.5s;"/>
+          <!-- Pulse ring -->
+          <circle id="sat-gauge-ring" cx="100" cy="100" r="36" fill="none" stroke="#10b981" stroke-width="1" opacity="0" class="score-ring-pulse"/>
+          <!-- Needle -->
+          <line id="sat-gauge-needle" x1="100" y1="100" x2="100" y2="32"
+                stroke="white" stroke-width="2" stroke-linecap="round"
+                style="transform-origin:100px 100px; transform:rotate(-150deg); transition:transform 0.8s cubic-bezier(0.4,0,0.2,1);"/>
+          <!-- Center dot -->
+          <circle cx="100" cy="100" r="5" fill="#22d3ee" opacity="0.8"/>
+          <!-- Score text -->
+          <text id="sat-gauge-score" x="100" y="86" text-anchor="middle" font-size="22" font-weight="900" font-family="monospace" fill="#22d3ee">—</text>
+          <text x="100" y="97" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">IMPACT</text>
+          <!-- Scale labels -->
+          <text x="24" y="120" text-anchor="middle" font-size="7" fill="#374151" font-family="monospace">0</text>
+          <text x="100" y="28" text-anchor="middle" font-size="7" fill="#374151" font-family="monospace">50</text>
+          <text x="176" y="120" text-anchor="middle" font-size="7" fill="#374151" font-family="monospace">100</text>
+        </svg>
+      </div>
+      <div class="flex justify-around text-center mt-1">
+        <div><div class="text-[8px] text-emerald-500">0-35</div><div class="text-[8px] text-gray-600">LOW</div></div>
+        <div><div class="text-[8px] text-yellow-500">35-55</div><div class="text-[8px] text-gray-600">MOD</div></div>
+        <div><div class="text-[8px] text-orange-500">55-75</div><div class="text-[8px] text-gray-600">HIGH</div></div>
+        <div><div class="text-[8px] text-red-500">75+</div><div class="text-[8px] text-gray-600">CRIT</div></div>
+      </div>
+    </div>
+
+    <!-- CNN Inference Live Progress -->
+    <div class="et-card p-4">
+      <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+        <i class="fas fa-microchip text-purple-400"></i> CNN Inference Engine
+        <span class="ml-auto font-normal text-gray-600 mono" id="sat-cnn-ms">—ms</span>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <div class="flex justify-between text-[8px] text-gray-500 mb-1">
+            <span>Processing</span><span id="sat-cnn-pct">0%</span>
+          </div>
+          <div class="h-2 bg-gray-800 rounded-full overflow-hidden">
+            <div id="sat-cnn-bar" class="cnn-inference-bar h-full" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="bg-gray-800/60 rounded-lg p-2">
+            <div class="text-[8px] text-gray-500">Detections</div>
+            <div class="text-sm font-black text-purple-300 mono" id="sat-cnn-detections">—</div>
+          </div>
+          <div class="bg-gray-800/60 rounded-lg p-2">
+            <div class="text-[8px] text-gray-500">Avg Conf</div>
+            <div class="text-sm font-black text-cyan-300 mono" id="sat-cnn-avgconf">—</div>
+          </div>
+          <div class="bg-gray-800/60 rounded-lg p-2">
+            <div class="text-[8px] text-gray-500">Cycles</div>
+            <div class="text-sm font-black text-emerald-300 mono" id="sat-cnn-cycles">0</div>
+          </div>
+        </div>
+        <!-- CNN activity sparkline (last 20 events) -->
+        <div>
+          <div class="text-[8px] text-gray-600 mb-1">Inference activity (last 20 cycles)</div>
+          <svg id="sat-cnn-activity" viewBox="0 0 200 30" class="w-full" style="height:30px;">
+            <path id="sat-cnn-activity-path" class="waveform-path" stroke="#8b5cf6" stroke-width="1.5" fill="none"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Alert Stream Panel ── -->
+  <div id="sat-alert-panel" class="hidden et-card p-4">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-xs font-bold text-white flex items-center gap-2">
+        <i class="fas fa-bell text-red-400"></i> Live Alert Stream
+        <span id="sat-alert-critical-count" class="text-[8px] px-2 py-0.5 rounded-full bg-red-900/60 border border-red-700 text-red-300">0 CRITICAL</span>
+      </h3>
+      <div class="flex gap-2">
+        <button onclick="acknowledgeAllAlerts()" class="text-[9px] px-2 py-1 rounded bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-200">
+          <i class="fas fa-check-double mr-1"></i>Ack All
+        </button>
+        <button onclick="closeAlertStream()" class="text-gray-500 hover:text-gray-300 transition-all">
+          <i class="fas fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+    <div id="sat-alert-list" class="space-y-1.5 max-h-80 overflow-y-auto pr-1 scrollbar-hide">
+      <div class="text-xs text-gray-600 italic animate-pulse">Loading alert stream…</div>
+    </div>
+  </div>
+
+  <!-- ── Split-Screen Pixel Diff ── -->
+  <div class="et-card p-4" id="sat-split-section">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-xs font-bold text-white flex items-center gap-2">
+        <i class="fas fa-left-right text-cyan-400"></i>
+        Before / After Split Comparison
+        <span class="text-[8px] font-normal text-gray-600">drag handle to compare</span>
+      </h3>
+      <div class="flex items-center gap-2">
+        <select id="sat-split-from" class="bg-gray-800 border border-gray-700 rounded text-[9px] text-gray-300 px-2 py-1 focus:outline-none focus:border-cyan-600">
+          ${[2010,2012,2015,2018,2020].map(y=>`<option value="${y}">${y}</option>`).join('')}
+        </select>
+        <span class="text-gray-600 text-[9px]">→</span>
+        <select id="sat-split-to" class="bg-gray-800 border border-gray-700 rounded text-[9px] text-gray-300 px-2 py-1 focus:outline-none focus:border-cyan-600">
+          ${[2020,2022,2023,2024].map(y=>`<option value="${y}" ${y===2024?'selected':''}>${y}</option>`).join('')}
+        </select>
+        <button onclick="loadPixelDiff()" class="text-[9px] px-2.5 py-1 rounded-lg bg-cyan-900/40 border border-cyan-700 text-cyan-300 hover:bg-cyan-900/70 transition-all">
+          <i class="fas fa-rotate-right mr-1"></i>Load
+        </button>
+      </div>
+    </div>
+
+    <!-- Split canvas area -->
+    <div class="split-compare-container" style="height:280px;" id="sat-split-container">
+      <canvas id="sat-split-before" class="absolute inset-0 w-full h-full" style="width:100%;height:280px;"></canvas>
+      <div class="split-before" id="sat-split-mask" style="right:50%;">
+        <canvas id="sat-split-after" class="absolute inset-0 w-full h-full" style="width:100%;height:280px;"></canvas>
+      </div>
+      <div class="split-handle" id="sat-split-handle" style="left:50%;"></div>
+      <div class="split-label split-label-before" id="sat-split-label-before">BEFORE 2015</div>
+      <div class="split-label split-label-after" id="sat-split-label-after">AFTER 2024</div>
+    </div>
+
+    <!-- Pixel diff summary -->
+    <div class="grid grid-cols-4 gap-2 mt-3" id="sat-pixel-diff-summary">
+      <div class="et-card text-center p-2">
+        <div class="text-[8px] text-gray-500 mb-0.5">Changed</div>
+        <div class="text-base font-black text-orange-300 mono" id="pd-changed">—%</div>
+      </div>
+      <div class="et-card text-center p-2">
+        <div class="text-[8px] text-gray-500 mb-0.5">Severe</div>
+        <div class="text-base font-black text-red-300 mono" id="pd-severe">—</div>
+      </div>
+      <div class="et-card text-center p-2">
+        <div class="text-[8px] text-gray-500 mb-0.5">Avg Intensity</div>
+        <div class="text-base font-black text-yellow-300 mono" id="pd-intensity">—</div>
+      </div>
+      <div class="et-card text-center p-2">
+        <div class="text-[8px] text-gray-500 mb-0.5">Stable</div>
+        <div class="text-base font-black text-emerald-300 mono" id="pd-stable">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── AI Chat Assistant ── -->
+  <div class="et-card overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+      <h3 class="text-xs font-bold text-white flex items-center gap-2">
+        <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-900 to-violet-900 border border-purple-700 flex items-center justify-center">
+          <i class="fas fa-robot text-purple-400 text-[10px]"></i>
+        </div>
+        AI Satellite Analyst
+        <span class="text-[8px] px-2 py-0.5 rounded-full bg-purple-900/50 border border-purple-700 text-purple-300">EcoTwin-AI-v4</span>
+      </h3>
+      <div class="flex items-center gap-2">
+        <span class="text-[8px] text-gray-600" id="sat-chat-region-ctx">No region selected</span>
+        <button onclick="clearChatHistory()" class="text-[8px] text-gray-600 hover:text-gray-400 transition-all"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+    <div class="sat-chat-panel">
+      <div class="sat-chat-messages" id="sat-chat-msgs">
+        <!-- Welcome message -->
+        <div class="chat-bubble-ai">
+          <div class="flex items-center gap-2 mb-1.5">
+            <div class="w-4 h-4 rounded-full bg-purple-900 border border-purple-700 flex items-center justify-center">
+              <i class="fas fa-robot text-purple-400" style="font-size:7px;"></i>
+            </div>
+            <span class="text-[8px] font-bold text-purple-400">EcoTwin AI</span>
+            <span class="text-[7px] text-gray-600 ml-auto mono">now</span>
+          </div>
+          <p>Hello! I'm your AI Satellite Analyst. Select a region on the left, then ask me about carbon emissions, vegetation health, wildfire risk, deforestation rates, water bodies, or future projections. I analyze real-time CNN outputs and satellite data.</p>
+          <div class="flex flex-wrap gap-1 mt-2">
+            ${['Carbon emissions?','NDVI trend?','Wildfire risk?','Predict next year','Water body loss?','Recommend actions'].map(q=>`
+            <button onclick="satChatQuickQuestion('${q}')" class="text-[8px] px-2 py-0.5 rounded-full bg-purple-900/40 border border-purple-800 text-purple-400 hover:bg-purple-900/70 transition-all">${q}</button>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="sat-chat-input-row">
+        <input id="sat-chat-input" type="text" class="sat-chat-input"
+               placeholder="Ask about any region: carbon, NDVI, wildfire, water…"
+               onkeydown="if(event.key==='Enter') sendSatChat()"/>
+        <button onclick="sendSatChat()" class="sat-chat-send">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  `;
+
+  container.appendChild(extrasDiv);
+
+  // Boot all live systems
+  startSatSSE();
+  startLiveMetrics();
+  loadAlertStream();
+  loadPixelDiff();
+  initSplitDrag();
+}
+
+// ── SSE LIVE STREAM ───────────────────────────────────────────────────────────
+function startSatSSE() {
+  if (SAT_SSE.source) { SAT_SSE.source.close(); SAT_SSE.source = null; }
+  try {
+    const es = new EventSource('/satellite/sse');
+    SAT_SSE.source = es;
+
+    es.addEventListener('connected', () => {
+      SAT_SSE.connected = true;
+      setSseStatus('connected', 'LIVE — Satellite SSE Active');
+      addConsole('[SSE] Stream connected to EcoTwin satellite network', 'success');
+    });
+
+    es.addEventListener('kpi_update', (e) => {
+      SAT_SSE.eventCount++;
+      const d = JSON.parse(e.data);
+      SAT_SSE.kpiBuffer = { ...SAT_SSE.kpiBuffer, ...d };
+      updateSseKpiDisplay(d);
+      updateLiveMetrics(d);
+      updateSpeedometer(SAT_STATE.activeRegion ? null : 0); // don't override active region
+    });
+
+    es.addEventListener('region_scan', (e) => {
+      const d = JSON.parse(e.data);
+      addConsole(`[SCAN] ${d.regionName} → ${d.changeType} · Score: ${d.impactScore} · Conf: ${(d.confidence*100).toFixed(0)}%`, d.impactGrade === 'CRITICAL' ? 'error' : d.impactGrade === 'HIGH' ? 'warning' : 'data');
+      // Flash the region card if it's visible
+      flashRegionCard(d.regionId, d.impactGrade);
+      // Update live feed data if it's this region
+      const existing = SAT_STATE.liveFeed.find(f => f.regionId === d.regionId);
+      if (existing) {
+        existing.impactScore = d.impactScore;
+        existing.impactGrade = d.impactGrade;
+        existing.confidence  = d.confidence;
+        // Re-render list silently
+        renderSatRegionList(SAT_STATE.liveFeed, SAT_STATE.lastScan);
+      }
+    });
+
+    es.addEventListener('alert', (e) => {
+      SAT_SSE.alertCount++;
+      const d = JSON.parse(e.data);
+      addConsole(`[ALERT] ${d.type} · ${d.region} — ${d.msg}`, d.severity === 'CRITICAL' ? 'error' : 'warning');
+      showLiveAlertBadge(d);
+      updateAlertCounter(SAT_SSE.alertCount);
+    });
+
+    es.addEventListener('cnn_update', (e) => {
+      const d = JSON.parse(e.data);
+      addConsole(`[CNN] Inference ${d.inferencePct}% · ${d.detectionsThisCycle} detections · ${d.processingMs}ms`, 'data');
+      updateCNNInference(d);
+    });
+
+    es.onerror = () => {
+      setSseStatus('error', 'Reconnecting…');
+      SAT_SSE.connected = false;
+    };
+  } catch(e) {
+    setSseStatus('error', 'SSE unavailable');
+    addConsole('[ERR] SSE connection failed — falling back to polling', 'error');
+  }
+}
+
+function setSseStatus(state, label) {
+  const dot = document.getElementById('sat-sse-dot');
+  const status = document.getElementById('sat-sse-status');
+  if (dot) { dot.className = `w-2 h-2 rounded-full sse-${state}`; }
+  if (status) status.textContent = label;
+}
+
+function updateSseKpiDisplay(d) {
+  const setVal = (id, val) => { const e = document.getElementById(id); if(e) { e.textContent = val; e.classList.add('ticker-flash'); setTimeout(()=>e.classList.remove('ticker-flash'), 500); } };
+  const count = document.getElementById('sat-sse-count');
+  if (count) count.textContent = SAT_SSE.eventCount;
+  const alerts = document.getElementById('sat-sse-alerts');
+  if (alerts) alerts.textContent = SAT_SSE.alertCount;
+  const last = document.getElementById('sat-sse-last');
+  if (last) last.textContent = new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  // Update sat global stats KPIs silently
+  if (d.forestLossHa) {
+    const el = document.querySelector('#sat-global-stats .text-red-300.mono');
+    if (el) { el.textContent = Number(d.forestLossHa * 1450).toLocaleString(); }
+  }
+}
+
+// ── CONSOLE ───────────────────────────────────────────────────────────────────
+function addConsole(msg, type = 'info') {
+  const lines = document.getElementById('sat-console-lines');
+  if (!lines) return;
+  const ts = new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const div = document.createElement('div');
+  div.className = `sat-console-line ${type} console-new`;
+  div.textContent = `[${ts}] ${msg}`;
+  lines.appendChild(div);
+  // Keep only last 80 lines
+  while (lines.children.length > 80) lines.removeChild(lines.firstChild);
+  lines.scrollTop = lines.scrollHeight;
+  SAT_SSE.consoleLines.push({ ts, msg, type });
+}
+
+function toggleSatConsole() {
+  const panel = document.getElementById('sat-console-panel');
+  if (panel) panel.classList.toggle('hidden');
+}
+
+function clearSatConsole() {
+  const lines = document.getElementById('sat-console-lines');
+  if (lines) { lines.innerHTML = '<div class="sat-console-line info">[CLR] Console cleared</div>'; }
+  SAT_SSE.consoleLines = [];
+}
+
+// ── LIVE METRICS ──────────────────────────────────────────────────────────────
+const METRIC_HISTORY = { co2: [], ndvi: [], score: [], temp: [] };
+
+function startLiveMetrics() {
+  if (SAT_SSE.liveMetricInterval) clearInterval(SAT_SSE.liveMetricInterval);
+  SAT_SSE.liveMetricInterval = setInterval(async () => {
+    if (!SAT_STATE.activeRegion) return;
+    try {
+      const r = await fetch(`/satellite/live_metrics/${SAT_STATE.activeRegion}`);
+      const d = await r.json();
+      updateLiveMetrics(d);
+      updateSpeedometer(d.liveScore);
+      updateWaveform('lm-co2-spark', METRIC_HISTORY.co2, '#22d3ee');
+      updateWaveform('lm-ndvi-spark', METRIC_HISTORY.ndvi, '#10b981');
+      updateWaveform('lm-score-spark', METRIC_HISTORY.score, '#ef4444');
+      updateWaveform('lm-temp-spark', METRIC_HISTORY.temp, '#f97316');
+    } catch(e) {
+      // Fallback local simulation
+      const d = {
+        co2ppm: +(422.5 + Math.sin(Date.now()/8000)*1.5 + (Math.random()-0.5)*0.4).toFixed(2),
+        ndvi: +(0.61 + Math.sin(Date.now()/7000)*0.03 + (Math.random()-0.5)*0.01).toFixed(3),
+        liveScore: +(70 + Math.sin(Date.now()/6000)*12 + (Math.random()-0.5)*3).toFixed(1),
+        surfaceTemp: +(28.5 + Math.sin(Date.now()/9000)*2 + (Math.random()-0.5)*0.5).toFixed(1),
+      };
+      updateLiveMetrics(d);
+      if (SAT_STATE.activeRegion) updateSpeedometer(parseFloat(d.liveScore));
+    }
+  }, 2000);
+}
+
+function updateLiveMetrics(d) {
+  const pulse = (id) => {
+    const el = document.getElementById(id);
+    if (el) { el.closest('.live-metric-card')?.classList.add('updating'); setTimeout(()=>el.closest('.live-metric-card')?.classList.remove('updating'),600); }
+  };
+  if (d.co2ppm !== undefined) {
+    const el = document.getElementById('lm-co2');
+    if (el) { el.textContent = d.co2ppm; pulse('lm-co2'); }
+    METRIC_HISTORY.co2.push(parseFloat(d.co2ppm)); if (METRIC_HISTORY.co2.length > 30) METRIC_HISTORY.co2.shift();
+    updateWaveform('lm-co2-spark', METRIC_HISTORY.co2, '#22d3ee');
+  }
+  if (d.ndvi !== undefined) {
+    const el = document.getElementById('lm-ndvi');
+    if (el) { el.textContent = d.ndvi; pulse('lm-ndvi'); }
+    METRIC_HISTORY.ndvi.push(parseFloat(d.ndvi)); if (METRIC_HISTORY.ndvi.length > 30) METRIC_HISTORY.ndvi.shift();
+    updateWaveform('lm-ndvi-spark', METRIC_HISTORY.ndvi, '#10b981');
+  }
+  if (d.liveScore !== undefined || d.score !== undefined) {
+    const score = d.liveScore || d.score;
+    const el = document.getElementById('lm-score');
+    if (el) { el.textContent = parseFloat(score).toFixed(0); pulse('lm-score'); }
+    METRIC_HISTORY.score.push(parseFloat(score)); if (METRIC_HISTORY.score.length > 30) METRIC_HISTORY.score.shift();
+    updateWaveform('lm-score-spark', METRIC_HISTORY.score, '#ef4444');
+  }
+  if (d.surfaceTemp !== undefined) {
+    const el = document.getElementById('lm-temp');
+    if (el) { el.textContent = `${d.surfaceTemp}°C`; pulse('lm-temp'); }
+    METRIC_HISTORY.temp.push(parseFloat(d.surfaceTemp)); if (METRIC_HISTORY.temp.length > 30) METRIC_HISTORY.temp.shift();
+    updateWaveform('lm-temp-spark', METRIC_HISTORY.temp, '#f97316');
+  }
+}
+
+// ── SPARKLINE WAVEFORM ────────────────────────────────────────────────────────
+function updateWaveform(containerId, values, color) {
+  const container = document.getElementById(containerId);
+  if (!container || values.length < 2) return;
+  const W = 120, H = 28;
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || 1;
+  const pts = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * W;
+    const y = H - ((v - min) / range) * (H - 4) - 2;
+    return `${x},${y}`;
+  });
+  container.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" class="w-full" style="height:28px;overflow:visible;">
+      <defs>
+        <linearGradient id="wg-${containerId}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="M${pts.join('L')} L${W},${H} L0,${H} Z" fill="url(#wg-${containerId})"/>
+      <path d="M${pts.join('L')}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="${W}" cy="${pts[pts.length-1].split(',')[1]}" r="2.5" fill="${color}"/>
+    </svg>`;
+}
+
+// ── SPEEDOMETER ───────────────────────────────────────────────────────────────
+function updateSpeedometer(score) {
+  if (score === null || score === undefined) return;
+  const arc = document.getElementById('sat-gauge-arc');
+  const needle = document.getElementById('sat-gauge-needle');
+  const scoreEl = document.getElementById('sat-gauge-score');
+  const regionEl = document.getElementById('sat-gauge-region');
+  const ring = document.getElementById('sat-gauge-ring');
+
+  if (!arc) return;
+  const pct = Math.min(100, Math.max(0, score)) / 100;
+  const totalDash = 240; // arc length
+  const offset = totalDash * (1 - pct);
+  arc.style.strokeDashoffset = offset;
+  // Color: green → yellow → orange → red
+  const color = score > 75 ? '#ef4444' : score > 55 ? '#f97316' : score > 35 ? '#f59e0b' : '#10b981';
+  arc.style.stroke = color;
+  if (ring) { ring.style.stroke = color; ring.style.opacity = '1'; }
+  // Needle: -150deg (0) to +150deg (100) = 300deg total
+  const angle = -150 + pct * 300;
+  if (needle) needle.style.transform = `rotate(${angle}deg)`;
+  if (scoreEl) { scoreEl.textContent = Math.round(score); scoreEl.style.fill = color; }
+  if (regionEl && SAT_STATE.activeRegion) {
+    const r = SAT_STATE.liveFeed.find(f => f.regionId === SAT_STATE.activeRegion);
+    if (r) regionEl.textContent = r.regionName;
+  }
+}
+
+// ── CNN INFERENCE DISPLAY ─────────────────────────────────────────────────────
+let cnnCycles = 0;
+const cnnActivityData = [];
+
+function updateCNNInference(d) {
+  cnnCycles++;
+  cnnActivityData.push(d.inferencePct);
+  if (cnnActivityData.length > 20) cnnActivityData.shift();
+
+  const bar = document.getElementById('sat-cnn-bar');
+  const pct = document.getElementById('sat-cnn-pct');
+  const ms  = document.getElementById('sat-cnn-ms');
+  const det = document.getElementById('sat-cnn-detections');
+  const conf = document.getElementById('sat-cnn-avgconf');
+  const cycles = document.getElementById('sat-cnn-cycles');
+  const cnnCount = document.getElementById('sat-sse-cnn');
+
+  if (bar) bar.style.width = `${d.inferencePct}%`;
+  if (pct) pct.textContent = `${d.inferencePct}%`;
+  if (ms) ms.textContent = `${d.processingMs}ms`;
+  if (det) det.textContent = d.detectionsThisCycle;
+  if (conf) conf.textContent = `${(d.avgConfidence*100).toFixed(0)}%`;
+  if (cycles) cycles.textContent = cnnCycles;
+  if (cnnCount) cnnCount.textContent = cnnCycles;
+
+  // Draw activity sparkline
+  const svg = document.getElementById('sat-cnn-activity');
+  const path = document.getElementById('sat-cnn-activity-path');
+  if (!svg || !path || cnnActivityData.length < 2) return;
+  const W = 200, H = 30;
+  const pts = cnnActivityData.map((v, i) => {
+    const x = (i / (cnnActivityData.length - 1)) * W;
+    const y = H - (v / 100) * (H - 4) - 2;
+    return `${x},${y}`;
+  });
+  path.setAttribute('d', `M${pts.join('L')}`);
+}
+
+// ── ALERT STREAM ──────────────────────────────────────────────────────────────
+let alertData = [];
+
+async function loadAlertStream() {
+  try {
+    const r = await fetch('/satellite/alert_stream');
+    const d = await r.json();
+    alertData = d.alerts;
+    if (document.getElementById('sat-alert-list')) renderAlertList(alertData);
+    const critEl = document.getElementById('sat-alert-critical-count');
+    if (critEl) critEl.textContent = `${d.critical} CRITICAL`;
+    updateAlertCounter(d.critical);
+  } catch(e) { console.error('Alert stream:', e); }
+}
+
+function renderAlertList(alerts) {
+  const el = document.getElementById('sat-alert-list');
+  if (!el) return;
+  el.innerHTML = alerts.map(a => {
+    const sev = a.severity === 'CRITICAL' ? 'sat-alert-critical' :
+                a.severity === 'HIGH'     ? 'sat-alert-high' :
+                a.severity === 'MODERATE' ? 'sat-alert-moderate' : 'sat-alert-low';
+    const ts = new Date(a.ts).toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'});
+    return `
+    <div id="alert-${a.id}" class="flex items-start gap-3 p-2.5 rounded-lg ${sev} ${a.acknowledged?'opacity-50':''}  ${a.severity==='CRITICAL'?'alert-critical-blink':''} transition-all">
+      <div class="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 bg-current/10">
+        <i class="fas fa-${a.icon} text-[10px]" style="color:${a.color}"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-[9px] font-bold text-white">${a.type}</span>
+          <span class="text-[8px] text-gray-500">${a.region}</span>
+          <span class="text-[8px] mono text-gray-600 ml-auto">${ts}</span>
+        </div>
+        <div class="text-[9px] text-gray-400 truncate">${a.msg}</div>
+      </div>
+      ${!a.acknowledged ? `<button onclick="acknowledgeAlert('${a.id}')" class="text-[8px] text-gray-600 hover:text-gray-400 flex-shrink-0 mt-0.5"><i class="fas fa-check"></i></button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function openAlertStream() {
+  const panel = document.getElementById('sat-alert-panel');
+  if (panel) { panel.classList.remove('hidden'); loadAlertStream(); }
+  updateAlertCounter(0);
+}
+
+function closeAlertStream() {
+  const panel = document.getElementById('sat-alert-panel');
+  if (panel) panel.classList.add('hidden');
+}
+
+function acknowledgeAlert(id) {
+  const el = document.getElementById(`alert-${id}`);
+  if (el) el.classList.add('opacity-50');
+  const idx = alertData.findIndex(a => a.id === id);
+  if (idx >= 0) alertData[idx].acknowledged = true;
+}
+
+function acknowledgeAllAlerts() {
+  document.querySelectorAll('#sat-alert-list > div').forEach(el => el.classList.add('opacity-50'));
+  alertData.forEach(a => a.acknowledged = true);
+}
+
+function updateAlertCounter(n) {
+  const counter = document.getElementById('sat-alert-counter');
+  if (!counter) return;
+  if (n > 0) { counter.textContent = n > 99 ? '99+' : n; counter.classList.remove('hidden'); }
+  else counter.classList.add('hidden');
+}
+
+function showLiveAlertBadge(alert) {
+  // Flash a brief notification toast
+  const color = alert.severity === 'CRITICAL' ? 'red' : alert.severity === 'HIGH' ? 'orange' : 'yellow';
+  toast(`${alert.type}: ${alert.region} — ${alert.msg}`, color === 'red' ? 'error' : 'warning');
+}
+
+function flashRegionCard(regionId, grade) {
+  const card = document.querySelector(`[onclick="selectSatRegion('${regionId}')"]`);
+  if (!card) return;
+  const prevBorder = card.style.borderColor;
+  const gc = GRADE_COLORS[grade] || GRADE_COLORS.LOW;
+  card.style.borderColor = gc.hex;
+  card.style.boxShadow = `0 0 12px ${gc.hex}44`;
+  setTimeout(() => { card.style.borderColor = ''; card.style.boxShadow = ''; }, 1200);
+}
+
+// ── SPLIT-SCREEN PIXEL DIFF ───────────────────────────────────────────────────
+function initSplitDrag() {
+  const container = document.getElementById('sat-split-container');
+  const handle = document.getElementById('sat-split-handle');
+  if (!container || !handle) return;
+
+  const onMove = (clientX) => {
+    const rect = container.getBoundingClientRect();
+    const pct = Math.min(95, Math.max(5, ((clientX - rect.left) / rect.width) * 100));
+    SAT_SSE.splitPos = pct;
+    handle.style.left = `${pct}%`;
+    const mask = document.getElementById('sat-split-mask');
+    if (mask) mask.style.right = `${100 - pct}%`;
+  };
+
+  const onDown = (e) => {
+    SAT_SSE.splitDragging = true;
+    e.preventDefault();
+  };
+  const onUp = () => { SAT_SSE.splitDragging = false; };
+  const onMoveGlobal = (e) => {
+    if (!SAT_SSE.splitDragging) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    onMove(clientX);
+  };
+
+  handle.addEventListener('mousedown', onDown);
+  handle.addEventListener('touchstart', onDown, { passive: false });
+  document.addEventListener('mousemove', onMoveGlobal);
+  document.addEventListener('touchmove', onMoveGlobal, { passive: false });
+  document.addEventListener('mouseup', onUp);
+  document.addEventListener('touchend', onUp);
+
+  // Also click on container to jump split
+  container.addEventListener('click', (e) => {
+    if (!SAT_SSE.splitDragging) onMove(e.clientX);
+  });
+}
+
+async function loadPixelDiff() {
+  const regionId = SAT_STATE.activeRegion || 'amazon';
+  const fromYear = document.getElementById('sat-split-from')?.value || '2015';
+  const toYear   = document.getElementById('sat-split-to')?.value   || '2024';
+
+  // Update labels
+  const lblB = document.getElementById('sat-split-label-before');
+  const lblA = document.getElementById('sat-split-label-after');
+  if (lblB) lblB.textContent = `BEFORE ${fromYear}`;
+  if (lblA) lblA.textContent = `AFTER ${toYear}`;
+
+  try {
+    const r = await fetch(`/satellite/pixel_diff/${regionId}?from=${fromYear}&to=${toYear}`);
+    const d = await r.json();
+    renderSplitCanvases(d, parseInt(fromYear), parseInt(toYear));
+    // Update summary
+    const setEl = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+    setEl('pd-changed',    `${d.summary.changePct}%`);
+    setEl('pd-severe',     d.summary.severeCells);
+    setEl('pd-intensity',  d.summary.avgIntensity);
+    setEl('pd-stable',     `${(256-d.summary.changedCells)}`);
+  } catch(e) {
+    renderSplitCanvasesFallback(parseInt(fromYear), parseInt(toYear));
+  }
+}
+
+function renderSplitCanvases(diffData, fromYear, toYear) {
+  const beforeCanvas = document.getElementById('sat-split-before');
+  const afterCanvas  = document.getElementById('sat-split-after');
+  if (!beforeCanvas || !afterCanvas) return;
+
+  const W = beforeCanvas.clientWidth || 600, H = 280;
+  [beforeCanvas, afterCanvas].forEach(c => { c.width = W; c.height = H; });
+
+  drawSplitCanvas(beforeCanvas, 'before', fromYear, diffData.grid);
+  drawSplitCanvas(afterCanvas,  'after',  toYear,   diffData.grid);
+}
+
+function drawSplitCanvas(canvas, type, year, grid) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  if (type === 'before') {
+    grad.addColorStop(0, '#0d2b0a'); grad.addColorStop(1, '#1a4a12');
+  } else {
+    grad.addColorStop(0, '#2a1005'); grad.addColorStop(1, '#4a1a08');
+  }
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+
+  // Draw pseudo-terrain
+  const cellW = W / 16, cellH = H / 16;
+  if (grid) {
+    grid.forEach(cell => {
+      const x = cell.col * cellW, y = cell.row * cellH;
+      const intensity = type === 'after' ? cell.changeIntensity : cell.changeIntensity * 0.15;
+      if (type === 'before') {
+        ctx.fillStyle = `rgba(40,${Math.round(100*(1-intensity))},30,0.6)`;
+      } else {
+        const r = Math.round(180 * intensity + 40);
+        const g = Math.round(80 * (1-intensity));
+        ctx.fillStyle = `rgba(${r},${g},20,0.7)`;
+      }
+      ctx.fillRect(x+1, y+1, cellW-2, cellH-2);
+    });
+  }
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 0.5;
+  for (let x = 0; x <= W; x += cellW) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y <= H; y += cellH) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  // Coordinates footer
+  ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, H-20, W, 20);
+  ctx.fillStyle = type === 'before' ? '#6ee7b7' : '#fca5a5';
+  ctx.font = 'bold 9px monospace';
+  ctx.fillText(`${type.toUpperCase()} ${year} · EcoTwin-CNN-v2.1 · NASA GIBS VIIRS 250m`, 10, H-6);
+}
+
+function renderSplitCanvasesFallback(fromYear, toYear) {
+  const fakeGrid = Array.from({length:256}, (_,i) => {
+    const row = Math.floor(i/16), col = i%16;
+    const dist = Math.sqrt((row-8)**2+(col-10)**2);
+    return { col, row, changeIntensity: Math.max(0, Math.min(1, 1 - dist/8 + (Math.sin(i*1.7))*0.15)) };
+  });
+  renderSplitCanvases({ grid: fakeGrid, summary: { changePct: 34.4, severeCells: 28, avgIntensity: 0.312, changedCells: 88 } }, fromYear, toYear);
+  const setEl = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+  setEl('pd-changed', '34.4%'); setEl('pd-severe', '28'); setEl('pd-intensity', '0.312'); setEl('pd-stable', '168');
+}
+
+// ── AI CHAT ───────────────────────────────────────────────────────────────────
+function satChatQuickQuestion(q) {
+  const input = document.getElementById('sat-chat-input');
+  if (input) { input.value = q; sendSatChat(); }
+}
+
+async function sendSatChat() {
+  const input = document.getElementById('sat-chat-input');
+  if (!input || !input.value.trim()) return;
+  const question = input.value.trim();
+  input.value = '';
+
+  const msgs = document.getElementById('sat-chat-msgs');
+  if (!msgs) return;
+
+  // User bubble
+  const userTime = new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'});
+  const userDiv = document.createElement('div');
+  userDiv.className = 'chat-bubble-user';
+  userDiv.innerHTML = `
+    <div class="flex items-center gap-2 mb-1">
+      <span class="text-[7px] text-gray-600 ml-auto mono">${userTime}</span>
+    </div>
+    <p>${question}</p>`;
+  msgs.appendChild(userDiv);
+
+  // Typing indicator
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'chat-bubble-ai';
+  typingDiv.innerHTML = `
+    <div class="flex items-center gap-2 mb-1">
+      <div class="w-4 h-4 rounded-full bg-purple-900 border border-purple-700 flex items-center justify-center">
+        <i class="fas fa-robot text-purple-400" style="font-size:7px;"></i>
+      </div>
+      <span class="text-[8px] font-bold text-purple-400">EcoTwin AI</span>
+    </div>
+    <div class="flex items-center gap-1.5 py-1">
+      <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+    </div>`;
+  msgs.appendChild(typingDiv);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  try {
+    const regionId = SAT_STATE.activeRegion || 'amazon';
+    const r = await fetch('/satellite/ai_chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, regionId, context: { impactScore: SAT_STATE.liveFeed.find(f=>f.regionId===regionId)?.impactScore } })
+    });
+    const d = await r.json();
+
+    // Replace typing with real answer
+    const aiTime = new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'});
+    const confidence = (d.confidence * 100).toFixed(0);
+    typingDiv.innerHTML = `
+      <div class="flex items-center gap-2 mb-1.5">
+        <div class="w-4 h-4 rounded-full bg-purple-900 border border-purple-700 flex items-center justify-center">
+          <i class="fas fa-robot text-purple-400" style="font-size:7px;"></i>
+        </div>
+        <span class="text-[8px] font-bold text-purple-400">EcoTwin AI</span>
+        <span class="text-[7px] text-gray-600 ml-auto mono">${aiTime}</span>
+      </div>
+      <p style="white-space:pre-line;">${d.answer}</p>
+      <div class="flex flex-wrap items-center gap-2 mt-2">
+        <span class="text-[8px] text-gray-500">Confidence: <span class="text-cyan-400 font-bold">${confidence}%</span></span>
+        <span class="text-[8px] text-gray-600">·</span>
+        ${(d.sources||[]).map(s=>`<span class="source-chip">${s}</span>`).join('')}
+      </div>`;
+
+    // Update context badge
+    const ctxEl = document.getElementById('sat-chat-region-ctx');
+    if (ctxEl) ctxEl.textContent = `Context: ${d.regionName}`;
+
+    // Store chat history
+    SAT_SSE.chatHistory.push({ role: 'user', content: question });
+    SAT_SSE.chatHistory.push({ role: 'ai', content: d.answer });
+
+  } catch(e) {
+    typingDiv.innerHTML = `
+      <div class="text-[10px] text-red-400 flex items-center gap-2">
+        <i class="fas fa-triangle-exclamation"></i>
+        Analysis failed. Please try again.
+      </div>`;
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function clearChatHistory() {
+  SAT_SSE.chatHistory = [];
+  const msgs = document.getElementById('sat-chat-msgs');
+  if (!msgs) return;
+  msgs.innerHTML = `
+  <div class="chat-bubble-ai">
+    <div class="flex items-center gap-2 mb-1.5">
+      <div class="w-4 h-4 rounded-full bg-purple-900 border border-purple-700 flex items-center justify-center">
+        <i class="fas fa-robot text-purple-400" style="font-size:7px;"></i>
+      </div>
+      <span class="text-[8px] font-bold text-purple-400">EcoTwin AI</span>
+    </div>
+    <p>Chat history cleared. How can I help you analyze the satellite data?</p>
+  </div>`;
+}
+
+// ── PATCH initSatellite to inject extras ─────────────────────────────────────
+const _origInitSatellite = window.initSatellite;
+window.initSatellite = function() {
+  _origInitSatellite();
+  // Inject extras after a brief delay to let DOM settle
+  setTimeout(() => {
+    injectSatelliteExtras();
+  }, 400);
+};
+
+// ── PATCH selectSatRegion to update speedometer & live metrics ────────────────
+const _origSelectSatRegion = window.selectSatRegion;
+window.selectSatRegion = function(regionId) {
+  _origSelectSatRegion(regionId);
+  // Update speedometer after data loads
+  setTimeout(() => {
+    const region = SAT_STATE.liveFeed.find(f => f.regionId === regionId);
+    if (region) updateSpeedometer(region.impactScore);
+    // Reload pixel diff for new region
+    if (document.getElementById('sat-split-section')) loadPixelDiff();
+  }, 600);
+};
+
+// Expose globals
+window.toggleSatConsole = toggleSatConsole;
+window.clearSatConsole = clearSatConsole;
+window.openAlertStream = openAlertStream;
+window.closeAlertStream = closeAlertStream;
+window.acknowledgeAlert = acknowledgeAlert;
+window.acknowledgeAllAlerts = acknowledgeAllAlerts;
+window.loadPixelDiff = loadPixelDiff;
+window.sendSatChat = sendSatChat;
+window.satChatQuickQuestion = satChatQuickQuestion;
+window.clearChatHistory = clearChatHistory;
+
+// ════════════════════════════════════════════════════════════════════════════
 // PLANET HEALTH SCORE — Multi-dimensional radial gauge + dimension breakdown
 // ════════════════════════════════════════════════════════════════════════════
 function healthHTML() {
@@ -4883,3 +5820,1794 @@ window.initRace = initRace;
 window.toggleRacePlay = toggleRacePlay;
 window.resetRace = resetRace;
 window.onRaceSlider = onRaceSlider;
+
+// ════════════════════════════════════════════════════════════════════════════
+// ADVANCED LIVE INTERACTIVE MODULES v5.0
+// 1. Realtime Globe Visualization (Canvas-based)
+// 2. Wind Patterns & Ocean Temperature Map
+// 3. Carbon Budget Live Tracker
+// 4. Deforestation 3D Heatmap (Canvas)
+// 5. Seismic Risk Monitor
+// 6. Advanced Alert Feed with filters + sound toggle
+// ════════════════════════════════════════════════════════════════════════════
+
+// ── MODULE STATE ──────────────────────────────────────────────────────────────
+const ADV = {
+  globe:    { interval: null, anim: null, rotation: 0, hotspots: [], orbits: [], canvas: null, ctx: null },
+  wind:     { interval: null, chart: null, data: null },
+  ocean:    { interval: null, chart: null },
+  carbon:   { interval: null, donut: null, bar: null, line: null, countdown: null },
+  defo3d:   { interval: null, canvas: null, ctx: null, region: 'amazon', chart: null },
+  seismic:  { interval: null, events: [] },
+  alerts:   { items: [], filter: 'ALL', soundOn: false, interval: null },
+};
+
+// ────────────────────────────────────────────────────────────────────────────
+// SECTION 1: REALTIME GLOBE (SVG projection + Canvas animated hotspots)
+// ────────────────────────────────────────────────────────────────────────────
+function globeHTML() {
+  return `
+<div class="space-y-4">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-base font-black text-white flex items-center gap-2">
+        <i class="fas fa-globe text-cyan-400"></i> Realtime Environmental Globe
+        <span class="text-[9px] px-2 py-0.5 rounded-full bg-cyan-900/60 border border-cyan-700 text-cyan-300 animate-pulse">● LIVE</span>
+      </h2>
+      <p class="text-[10px] text-gray-500 mt-0.5">30 global hotspots · 3 satellite tracks · live impact scoring</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="globeSetView('impact')" id="globe-btn-impact" class="globe-view-btn active text-[9px] px-3 py-1.5 rounded-lg bg-cyan-900/40 border border-cyan-700 text-cyan-300">Impact</button>
+      <button onclick="globeSetView('temp')" id="globe-btn-temp" class="globe-view-btn text-[9px] px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400">Temp</button>
+      <button onclick="globeSetView('co2')" id="globe-btn-co2" class="globe-view-btn text-[9px] px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400">CO₂</button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <!-- Globe Canvas -->
+    <div class="lg:col-span-2 et-card p-4">
+      <div class="relative" style="background:radial-gradient(ellipse at 40% 40%,#0a1628 0%,#050d1a 70%); border-radius:12px; overflow:hidden; min-height:360px;">
+        <canvas id="globe-canvas" width="640" height="360" style="width:100%;height:360px;cursor:crosshair;"></canvas>
+        <!-- Overlay info -->
+        <div class="absolute top-3 left-3 flex flex-col gap-1.5">
+          <div class="globe-hud-badge"><i class="fas fa-satellite text-cyan-400 mr-1"></i><span id="globe-sat-count">3</span> Satellites</div>
+          <div class="globe-hud-badge"><i class="fas fa-circle-exclamation text-red-400 mr-1"></i><span id="globe-alert-count">0</span> Alerts</div>
+          <div class="globe-hud-badge"><i class="fas fa-crosshairs text-emerald-400 mr-1"></i>Avg: <span id="globe-avg-score">—</span></div>
+        </div>
+        <div class="absolute top-3 right-3 text-[8px] text-gray-600 mono" id="globe-ts">—</div>
+        <!-- Tooltip -->
+        <div id="globe-tooltip" class="globe-tooltip hidden"></div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Hotspot List -->
+    <div class="et-card p-4 flex flex-col">
+      <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+        <i class="fas fa-fire text-orange-400"></i> Top Hotspots
+        <span class="ml-auto text-gray-600 font-normal" id="globe-critical-badge">—</span>
+      </div>
+      <div id="globe-hotspot-list" class="flex-1 overflow-y-auto space-y-1.5 scrollbar-hide" style="max-height:300px;">
+        <div class="text-xs text-gray-600 animate-pulse">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Globe metrics bar -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="globe-metrics-bar">
+    <div class="kpi-card-sm"><div class="text-[8px] text-gray-500 uppercase">Active Satellites</div><div class="text-lg font-black text-cyan-300 mono" id="gm-sats">3</div></div>
+    <div class="kpi-card-sm"><div class="text-[8px] text-gray-500 uppercase">Coverage</div><div class="text-lg font-black text-emerald-300 mono" id="gm-cov">87%</div></div>
+    <div class="kpi-card-sm"><div class="text-[8px] text-gray-500 uppercase">Alerts (1h)</div><div class="text-lg font-black text-red-300 mono" id="gm-alerts1h">—</div></div>
+    <div class="kpi-card-sm"><div class="text-[8px] text-gray-500 uppercase">Avg Impact</div><div class="text-lg font-black text-orange-300 mono" id="gm-avg">—</div></div>
+  </div>
+</div>`;
+}
+
+let GLOBE_VIEW = 'impact';
+function globeSetView(v) {
+  GLOBE_VIEW = v;
+  document.querySelectorAll('.globe-view-btn').forEach(b => {
+    b.classList.toggle('active', b.id === `globe-btn-${v}`);
+    b.classList.toggle('bg-cyan-900/40', b.id === `globe-btn-${v}`);
+    b.classList.toggle('border-cyan-700', b.id === `globe-btn-${v}`);
+    b.classList.toggle('text-cyan-300', b.id === `globe-btn-${v}`);
+    b.classList.toggle('bg-gray-800', b.id !== `globe-btn-${v}`);
+    b.classList.toggle('border-gray-700', b.id !== `globe-btn-${v}`);
+    b.classList.toggle('text-gray-400', b.id !== `globe-btn-${v}`);
+  });
+}
+
+function latLonToXY(lat, lon, w, h) {
+  const x = ((lon + 180) / 360) * w;
+  const y = ((90 - lat) / 180) * h;
+  return { x, y };
+}
+
+function initGlobe() {
+  if (ADV.globe.interval) clearInterval(ADV.globe.interval);
+  refreshGlobe();
+  ADV.globe.interval = setInterval(refreshGlobe, 3000);
+}
+
+async function refreshGlobe() {
+  try {
+    const r = await fetch('/satellite/realtime_globe');
+    const d = await r.json();
+    ADV.globe.hotspots = d.hotspots;
+    ADV.globe.orbits = d.orbits;
+    renderGlobe(d);
+    renderGlobeHotspotList(d.hotspots, d.globalMetrics);
+    updateGlobeMetrics(d.globalMetrics);
+    const ts = document.getElementById('globe-ts');
+    if (ts) ts.textContent = new Date(d.ts).toLocaleTimeString();
+  } catch(e) {
+    console.warn('[Globe] fetch failed', e);
+  }
+}
+
+function renderGlobe(d) {
+  const canvas = document.getElementById('globe-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background gradient (space)
+  const bg = ctx.createRadialGradient(W*0.4, H*0.35, 10, W*0.4, H*0.35, W*0.6);
+  bg.addColorStop(0, '#0d1f3c');
+  bg.addColorStop(1, '#020810');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw simplified world outline using lat/lon bands
+  ctx.strokeStyle = 'rgba(34,211,238,0.15)';
+  ctx.lineWidth = 0.5;
+  // Horizontal grid lines (lat)
+  for (let lat = -80; lat <= 80; lat += 20) {
+    const y = ((90 - lat) / 180) * H;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  // Vertical grid lines (lon)
+  for (let lon = -180; lon <= 180; lon += 30) {
+    const x = ((lon + 180) / 360) * W;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+
+  // Draw continent silhouettes (approximate polygons)
+  const continents = [
+    // North America
+    [[49,-125],[49,-52],[25,-80],[25,-90],[15,-85],[8,-77],[9,-84],[15,-92],[22,-105],[32,-117],[49,-125]],
+    // South America
+    [[-4,-80],[0,-50],[[-5,-35]],[[10,-60],[0,-50],[-4,-80],[-10,-75],[-33,-71],[-55,-68],[-55,-64],[-34,-53],[-23,-43],[-5,-35],[10,-60]]],
+    // Europe
+    [[70,30],[70,10],[60,5],[55,-5],[43,-9],[36,-5],[36,10],[38,28],[42,42],[55,38],[65,30],[70,30]],
+    // Africa
+    [[37,10],[37,37],[12,42],[0,42],[-10,40],[-35,18],[-35,27],[-25,33],[-10,40],[0,10],[10,0],[15,-17],[37,10]],
+    // Asia
+    [[70,30],[70,180],[40,130],[22,120],[8,100],[0,104],[-10,125],[0,140],[20,120],[25,90],[25,50],[38,42],[55,38],[65,30],[70,30]],
+    // Australia
+    [[-10,130],[-10,142],[-40,148],[-40,136],[-32,116],[-22,114],[-10,130]],
+  ];
+
+  ctx.fillStyle = 'rgba(34,211,238,0.06)';
+  ctx.strokeStyle = 'rgba(34,211,238,0.18)';
+  ctx.lineWidth = 0.8;
+  continents.forEach(poly => {
+    if (!Array.isArray(poly[0])) {
+      ctx.beginPath();
+      poly.forEach(([lat, lon], i) => {
+        const {x, y} = latLonToXY(lat, lon, W, H);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      // nested array, skip
+    }
+  });
+
+  // Draw satellite orbit tracks
+  d.orbits.forEach(sat => {
+    ctx.strokeStyle = sat.color + '55';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    for (let lon = -180; lon <= 180; lon += 5) {
+      const lat = 30 * Math.sin((lon + sat.speed * 100) * Math.PI / 90);
+      const {x, y} = latLonToXY(lat, lon, W, H);
+      if (lon === -180) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Draw satellite dot
+    const {x: sx, y: sy} = latLonToXY(sat.lat, sat.lon, W, H);
+    ctx.fillStyle = sat.color;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = sat.color + 'aa';
+    ctx.font = '8px monospace';
+    ctx.fillText(sat.id, sx + 6, sy - 4);
+  });
+
+  // Draw hotspots
+  const now = Date.now();
+  d.hotspots.forEach((h, idx) => {
+    const {x, y} = latLonToXY(h.lat, h.lon, W, H);
+    const grade = h.impactGrade;
+    const color = grade === 'CRITICAL' ? '#ef4444' : grade === 'HIGH' ? '#f97316' : grade === 'MODERATE' ? '#f59e0b' : '#10b981';
+
+    // Value based on current view
+    let value = h.impactScore;
+    if (GLOBE_VIEW === 'temp') value = h.temp;
+    if (GLOBE_VIEW === 'co2') value = h.co2flux * 30;
+
+    const r = 4 + (value / 100) * 8;
+    const pulse = h.pulse;
+
+    // Pulse ring
+    ctx.beginPath();
+    ctx.arc(x, y, r + pulse * 12, 0, Math.PI * 2);
+    ctx.strokeStyle = color + Math.round(pulse * 180).toString(16).padStart(2,'0');
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Core dot
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+    grad.addColorStop(0, color);
+    grad.addColorStop(1, color + '44');
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // CRITICAL blink effect
+    if (grade === 'CRITICAL') {
+      ctx.beginPath();
+      ctx.arc(x, y, r + 3 + Math.sin(now/400 + idx) * 3, 0, Math.PI * 2);
+      ctx.strokeStyle = '#ef4444' + '88';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  });
+
+  // Draw equator and tropics
+  ['rgba(255,220,0,0.15)', 'rgba(255,150,0,0.1)', 'rgba(255,150,0,0.1)'].forEach((color, i) => {
+    const lats = [0, 23.5, -23.5];
+    const y = ((90 - lats[i]) / 180) * H;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y);
+    ctx.strokeStyle = color; ctx.lineWidth = i === 0 ? 1.5 : 0.8; ctx.stroke();
+  });
+
+  // Legend
+  const legendColors = [
+    ['CRITICAL', '#ef4444'], ['HIGH', '#f97316'], ['MODERATE', '#f59e0b'], ['LOW', '#10b981']
+  ];
+  legendColors.forEach(([label, color], i) => {
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(10, H - 55 + i * 14, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#9ca3af'; ctx.font = '9px sans-serif';
+    ctx.fillText(label, 18, H - 51 + i * 14);
+  });
+}
+
+function renderGlobeHotspotList(hotspots, metrics) {
+  const list = document.getElementById('globe-hotspot-list');
+  if (!list) return;
+  const sorted = [...hotspots].sort((a, b) => b.impactScore - a.impactScore).slice(0, 15);
+  list.innerHTML = sorted.map(h => {
+    const color = h.impactGrade === 'CRITICAL' ? 'red' : h.impactGrade === 'HIGH' ? 'orange' : h.impactGrade === 'MODERATE' ? 'yellow' : 'emerald';
+    const icon = { deforestation: 'tree', ice_loss: 'snowflake', desertification: 'sun', water_loss: 'droplet', urban_expansion: 'city', wildfire: 'fire', ocean_change: 'water' }[h.type] || 'circle';
+    return `
+    <div class="flex items-center gap-2 p-1.5 rounded-lg bg-gray-900/40 hover:bg-gray-800/60 cursor-pointer transition-all group" onclick="selectSatRegion('${h.id}')">
+      <i class="fas fa-${icon} text-${color}-400 text-xs w-4 text-center"></i>
+      <div class="flex-1 min-w-0">
+        <div class="text-[9px] font-semibold text-gray-200 truncate">${h.name}</div>
+        <div class="text-[8px] text-gray-600">${h.type.replace('_',' ')}</div>
+      </div>
+      <div class="text-right">
+        <div class="text-[10px] font-black text-${color}-400 mono">${h.impactScore.toFixed(0)}</div>
+        <div class="text-[7px] text-gray-600">${h.impactGrade}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const badge = document.getElementById('globe-critical-badge');
+  if (badge && metrics) badge.textContent = `${metrics.alertsLast1h} alerts`;
+}
+
+function updateGlobeMetrics(m) {
+  if (!m) return;
+  const set = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  set('gm-sats', m.activeSatellites);
+  set('gm-cov', m.coveragePct + '%');
+  set('gm-alerts1h', m.alertsLast1h);
+  set('gm-avg', m.avgScore);
+  set('globe-avg-score', m.avgScore);
+  set('globe-alert-count', m.alertsLast1h);
+}
+
+// Globe canvas mouse hover for tooltips
+document.addEventListener('click', (e) => {
+  const canvas = document.getElementById('globe-canvas');
+  if (!canvas || e.target !== canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+
+  // Find nearest hotspot
+  let nearest = null, minDist = 20;
+  ADV.globe.hotspots.forEach(h => {
+    const {x, y} = latLonToXY(h.lat, h.lon, canvas.width, canvas.height);
+    const dist = Math.sqrt((mx - x) ** 2 + (my - y) ** 2);
+    if (dist < minDist) { minDist = dist; nearest = h; }
+  });
+  if (nearest) {
+    selectSatRegion(nearest.id);
+    // Switch to satellite tab if not already there
+    if (typeof switchTab === 'function') {
+      const satTab = document.querySelector('[data-tab="satellite"]') || document.querySelector('#tab-satellite');
+    }
+  }
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// SECTION 2: WIND PATTERNS & OCEAN TEMPERATURE
+// ────────────────────────────────────────────────────────────────────────────
+function windOceanHTML() {
+  return `
+<div class="space-y-4">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-base font-black text-white flex items-center gap-2">
+        <i class="fas fa-wind text-blue-400"></i> Atmospheric & Ocean Systems
+        <span class="text-[9px] px-2 py-0.5 rounded-full bg-blue-900/60 border border-blue-700 text-blue-300 animate-pulse">● LIVE</span>
+      </h2>
+      <p class="text-[10px] text-gray-500 mt-0.5">Live wind vectors · SST anomalies · weather systems · ocean acidification</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="windOceanTab('wind')" id="wo-btn-wind" class="wo-tab-btn active-wo text-[9px] px-3 py-1.5 rounded-lg bg-blue-900/40 border border-blue-700 text-blue-300">Wind</button>
+      <button onclick="windOceanTab('ocean')" id="wo-btn-ocean" class="wo-tab-btn text-[9px] px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400">Ocean</button>
+    </div>
+  </div>
+
+  <!-- Wind Panel -->
+  <div id="wo-wind-panel" class="space-y-4">
+    <!-- Wind vector map (canvas) -->
+    <div class="et-card p-4">
+      <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+        <i class="fas fa-location-arrow text-blue-400"></i> Global Wind Vectors
+        <span class="ml-auto text-[8px] text-gray-600" id="wo-wind-ts">—</span>
+      </div>
+      <canvas id="wind-canvas" width="700" height="280" style="width:100%;height:auto;background:#050d1a;border-radius:8px;"></canvas>
+    </div>
+
+    <!-- Weather Systems -->
+    <div class="et-card p-4">
+      <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+        <i class="fas fa-cloud-bolt text-yellow-400"></i> Active Weather Systems
+      </div>
+      <div id="wo-systems-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div class="text-xs text-gray-600 animate-pulse">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Jet Stream + Stats -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="kpi-card-sm"><div class="text-[8px] text-gray-500">N. Jet Stream Lat</div><div class="text-lg font-black text-cyan-300 mono" id="wo-jet-n">—°N</div></div>
+      <div class="kpi-card-sm"><div class="text-[8px] text-gray-500">S. Jet Stream Lat</div><div class="text-lg font-black text-cyan-300 mono" id="wo-jet-s">—°S</div></div>
+      <div class="kpi-card-sm"><div class="text-[8px] text-gray-500">Jet Speed</div><div class="text-lg font-black text-yellow-300 mono" id="wo-jet-spd">— m/s</div></div>
+      <div class="kpi-card-sm"><div class="text-[8px] text-gray-500">Active Systems</div><div class="text-lg font-black text-red-300 mono" id="wo-sys-count">—</div></div>
+    </div>
+  </div>
+
+  <!-- Ocean Panel -->
+  <div id="wo-ocean-panel" class="hidden space-y-4">
+    <!-- SST Chart -->
+    <div class="et-card p-4">
+      <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+        <i class="fas fa-thermometer-half text-red-400"></i> Sea Surface Temperature Zones
+        <span class="ml-auto text-[8px] text-gray-600" id="wo-ocean-ts">—</span>
+      </div>
+      <canvas id="ocean-sst-chart" height="200" style="max-height:200px;"></canvas>
+    </div>
+
+    <!-- Ocean Zones -->
+    <div class="et-card p-4">
+      <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+        <i class="fas fa-water text-blue-400"></i> Ocean Health Metrics
+        <span class="ml-auto text-[8px] px-2 py-0.5 rounded-full bg-orange-900/60 border border-orange-700 text-orange-300" id="wo-elnino">El Niño</span>
+      </div>
+      <div id="wo-ocean-zones" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div>
+    </div>
+
+    <!-- Coral bleaching -->
+    <div class="et-card p-4">
+      <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+        <i class="fas fa-circle-radiation text-pink-400"></i> Coral Bleaching Risk
+      </div>
+      <div id="wo-coral-list" class="space-y-2"></div>
+    </div>
+  </div>
+</div>`;
+}
+
+let WO_ACTIVE_TAB = 'wind';
+function windOceanTab(tab) {
+  WO_ACTIVE_TAB = tab;
+  document.getElementById('wo-wind-panel').classList.toggle('hidden', tab !== 'wind');
+  document.getElementById('wo-ocean-panel').classList.toggle('hidden', tab !== 'ocean');
+  ['wind','ocean'].forEach(t => {
+    const btn = document.getElementById(`wo-btn-${t}`);
+    if (!btn) return;
+    const active = t === tab;
+    btn.className = `wo-tab-btn text-[9px] px-3 py-1.5 rounded-lg ${active?'bg-blue-900/40 border border-blue-700 text-blue-300':'bg-gray-800 border border-gray-700 text-gray-400'}`;
+  });
+  if (tab === 'ocean' && !ADV.ocean.chart) initOceanChart();
+}
+
+function initWindOcean() {
+  if (ADV.wind.interval) clearInterval(ADV.wind.interval);
+  refreshWindOcean();
+  ADV.wind.interval = setInterval(refreshWindOcean, 4000);
+}
+
+async function refreshWindOcean() {
+  try {
+    const [wr, or] = await Promise.all([
+      fetch('/satellite/wind_patterns'),
+      fetch('/satellite/ocean_temps'),
+    ]);
+    const wd = await wr.json();
+    const od = await or.json();
+
+    renderWindCanvas(wd);
+    renderWeatherSystems(wd.systems, wd.jetStream);
+    if (WO_ACTIVE_TAB === 'ocean') updateOceanData(od);
+    else { ADV.ocean.pendingData = od; }
+
+    const ts = document.getElementById('wo-wind-ts');
+    if (ts) ts.textContent = new Date(wd.ts).toLocaleTimeString();
+  } catch(e) {}
+}
+
+function renderWindCanvas(d) {
+  const canvas = document.getElementById('wind-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#050d1a';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(34,211,238,0.08)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 10; i++) {
+    const x = (i / 10) * W; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    const y = (i / 10) * H; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // SST anomaly background heatmap
+  if (d.sstGrid) {
+    d.sstGrid.forEach(g => {
+      const {x, y} = latLonToXY(g.lat, g.lon, W, H);
+      const r = g.anomaly > 0 ? Math.min(255, Math.round(g.anomaly * 80)) : 0;
+      const b = g.anomaly < 0 ? Math.min(255, Math.round(-g.anomaly * 80)) : 0;
+      ctx.fillStyle = `rgba(${r},${Math.round(r*0.1)},${b},0.35)`;
+      const cellW = (30 / 360) * W + 2, cellH = (24 / 180) * H + 2;
+      ctx.fillRect(x - cellW/2, y - cellH/2, cellW, cellH);
+    });
+  }
+
+  // Wind vectors
+  if (d.vectors) {
+    d.vectors.forEach(v => {
+      const {x, y} = latLonToXY(v.lat, v.lon, W, H);
+      const speed = v.speed;
+      const len = Math.min(18, 4 + speed * 0.8);
+      const angle = Math.atan2(-v.v, v.u);
+      const speedColor = speed > 25 ? '#ef4444' : speed > 15 ? '#f97316' : speed > 8 ? '#f59e0b' : '#22d3ee';
+      const alpha = 0.4 + Math.min(0.5, speed / 50);
+      ctx.strokeStyle = speedColor + Math.round(alpha * 255).toString(16).padStart(2,'0');
+      ctx.lineWidth = 0.8 + speed / 30;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + Math.cos(angle) * len, y + Math.sin(angle) * len);
+      ctx.stroke();
+      // Arrowhead
+      const ax = x + Math.cos(angle) * len;
+      const ay = y + Math.sin(angle) * len;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(ax - Math.cos(angle - 0.5) * 4, ay - Math.sin(angle - 0.5) * 4);
+      ctx.lineTo(ax - Math.cos(angle + 0.5) * 4, ay - Math.sin(angle + 0.5) * 4);
+      ctx.closePath();
+      ctx.fillStyle = speedColor;
+      ctx.fill();
+    });
+  }
+
+  // Jet streams
+  if (d.jetStream) {
+    ['northernLat', 'southernLat'].forEach(key => {
+      const y = ((90 - Math.abs(d.jetStream[key])) / 180) * H;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y);
+      ctx.strokeStyle = 'rgba(250,204,21,0.5)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+  }
+
+  // Weather system symbols
+  if (d.systems) {
+    d.systems.forEach(s => {
+      const {x, y} = latLonToXY(s.lat, s.lon, W, H);
+      const isCyclone = s.type === 'Cyclone' || s.type === 'Typhoon';
+      const isLow = s.type === 'Low' || isCyclone;
+      ctx.fillStyle = isCyclone ? '#ef4444' : isLow ? '#3b82f6' : '#10b981';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(isCyclone ? '🌀' : isLow ? 'L' : 'H', x, y);
+      ctx.font = '7px monospace';
+      ctx.fillStyle = '#9ca3af';
+      ctx.fillText(s.pressure + 'mb', x, y + 10);
+    });
+  }
+}
+
+function renderWeatherSystems(systems, jet) {
+  const list = document.getElementById('wo-systems-list');
+  if (!list || !systems) return;
+  list.innerHTML = systems.map(s => {
+    const isExtreme = s.type === 'Cyclone' || s.type === 'Typhoon';
+    const color = isExtreme ? 'red' : s.type === 'Low' ? 'blue' : 'emerald';
+    return `
+    <div class="flex items-center gap-2 p-2 rounded-lg bg-gray-900/40 border border-${color}-900/40">
+      <span class="text-lg">${isExtreme ? '🌀' : s.type === 'Low' ? '🌧' : '☀️'}</span>
+      <div class="flex-1">
+        <div class="text-[9px] font-bold text-${color}-300">${s.label}</div>
+        <div class="text-[8px] text-gray-600">${s.lat}°, ${s.lon}° · ${s.pressure} mb</div>
+      </div>
+      <div class="text-right">
+        <div class="text-[10px] font-black text-${color}-400 mono">${s.wind} m/s</div>
+        <div class="text-[7px] text-gray-600">${s.type}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const set = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  if (jet) {
+    set('wo-jet-n', `${jet.northernLat}°N`);
+    set('wo-jet-s', `${Math.abs(jet.southernLat)}°S`);
+    set('wo-jet-spd', `${jet.speed} m/s`);
+  }
+  set('wo-sys-count', systems.length);
+}
+
+function initOceanChart() {
+  const canvas = document.getElementById('ocean-sst-chart');
+  if (!canvas) return;
+  ADV.ocean.chart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'SST (°C)',
+        data: [],
+        backgroundColor: [],
+        borderColor: [],
+        borderWidth: 1,
+      }, {
+        label: 'Anomaly',
+        data: [],
+        type: 'line',
+        borderColor: '#f97316',
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        pointRadius: 3,
+        yAxisID: 'y2',
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#9ca3af', font: { size: 9 } } } },
+      scales: {
+        x: { ticks: { color: '#6b7280', font: { size: 7 } }, grid: { color: 'rgba(75,85,99,0.2)' } },
+        y: { ticks: { color: '#6b7280', font: { size: 8 } }, grid: { color: 'rgba(75,85,99,0.2)' } },
+        y2: { position: 'right', ticks: { color: '#f97316', font: { size: 8 } }, grid: { drawOnChartArea: false } },
+      }
+    }
+  });
+  if (ADV.ocean.pendingData) { updateOceanData(ADV.ocean.pendingData); ADV.ocean.pendingData = null; }
+}
+
+function updateOceanData(d) {
+  if (!d) return;
+  const ts = document.getElementById('wo-ocean-ts');
+  if (ts) ts.textContent = new Date(d.ts).toLocaleTimeString();
+
+  const el = document.getElementById('wo-elnino');
+  if (el && d.elnino) el.textContent = `${d.elnino.phase} (ONI: ${d.elnino.oni})`;
+
+  // SST chart
+  if (ADV.ocean.chart && d.zones) {
+    const chart = ADV.ocean.chart;
+    chart.data.labels = d.zones.map(z => z.name);
+    const temps = d.zones.map(z => z.sst);
+    chart.data.datasets[0].data = temps;
+    chart.data.datasets[0].backgroundColor = temps.map(t => t > 28 ? 'rgba(239,68,68,0.6)' : t > 20 ? 'rgba(249,115,22,0.5)' : t > 10 ? 'rgba(34,211,238,0.5)' : 'rgba(59,130,246,0.6)');
+    chart.data.datasets[0].borderColor = temps.map(t => t > 28 ? '#ef4444' : t > 20 ? '#f97316' : '#22d3ee');
+    chart.data.datasets[1].data = d.zones.map(z => z.anomaly);
+    chart.update();
+  }
+
+  // Ocean zones
+  const zonesDiv = document.getElementById('wo-ocean-zones');
+  if (zonesDiv && d.zones) {
+    zonesDiv.innerHTML = d.zones.slice(0,6).map(z => `
+    <div class="p-2 rounded-lg bg-gray-900/50 border border-gray-800">
+      <div class="text-[9px] font-bold text-gray-200 mb-1">${z.name}</div>
+      <div class="grid grid-cols-2 gap-1 text-[8px]">
+        <div><span class="text-gray-600">SST</span> <span class="text-orange-300 mono">${z.sst}°C</span></div>
+        <div><span class="text-gray-600">Δ</span> <span class="${z.anomaly>0?'text-red-400':'text-blue-400'} mono">${z.anomaly>0?'+':''}${z.anomaly}°C</span></div>
+        <div><span class="text-gray-600">pH</span> <span class="text-cyan-300 mono">${z.ph}</span></div>
+        <div><span class="text-gray-600">O₂</span> <span class="text-emerald-300 mono">${z.oxygenMlL} ml/L</span></div>
+      </div>
+    </div>`).join('');
+  }
+
+  // Coral bleaching
+  const coralDiv = document.getElementById('wo-coral-list');
+  if (coralDiv && d.zones) {
+    const bleachZones = d.zones.filter(z => z.bleachRisk !== 'LOW').sort((a,b) => ['CRITICAL','HIGH','MODERATE'].indexOf(a.bleachRisk) - ['CRITICAL','HIGH','MODERATE'].indexOf(b.bleachRisk));
+    coralDiv.innerHTML = bleachZones.map(z => {
+      const color = z.bleachRisk === 'CRITICAL' ? 'red' : z.bleachRisk === 'HIGH' ? 'orange' : 'yellow';
+      const pct = Math.min(100, (z.dhw / 16) * 100);
+      return `
+      <div class="flex items-center gap-2 p-2 rounded-lg bg-gray-900/40">
+        <i class="fas fa-fan text-${color}-400 text-xs"></i>
+        <div class="flex-1">
+          <div class="text-[9px] font-semibold text-gray-200">${z.name}</div>
+          <div class="h-1.5 bg-gray-800 rounded-full mt-1 overflow-hidden">
+            <div class="h-full bg-${color}-500 rounded-full transition-all" style="width:${pct}%"></div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-[9px] font-black text-${color}-400 mono">DHW ${z.dhw}</div>
+          <div class="text-[7px] text-gray-600">${z.bleachRisk}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// SECTION 3: CARBON BUDGET LIVE TRACKER
+// ────────────────────────────────────────────────────────────────────────────
+function carbonBudgetHTML() {
+  return `
+<div class="space-y-4">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-base font-black text-white flex items-center gap-2">
+        <i class="fas fa-cloud-arrow-up text-orange-400"></i> Live Carbon Budget Tracker
+        <span class="text-[9px] px-2 py-0.5 rounded-full bg-orange-900/60 border border-orange-700 text-orange-300 animate-pulse">● LIVE</span>
+      </h2>
+      <p class="text-[10px] text-gray-500 mt-0.5">IPCC AR6 remaining budget · real-time sector tracking · net-zero countdown</p>
+    </div>
+    <button onclick="refreshCarbonBudget()" class="px-3 py-1.5 rounded-lg bg-orange-900/40 border border-orange-700 text-orange-300 text-xs font-semibold hover:bg-orange-900/70 transition-all">
+      <i class="fas fa-rotate-right mr-1"></i> Refresh
+    </button>
+  </div>
+
+  <!-- Budget alarm bar -->
+  <div class="et-card p-4 border-l-4 border-orange-500">
+    <div class="flex flex-wrap items-center gap-4">
+      <div class="text-center px-4">
+        <div class="text-[8px] text-gray-500 uppercase">Remaining 1.5°C Budget</div>
+        <div class="text-3xl font-black mono" id="cb-remain15" style="color:#f97316">—</div>
+        <div class="text-[8px] text-gray-600">Gt CO₂</div>
+      </div>
+      <div class="text-center px-4">
+        <div class="text-[8px] text-gray-500 uppercase">Years Left @ Current Rate</div>
+        <div class="text-3xl font-black text-red-400 mono" id="cb-years-left">—</div>
+        <div class="text-[8px] text-gray-600">years</div>
+      </div>
+      <div class="text-center px-4">
+        <div class="text-[8px] text-gray-500 uppercase">Annual Emissions</div>
+        <div class="text-3xl font-black text-yellow-400 mono" id="cb-annual">—</div>
+        <div class="text-[8px] text-gray-600">Gt CO₂/yr</div>
+      </div>
+      <div class="flex-1 min-w-40">
+        <div class="flex justify-between text-[8px] text-gray-500 mb-1">
+          <span>Budget Used</span>
+          <span id="cb-pct-label">—%</span>
+        </div>
+        <div class="h-4 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
+          <div id="cb-budget-bar" class="h-full rounded-full transition-all" style="width:0%;background:linear-gradient(90deg,#10b981,#f59e0b,#ef4444);"></div>
+        </div>
+        <div class="flex justify-between text-[8px] text-gray-600 mt-1">
+          <span>0</span><span>400 Gt</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Atmosphere & Sectors -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <!-- Atmospheric GHG levels -->
+    <div class="et-card p-4">
+      <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+        <i class="fas fa-smog text-gray-400"></i> Atmospheric GHG Concentrations
+      </div>
+      <div class="space-y-3">
+        <div>
+          <div class="flex justify-between text-[8px] mb-1"><span class="text-gray-400">CO₂</span><span class="text-orange-300 mono font-bold" id="atm-co2">422.5 ppm</span></div>
+          <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div id="atm-co2-bar" class="h-full bg-gradient-to-r from-orange-700 to-orange-400 rounded-full transition-all" style="width:84%"></div></div>
+          <div class="text-[7px] text-gray-600 mt-0.5">Pre-industrial: 280 ppm · Dangerous: 450 ppm</div>
+        </div>
+        <div>
+          <div class="flex justify-between text-[8px] mb-1"><span class="text-gray-400">CH₄</span><span class="text-yellow-300 mono font-bold" id="atm-ch4">1923 ppb</span></div>
+          <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div id="atm-ch4-bar" class="h-full bg-gradient-to-r from-yellow-700 to-yellow-400 rounded-full transition-all" style="width:72%"></div></div>
+          <div class="text-[7px] text-gray-600 mt-0.5">Pre-industrial: 722 ppb · 30yr GWP: 80x CO₂</div>
+        </div>
+        <div>
+          <div class="flex justify-between text-[8px] mb-1"><span class="text-gray-400">N₂O</span><span class="text-purple-300 mono font-bold" id="atm-n2o">337 ppb</span></div>
+          <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div id="atm-n2o-bar" class="h-full bg-gradient-to-r from-purple-700 to-purple-400 rounded-full transition-all" style="width:65%"></div></div>
+          <div class="text-[7px] text-gray-600 mt-0.5">Pre-industrial: 270 ppb · GWP: 265x CO₂</div>
+        </div>
+        <div>
+          <div class="flex justify-between text-[8px] mb-1"><span class="text-gray-400">Global Temp Rise</span><span class="text-red-300 mono font-bold" id="atm-temp">+1.18°C</span></div>
+          <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div id="atm-temp-bar" class="h-full bg-gradient-to-r from-red-700 to-red-400 rounded-full transition-all" style="width:79%"></div></div>
+          <div class="text-[7px] text-gray-600 mt-0.5">Target: +1.5°C · Current trajectory: +2.8°C</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sector pie / bar -->
+    <div class="et-card p-4">
+      <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+        <i class="fas fa-chart-pie text-orange-400"></i> Emissions by Sector (Gt/yr)
+      </div>
+      <div id="cb-sector-bars" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- Top emitters -->
+  <div class="et-card p-4">
+    <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+      <i class="fas fa-ranking-star text-yellow-400"></i> Top Emitting Nations — Live Tracker
+      <span class="ml-auto text-[8px] text-gray-600">Click to explore</span>
+    </div>
+    <div id="cb-country-bars" class="space-y-1.5"></div>
+  </div>
+
+  <!-- Net Zero Tracker -->
+  <div class="et-card p-4">
+    <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+      <i class="fas fa-scale-balanced text-emerald-400"></i> Global Net-Zero Commitments
+    </div>
+    <div class="grid grid-cols-3 gap-3 text-center mb-4">
+      <div class="p-3 rounded-xl bg-emerald-900/20 border border-emerald-800">
+        <div class="text-2xl font-black text-emerald-300 mono" id="nz-committed">137</div>
+        <div class="text-[8px] text-gray-500">Countries Committed</div>
+      </div>
+      <div class="p-3 rounded-xl bg-yellow-900/20 border border-yellow-800">
+        <div class="text-2xl font-black text-yellow-300 mono" id="nz-ontrack">12%</div>
+        <div class="text-[8px] text-gray-500">On Track</div>
+      </div>
+      <div class="p-3 rounded-xl bg-red-900/20 border border-red-800">
+        <div class="text-2xl font-black text-red-300 mono" id="nz-offtrack">76%</div>
+        <div class="text-[8px] text-gray-500">Off Track</div>
+      </div>
+    </div>
+    <!-- Progress bar -->
+    <div class="h-3 bg-gray-800 rounded-full overflow-hidden flex">
+      <div id="nz-ontrack-bar" class="bg-emerald-500 transition-all" style="width:12%"></div>
+      <div id="nz-offtrack-bar" class="bg-red-500 transition-all" style="width:76%"></div>
+      <div class="bg-gray-600 transition-all flex-1"></div>
+    </div>
+    <div class="flex justify-between text-[7px] text-gray-600 mt-1">
+      <span>On Track</span><span>Off Track</span><span>No Commitment</span>
+    </div>
+  </div>
+</div>`;
+}
+
+function initCarbonBudget() {
+  if (ADV.carbon.interval) clearInterval(ADV.carbon.interval);
+  refreshCarbonBudget();
+  ADV.carbon.interval = setInterval(refreshCarbonBudget, 5000);
+}
+
+async function refreshCarbonBudget() {
+  try {
+    const r = await fetch('/satellite/carbon_budget');
+    const d = await r.json();
+    updateCarbonBudgetUI(d);
+  } catch(e) {}
+}
+
+function updateCarbonBudgetUI(d) {
+  const set = (id, v) => { const e = document.getElementById(id); if(e) { e.textContent = v; } };
+  const flash = (id, v) => { const e = document.getElementById(id); if(e) { e.textContent = v; e.classList.add('ticker-flash'); setTimeout(()=>e.classList.remove('ticker-flash'), 600); } };
+
+  if (d.budget) {
+    flash('cb-remain15', d.budget.remaining1_5 + ' Gt');
+    flash('cb-years-left', d.budget.yearsLeft1_5 + ' yr');
+    flash('cb-annual', d.budget.annualEmissions + ' Gt/yr');
+    set('cb-pct-label', d.budget.pctUsed1_5 + '%');
+    const bar = document.getElementById('cb-budget-bar');
+    if (bar) bar.style.width = Math.min(100, d.budget.pctUsed1_5) + '%';
+  }
+
+  if (d.atmosphere) {
+    flash('atm-co2', d.atmosphere.co2ppm + ' ppm');
+    flash('atm-ch4', d.atmosphere.ch4ppb + ' ppb');
+    flash('atm-n2o', d.atmosphere.n2oppb + ' ppb');
+    flash('atm-temp', '+' + d.atmosphere.globalTemp + '°C');
+    const co2Pct = ((d.atmosphere.co2ppm - 280) / (450 - 280)) * 100;
+    const setBar = (id, pct) => { const e = document.getElementById(id); if(e) e.style.width = Math.min(100, Math.max(0, pct)) + '%'; };
+    setBar('atm-co2-bar', co2Pct);
+    setBar('atm-ch4-bar', ((d.atmosphere.ch4ppb - 722) / (3000 - 722)) * 100);
+    setBar('atm-n2o-bar', ((d.atmosphere.n2oppb - 270) / (370 - 270)) * 100);
+    setBar('atm-temp-bar', (d.atmosphere.globalTemp / 2.0) * 100);
+  }
+
+  if (d.sectors) {
+    const maxLive = Math.max(...d.sectors.map(s => s.live));
+    const sectorsDiv = document.getElementById('cb-sector-bars');
+    if (sectorsDiv) {
+      sectorsDiv.innerHTML = d.sectors.map(s => {
+        const pct = (s.live / maxLive * 100).toFixed(0);
+        const trendIcon = s.trend === 'rising' ? '↑' : s.trend === 'falling' ? '↓' : '→';
+        const trendColor = s.trend === 'rising' ? 'text-red-400' : s.trend === 'falling' ? 'text-emerald-400' : 'text-gray-400';
+        return `
+        <div class="flex items-center gap-2">
+          <span class="text-sm w-5">${s.emoji}</span>
+          <div class="w-20 text-[9px] text-gray-400 truncate">${s.name}</div>
+          <div class="flex-1 h-5 bg-gray-800 rounded-full overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-700 flex items-center justify-end pr-1.5" style="width:${pct}%;background:${s.color}88">
+              <span class="text-[7px] font-bold mono" style="color:${s.color}">${s.live}</span>
+            </div>
+          </div>
+          <div class="text-[9px] font-bold ${trendColor} mono w-4">${trendIcon}</div>
+          <div class="text-[8px] text-gray-600 w-8 text-right">${s.share}%</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  if (d.countries) {
+    const maxLive = Math.max(...d.countries.map(c => c.live));
+    const cDiv = document.getElementById('cb-country-bars');
+    if (cDiv) {
+      cDiv.innerHTML = d.countries.map((c, i) => {
+        const pct = (c.live / maxLive * 100).toFixed(0);
+        const trend = c.yoyChange > 1 ? '↑' : c.yoyChange < -1 ? '↓' : '→';
+        const tColor = c.yoyChange > 1 ? '#ef4444' : c.yoyChange < -1 ? '#10b981' : '#9ca3af';
+        return `
+        <div class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-800/40 cursor-pointer transition-all">
+          <div class="text-[10px] mono font-black w-5 text-center" style="color:${i===0?'#fbbf24':i===1?'#9ca3af':'#cd7f32'}">${i+1}</div>
+          <span class="text-sm">${c.flag}</span>
+          <div class="w-24 text-[9px] text-gray-300 truncate">${c.name}</div>
+          <div class="flex-1 h-4 bg-gray-800 rounded-full overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-700" style="width:${pct}%;background:${c.color}66;border-right:2px solid ${c.color};"></div>
+          </div>
+          <div class="text-[9px] font-black mono w-12 text-right" style="color:${c.color}">${c.live} Gt</div>
+          <div class="text-[9px] mono w-8 text-right" style="color:${tColor}">${trend}${Math.abs(c.yoyChange).toFixed(1)}%</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  if (d.netZeroTracker) {
+    const nz = d.netZeroTracker;
+    set('nz-committed', nz.countriesCommitted);
+    set('nz-ontrack', nz.onTrackPct + '%');
+    set('nz-offtrack', nz.offTrackPct + '%');
+    const ot = document.getElementById('nz-ontrack-bar');
+    const of_ = document.getElementById('nz-offtrack-bar');
+    if (ot) ot.style.width = nz.onTrackPct + '%';
+    if (of_) of_.style.width = nz.offTrackPct + '%';
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// SECTION 4: DEFORESTATION 3D HEATMAP (canvas-based terrain)
+// ────────────────────────────────────────────────────────────────────────────
+function defo3dHTML() {
+  return `
+<div class="space-y-4">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-base font-black text-white flex items-center gap-2">
+        <i class="fas fa-layer-group text-emerald-400"></i> 3D Deforestation Terrain Analysis
+        <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-900/60 border border-emerald-700 text-emerald-300 animate-pulse">● LIVE</span>
+      </h2>
+      <p class="text-[10px] text-gray-500 mt-0.5">CNN-generated heightmap · canopy cover · carbon stock · click cell for details</p>
+    </div>
+    <div class="flex gap-2 flex-wrap">
+      <select id="defo3d-region-select" onchange="changeDefo3dRegion(this.value)"
+              class="text-[9px] px-2 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-300">
+        <option value="amazon">Amazon Basin</option>
+        <option value="borneo">Borneo</option>
+        <option value="congo">Congo Basin</option>
+        <option value="indonesia">Indonesia</option>
+        <option value="siberia">Siberia</option>
+      </select>
+      <button onclick="refreshDefo3d()" class="text-[9px] px-3 py-1.5 rounded-lg bg-emerald-900/40 border border-emerald-700 text-emerald-300 hover:bg-emerald-900/70 transition-all">
+        <i class="fas fa-rotate-right mr-1"></i> Rescan
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <!-- 3D Canvas -->
+    <div class="lg:col-span-2 et-card p-4">
+      <div class="text-[9px] font-bold text-gray-400 uppercase mb-2 flex items-center gap-2">
+        <i class="fas fa-cube text-emerald-400"></i> Terrain Deforestation Map
+        <span class="ml-auto text-[8px] text-gray-600" id="defo3d-region-label">Amazon Basin</span>
+      </div>
+      <div class="relative">
+        <canvas id="defo3d-canvas" width="600" height="300" style="width:100%;height:auto;border-radius:8px;cursor:pointer;"></canvas>
+        <!-- Cell detail popup -->
+        <div id="defo3d-popup" class="hidden absolute top-2 right-2 bg-gray-900/95 border border-emerald-700 rounded-xl p-3 text-[8px] w-48 backdrop-blur-sm" style="z-index:10">
+          <div class="text-[9px] font-bold text-emerald-300 mb-2">Cell Analysis</div>
+          <div id="defo3d-popup-content"></div>
+        </div>
+      </div>
+      <!-- Legend -->
+      <div class="flex gap-3 mt-3 flex-wrap">
+        <div class="flex items-center gap-1 text-[8px] text-gray-500"><div class="w-3 h-3 rounded" style="background:#10b981"></div> Dense Canopy (>70%)</div>
+        <div class="flex items-center gap-1 text-[8px] text-gray-500"><div class="w-3 h-3 rounded" style="background:#f59e0b"></div> Degraded (30-70%)</div>
+        <div class="flex items-center gap-1 text-[8px] text-gray-500"><div class="w-3 h-3 rounded" style="background:#ef4444"></div> Deforested (&lt;30%)</div>
+        <div class="flex items-center gap-1 text-[8px] text-gray-500"><div class="w-3 h-3 rounded" style="background:#7f1d1d"></div> Active Fire</div>
+      </div>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="et-card p-4">
+      <div class="text-[9px] font-bold text-gray-400 uppercase mb-3">Region Summary</div>
+      <div class="space-y-3">
+        <div class="p-2 rounded-lg bg-gray-900/60">
+          <div class="text-[8px] text-gray-500">Total Carbon Stock</div>
+          <div class="text-xl font-black text-emerald-300 mono" id="d3d-carbon">—</div>
+          <div class="text-[7px] text-gray-600">Gt CO₂ equiv.</div>
+        </div>
+        <div class="p-2 rounded-lg bg-gray-900/60">
+          <div class="text-[8px] text-gray-500">Avg NDVI</div>
+          <div class="text-xl font-black text-green-300 mono" id="d3d-ndvi">—</div>
+        </div>
+        <div class="p-2 rounded-lg bg-red-900/20 border border-red-900">
+          <div class="text-[8px] text-gray-500">Deforested Cells</div>
+          <div class="text-xl font-black text-red-400 mono" id="d3d-defo">—</div>
+          <div class="text-[7px] text-gray-600">of 1024 total</div>
+        </div>
+        <div class="p-2 rounded-lg bg-emerald-900/20 border border-emerald-900">
+          <div class="text-[8px] text-gray-500">Intact Forest Cells</div>
+          <div class="text-xl font-black text-emerald-400 mono" id="d3d-intact">—</div>
+        </div>
+        <div class="p-2 rounded-lg bg-orange-900/20 border border-orange-900">
+          <div class="text-[8px] text-gray-500">Active Fire Cells</div>
+          <div class="text-xl font-black text-orange-400 mono" id="d3d-fire">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Annual Loss Chart -->
+  <div class="et-card p-4">
+    <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+      <i class="fas fa-chart-area text-red-400"></i> 25-Year Forest Loss Timeseries (2000-2024)
+    </div>
+    <canvas id="defo3d-annual-chart" height="150" style="max-height:150px;"></canvas>
+  </div>
+</div>`;
+}
+
+let DEFO3D_CANVAS_DATA = null;
+
+function changeDefo3dRegion(region) {
+  ADV.defo3d.region = region;
+  const label = document.getElementById('defo3d-region-label');
+  if (label) {
+    const names = { amazon: 'Amazon Basin', borneo: 'Borneo', congo: 'Congo Basin', indonesia: 'Indonesia', siberia: 'Siberia' };
+    label.textContent = names[region] || region;
+  }
+  refreshDefo3d();
+}
+
+function initDefo3d() {
+  if (ADV.defo3d.interval) clearInterval(ADV.defo3d.interval);
+  refreshDefo3d();
+  ADV.defo3d.interval = setInterval(refreshDefo3d, 8000);
+
+  // Canvas click handler
+  setTimeout(() => {
+    const canvas = document.getElementById('defo3d-canvas');
+    if (canvas) {
+      canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const mx = (e.clientX - rect.left) * scaleX;
+        const my = (e.clientY - rect.top) * scaleY;
+        showDefo3dCellDetail(mx, my);
+      });
+    }
+  }, 500);
+}
+
+async function refreshDefo3d() {
+  try {
+    const r = await fetch(`/satellite/deforestation_3d?region=${ADV.defo3d.region}`);
+    const d = await r.json();
+    DEFO3D_CANVAS_DATA = d;
+    renderDefo3dCanvas(d);
+    updateDefo3dStats(d);
+    renderDefo3dAnnualChart(d.annual);
+  } catch(e) {}
+}
+
+function renderDefo3dCanvas(d) {
+  const canvas = document.getElementById('defo3d-canvas');
+  if (!canvas || !d.heightmap) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#050d1a';
+  ctx.fillRect(0, 0, W, H);
+
+  const size = 32;
+  const cellW = W / size, cellH = H / size;
+  const now = Date.now();
+
+  d.heightmap.forEach(cell => {
+    const px = cell.x * cellW, py = cell.y * cellH;
+    const cc = cell.canopyCover;
+    const df = cell.deforestedPct;
+    const isFireCell = cell.x % 7 === 0 && cell.y % 5 === 0 && df > 0.6;
+
+    let r, g, b;
+    if (isFireCell) {
+      // Fire: flickering orange-red
+      const flicker = 0.7 + Math.sin(now / 150 + cell.x * 0.8) * 0.3;
+      r = 220; g = Math.round(60 * flicker); b = 0;
+    } else if (cc > 0.7) {
+      // Dense forest: deep green
+      r = Math.round(16 * (1 - df)); g = Math.round(185 * cc); b = Math.round(80 * cc);
+    } else if (cc > 0.3) {
+      // Degraded: amber
+      r = Math.round(245 * df); g = Math.round(158 * (1 - df * 0.5)); b = Math.round(11 * (1 - df));
+    } else {
+      // Deforested: red-brown
+      r = Math.round(180 + df * 60); g = Math.round(40 * (1 - df)); b = 0;
+    }
+
+    // Elevation shading (brightness)
+    const bright = 0.6 + cell.elevation * 0.4;
+    ctx.fillStyle = `rgb(${Math.round(r*bright)},${Math.round(g*bright)},${Math.round(b*bright)})`;
+    ctx.fillRect(px, py, cellW + 0.5, cellH + 0.5);
+
+    // Grid line
+    if (cell.x % 4 === 0 || cell.y % 4 === 0) {
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.fillRect(px, py, 0.5, cellH);
+      ctx.fillRect(px, py, cellW, 0.5);
+    }
+  });
+
+  // Scan line animation
+  const scanY = ((now / 30) % H);
+  ctx.fillStyle = 'rgba(34,211,238,0.08)';
+  ctx.fillRect(0, scanY, W, 2);
+  ctx.fillStyle = 'rgba(34,211,238,0.04)';
+  ctx.fillRect(0, scanY - 8, W, 8);
+}
+
+function showDefo3dCellDetail(mx, my) {
+  if (!DEFO3D_CANVAS_DATA) return;
+  const canvas = document.getElementById('defo3d-canvas');
+  if (!canvas) return;
+  const cellW = canvas.width / 32, cellH = canvas.height / 32;
+  const cx = Math.floor(mx / cellW), cy = Math.floor(my / cellH);
+  const cell = DEFO3D_CANVAS_DATA.heightmap.find(c => c.x === cx && c.y === cy);
+  if (!cell) return;
+
+  const popup = document.getElementById('defo3d-popup');
+  const content = document.getElementById('defo3d-popup-content');
+  if (!popup || !content) return;
+
+  content.innerHTML = `
+    <div class="space-y-1">
+      <div class="flex justify-between"><span class="text-gray-500">Cell</span><span class="mono text-gray-300">(${cx}, ${cy})</span></div>
+      <div class="flex justify-between"><span class="text-gray-500">Canopy</span><span class="mono text-emerald-300">${(cell.canopyCover * 100).toFixed(0)}%</span></div>
+      <div class="flex justify-between"><span class="text-gray-500">Deforested</span><span class="mono text-red-300">${(cell.deforestedPct * 100).toFixed(0)}%</span></div>
+      <div class="flex justify-between"><span class="text-gray-500">NDVI</span><span class="mono text-green-300">${cell.ndvi}</span></div>
+      <div class="flex justify-between"><span class="text-gray-500">Carbon</span><span class="mono text-orange-300">${cell.carbonStock} t/ha</span></div>
+      <div class="flex justify-between"><span class="text-gray-500">Elevation</span><span class="mono text-cyan-300">${(cell.elevation * 100).toFixed(0)} m</span></div>
+    </div>`;
+  popup.classList.remove('hidden');
+  setTimeout(() => popup.classList.add('hidden'), 4000);
+}
+
+function updateDefo3dStats(d) {
+  const set = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  if (d.summary) {
+    set('d3d-carbon', d.summary.totalCarbonGt);
+    set('d3d-ndvi', d.summary.avgNdvi);
+    set('d3d-defo', d.summary.deforestedCells);
+    set('d3d-intact', d.summary.intactCells);
+    set('d3d-fire', d.summary.activeFireCells);
+  }
+}
+
+function renderDefo3dAnnualChart(annual) {
+  if (!annual) return;
+  const canvas = document.getElementById('defo3d-annual-chart');
+  if (!canvas) return;
+
+  if (ADV.defo3d.chart) { ADV.defo3d.chart.destroy(); ADV.defo3d.chart = null; }
+  ADV.defo3d.chart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: annual.map(a => a.year),
+      datasets: [{
+        label: 'Forest Loss (ha)',
+        data: annual.map(a => a.lossHa),
+        borderColor: '#ef4444',
+        backgroundColor: 'rgba(239,68,68,0.15)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 2,
+      }, {
+        label: 'Cumulative (k ha)',
+        data: annual.map(a => a.cumulative),
+        borderColor: '#f97316',
+        backgroundColor: 'transparent',
+        borderWidth: 1.5,
+        borderDash: [4, 2],
+        fill: false,
+        tension: 0.4,
+        pointRadius: 0,
+        yAxisID: 'y2',
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#9ca3af', font: { size: 8 } } } },
+      scales: {
+        x: { ticks: { color: '#6b7280', font: { size: 7 } }, grid: { color: 'rgba(75,85,99,0.15)' } },
+        y: { ticks: { color: '#ef4444', font: { size: 7 } }, grid: { color: 'rgba(75,85,99,0.15)' } },
+        y2: { position: 'right', ticks: { color: '#f97316', font: { size: 7 } }, grid: { drawOnChartArea: false } },
+      }
+    }
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// SECTION 5: SEISMIC RISK MONITOR
+// ────────────────────────────────────────────────────────────────────────────
+function seismicHTML() {
+  return `
+<div class="space-y-4">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-base font-black text-white flex items-center gap-2">
+        <i class="fas fa-waveform text-rose-400"></i> Seismic Risk Monitor
+        <span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-900/60 border border-rose-700 text-rose-300 animate-pulse">● LIVE</span>
+      </h2>
+      <p class="text-[10px] text-gray-500 mt-0.5">Earthquake events · tectonic zones · environmental hazard correlation</p>
+    </div>
+    <button onclick="refreshSeismic()" class="px-3 py-1.5 rounded-lg bg-rose-900/40 border border-rose-700 text-rose-300 text-[9px] font-semibold hover:bg-rose-900/70 transition-all">
+      <i class="fas fa-rotate-right mr-1"></i> Refresh
+    </button>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="seismic-stats-bar">
+    <div class="kpi-card-sm"><div class="text-[8px] text-gray-500">M4+ Last 24h</div><div class="text-xl font-black text-rose-400 mono" id="seis-m4">—</div></div>
+    <div class="kpi-card-sm"><div class="text-[8px] text-gray-500">M5+ Last 7d</div><div class="text-xl font-black text-orange-400 mono" id="seis-m5">—</div></div>
+    <div class="kpi-card-sm"><div class="text-[8px] text-gray-500">M6+ Last 30d</div><div class="text-xl font-black text-red-400 mono" id="seis-m6">—</div></div>
+    <div class="kpi-card-sm"><div class="text-[8px] text-gray-500">Tsunami Warnings</div><div class="text-xl font-black text-cyan-400 mono" id="seis-tsun">—</div></div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <!-- Recent Events -->
+    <div class="et-card p-4">
+      <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+        <i class="fas fa-circle-exclamation text-rose-400"></i> Recent Seismic Events (72h)
+      </div>
+      <div id="seismic-event-list" class="space-y-1.5 max-h-80 overflow-y-auto scrollbar-hide"></div>
+    </div>
+
+    <!-- Risk Zones -->
+    <div class="et-card p-4">
+      <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+        <i class="fas fa-map-pin text-yellow-400"></i> Tectonic Risk Zones
+      </div>
+      <div id="seismic-risk-zones" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- Seismic wave canvas -->
+  <div class="et-card p-4">
+    <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+      <i class="fas fa-wave-square text-purple-400"></i> Live Seismic Activity Waveform
+    </div>
+    <canvas id="seismic-wave-canvas" width="800" height="80" style="width:100%;height:80px;background:#050d1a;border-radius:8px;"></canvas>
+  </div>
+</div>`;
+}
+
+let SEISMIC_WAVE = Array(200).fill(0);
+let SEISMIC_ANIM = null;
+
+function initSeismic() {
+  if (ADV.seismic.interval) clearInterval(ADV.seismic.interval);
+  refreshSeismic();
+  ADV.seismic.interval = setInterval(refreshSeismic, 6000);
+  startSeismicWave();
+}
+
+async function refreshSeismic() {
+  try {
+    const r = await fetch('/satellite/seismic_risk');
+    const d = await r.json();
+    updateSeismicStats(d.globalStats);
+    renderSeismicEvents(d.events);
+    renderSeismicRiskZones(d.riskZones);
+  } catch(e) {}
+}
+
+function updateSeismicStats(stats) {
+  if (!stats) return;
+  const set = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  set('seis-m4', stats.M4plusLast24h);
+  set('seis-m5', stats.M5plusLast7d);
+  set('seis-m6', stats.M6plusLast30d);
+  set('seis-tsun', stats.activeTsunamiWarnings);
+}
+
+function renderSeismicEvents(events) {
+  const list = document.getElementById('seismic-event-list');
+  if (!list || !events) return;
+  list.innerHTML = events.sort((a, b) => b.mag - a.mag).map(eq => {
+    const magColor = eq.mag >= 6 ? 'red' : eq.mag >= 5 ? 'orange' : eq.mag >= 4 ? 'yellow' : 'gray';
+    const envColor = eq.environmentalImpact === 'CRITICAL' ? 'red' : eq.environmentalImpact === 'HIGH' ? 'orange' : 'yellow';
+    return `
+    <div class="flex items-center gap-2 p-2 rounded-lg bg-gray-900/40 hover:bg-gray-800/50 transition-all">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm mono" style="background:rgba(239,68,68,${Math.min(1, (eq.mag-3)/4)*0.3});color:${eq.mag>=6?'#ef4444':eq.mag>=5?'#f97316':'#f59e0b'};border:1px solid rgba(239,68,68,0.2);">
+        M${eq.mag}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-[9px] font-semibold text-gray-200 truncate">${eq.region}</div>
+        <div class="text-[8px] text-gray-500">${eq.lat}°, ${eq.lon}° · Depth: ${eq.depth} km · ${eq.hoursAgo}h ago</div>
+        <div class="flex gap-1.5 mt-0.5">
+          ${eq.tsunamiRisk !== 'NONE' ? `<span class="text-[7px] px-1.5 py-0.5 rounded bg-cyan-900/60 border border-cyan-800 text-cyan-300">🌊 Tsunami ${eq.tsunamiRisk}</span>` : ''}
+          <span class="text-[7px] px-1.5 py-0.5 rounded bg-${envColor}-900/40 border border-${envColor}-800 text-${envColor}-300">Env: ${eq.environmentalImpact}</span>
+        </div>
+      </div>
+      <div class="text-right text-[8px] text-gray-500">
+        <div>Aftershock</div>
+        <div class="text-${magColor}-400 mono font-bold">${(eq.aftershockProb72h * 100).toFixed(0)}%</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSeismicRiskZones(zones) {
+  const div = document.getElementById('seismic-risk-zones');
+  if (!div || !zones) return;
+  div.innerHTML = zones.sort((a, b) => b.riskLevel - a.riskLevel).map(z => {
+    const pct = (z.riskLevel * 100).toFixed(0);
+    const color = z.riskLevel > 0.8 ? 'red' : z.riskLevel > 0.65 ? 'orange' : 'yellow';
+    return `
+    <div class="p-2 rounded-lg bg-gray-900/40">
+      <div class="flex justify-between mb-1">
+        <span class="text-[9px] font-semibold text-gray-200">${z.name}</span>
+        <span class="text-[8px] mono font-black text-${color}-400">Mw ${z.magnitude_potential} potential</span>
+      </div>
+      <div class="h-2 bg-gray-800 rounded-full overflow-hidden mb-1">
+        <div class="h-full rounded-full transition-all" style="width:${pct}%;background:linear-gradient(90deg,#f59e0b,#ef4444)"></div>
+      </div>
+      <div class="flex justify-between text-[7px] text-gray-600">
+        <span>Risk: ${pct}%</span>
+        <span>Last event: ${z.lastMajorEvent}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function startSeismicWave() {
+  if (SEISMIC_ANIM) cancelAnimationFrame(SEISMIC_ANIM);
+  let t = 0;
+  function draw() {
+    const canvas = document.getElementById('seismic-wave-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#050d1a';
+    ctx.fillRect(0, 0, W, H);
+
+    // Shift wave left
+    SEISMIC_WAVE.shift();
+    // Generate new sample: baseline + event spikes
+    const baseline = Math.sin(t * 0.05) * 4 + (Math.random() - 0.5) * 3;
+    const spike = Math.random() < 0.02 ? (Math.random() - 0.5) * 50 * Math.random() : 0;
+    SEISMIC_WAVE.push(baseline + spike);
+
+    // Draw waveform
+    const mid = H / 2;
+    const xScale = W / SEISMIC_WAVE.length;
+    ctx.beginPath();
+    ctx.moveTo(0, mid);
+    SEISMIC_WAVE.forEach((v, i) => {
+      ctx.lineTo(i * xScale, mid + v);
+    });
+    ctx.strokeStyle = '#a78bfa';
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = '#a78bfa';
+    ctx.shadowBlur = 4;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Center line
+    ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(W, mid);
+    ctx.strokeStyle = 'rgba(167,139,250,0.2)';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    t++;
+    SEISMIC_ANIM = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// SECTION 6: ADVANCED ALERT FEED
+// ────────────────────────────────────────────────────────────────────────────
+function advAlertFeedHTML() {
+  return `
+<div class="space-y-4">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-base font-black text-white flex items-center gap-2">
+        <i class="fas fa-bell text-red-400"></i> Advanced Live Alert Feed
+        <span class="text-[9px] px-2 py-0.5 rounded-full bg-red-900/60 border border-red-700 text-red-300 animate-pulse">● LIVE</span>
+        <span class="text-[9px] px-2 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-gray-300" id="adv-alert-count">0</span>
+      </h2>
+      <p class="text-[10px] text-gray-500 mt-0.5">Real-time environmental alerts · filter by severity · sound notifications</p>
+    </div>
+    <div class="flex gap-2 flex-wrap items-center">
+      <button onclick="toggleAlertSound()" id="alert-sound-btn" class="text-[9px] px-2.5 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-200 transition-all">
+        <i id="alert-sound-icon" class="fas fa-volume-xmark mr-1"></i>Sound
+      </button>
+      <button onclick="filterAlerts('ALL')" id="af-btn-ALL" class="af-filter-btn text-[9px] px-2.5 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-gray-200">All</button>
+      <button onclick="filterAlerts('CRITICAL')" id="af-btn-CRITICAL" class="af-filter-btn text-[9px] px-2.5 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400">Critical</button>
+      <button onclick="filterAlerts('HIGH')" id="af-btn-HIGH" class="af-filter-btn text-[9px] px-2.5 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400">High</button>
+      <button onclick="clearAllAlertsFeed()" class="text-[9px] px-2.5 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-200 transition-all">
+        <i class="fas fa-trash mr-1"></i>Clear
+      </button>
+    </div>
+  </div>
+
+  <!-- Alert ticker / crawl -->
+  <div class="overflow-hidden rounded-xl border border-red-900/40 bg-red-950/20 py-2 px-4">
+    <div id="adv-alert-ticker" class="adv-ticker-scroll text-[9px] font-mono text-red-300 whitespace-nowrap">
+      Loading live alerts…
+    </div>
+  </div>
+
+  <!-- Alert Statistics -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="kpi-card-sm"><div class="text-[8px] text-gray-500">CRITICAL</div><div class="text-xl font-black text-red-400 mono" id="af-count-crit">0</div></div>
+    <div class="kpi-card-sm"><div class="text-[8px] text-gray-500">HIGH</div><div class="text-xl font-black text-orange-400 mono" id="af-count-high">0</div></div>
+    <div class="kpi-card-sm"><div class="text-[8px] text-gray-500">MODERATE</div><div class="text-xl font-black text-yellow-400 mono" id="af-count-mod">0</div></div>
+    <div class="kpi-card-sm"><div class="text-[8px] text-gray-500">LOW</div><div class="text-xl font-black text-emerald-400 mono" id="af-count-low">0</div></div>
+  </div>
+
+  <!-- Alert List -->
+  <div class="et-card p-4">
+    <div id="adv-alert-list" class="space-y-2 max-h-96 overflow-y-auto scrollbar-hide pr-1"></div>
+  </div>
+
+  <!-- Alert Map (canvas) -->
+  <div class="et-card p-4">
+    <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+      <i class="fas fa-map-location-dot text-red-400"></i> Alert Geographic Distribution
+    </div>
+    <canvas id="alert-map-canvas" width="700" height="220" style="width:100%;height:auto;background:#050d1a;border-radius:8px;"></canvas>
+  </div>
+</div>`;
+}
+
+let ADV_ALERT_SOUND = false;
+let ADV_ALERT_FILTER = 'ALL';
+const ADV_ALERT_ITEMS = [];
+const ADV_ALERT_TYPES = [
+  { type: 'WILDFIRE',      icon: '🔥', color: '#ef4444', severity: 'CRITICAL', regions: ['California', 'Amazon', 'Siberia', 'Australia', 'Mato Grosso'] },
+  { type: 'DEFORESTATION', icon: '🌳', color: '#f97316', severity: 'HIGH',     regions: ['Amazon', 'Borneo', 'Congo Basin', 'Indonesia'] },
+  { type: 'FLOOD_RISK',    icon: '🌊', color: '#3b82f6', severity: 'HIGH',     regions: ['Bangladesh', 'Mekong Delta', 'Mississippi', 'Nile'] },
+  { type: 'ICE_MELT',      icon: '🧊', color: '#67e8f9', severity: 'HIGH',     regions: ['Greenland', 'Arctic', 'Himalayas', 'Patagonia'] },
+  { type: 'DROUGHT',       icon: '☀️', color: '#f59e0b', severity: 'MODERATE', regions: ['Sahel', 'Horn of Africa', 'Australia Outback', 'California'] },
+  { type: 'URBAN_HEAT',    icon: '🏙', color: '#a78bfa', severity: 'MODERATE', regions: ['Mumbai', 'Beijing', 'Phoenix', 'Madrid'] },
+  { type: 'STORM_SURGE',   icon: '💨', color: '#94a3b8', severity: 'HIGH',     regions: ['Bangladesh', 'Gulf of Mexico', 'Bay of Bengal', 'South China Sea'] },
+  { type: 'CORAL_BLEACH',  icon: '🐠', color: '#fb7185', severity: 'CRITICAL', regions: ['Great Barrier Reef', 'Caribbean', 'Coral Triangle', 'Maldives'] },
+  { type: 'OIL_SPILL',     icon: '🛢', color: '#78716c', severity: 'HIGH',     regions: ['North Sea', 'Gulf of Mexico', 'Niger Delta'] },
+  { type: 'SEISMIC',       icon: '📳', color: '#c084fc', severity: 'HIGH',     regions: ['Nepal', 'Japan', 'Chile', 'Indonesia'] },
+];
+
+function initAdvAlertFeed() {
+  if (ADV.alerts.interval) clearInterval(ADV.alerts.interval);
+  // Initial load from backend
+  loadAdvAlertStream();
+  // Start live generation
+  ADV.alerts.interval = setInterval(() => {
+    generateLiveAlert();
+    renderAdvAlertList();
+    renderAlertMap();
+    updateAlertTicker();
+    updateAlertCounts();
+  }, 3500);
+  // Also render map when ready
+  setTimeout(renderAlertMap, 800);
+}
+
+async function loadAdvAlertStream() {
+  try {
+    const r = await fetch('/satellite/alert_stream');
+    const d = await r.json();
+    if (d.alerts) {
+      d.alerts.forEach(a => {
+        ADV_ALERT_ITEMS.unshift({
+          id: a.id,
+          type: a.type,
+          severity: a.severity,
+          region: a.region,
+          msg: a.msg,
+          icon: a.icon,
+          color: a.color,
+          ts: new Date(a.ts),
+          acknowledged: false,
+          lat: Math.random() * 120 - 60,
+          lon: Math.random() * 340 - 170,
+        });
+      });
+    }
+    renderAdvAlertList();
+    renderAlertMap();
+    updateAlertTicker();
+    updateAlertCounts();
+  } catch(e) {}
+}
+
+function generateLiveAlert() {
+  const type = ADV_ALERT_TYPES[Math.floor(Math.random() * ADV_ALERT_TYPES.length)];
+  const region = type.regions[Math.floor(Math.random() * type.regions.length)];
+  const msgs = {
+    WILDFIRE: ['Active fire front detected via VIIRS thermal anomaly', 'Rapid fire expansion — wind speed 45 km/h', 'New ignition point detected NW quadrant', 'Fire perimeter expanded 2,400 ha in 6h'],
+    DEFORESTATION: ['Rapid canopy loss detected in primary forest zone', 'New clearing polygon detected — 340 ha', 'Logging road extension detected via SAR', 'Forest fragmentation index threshold exceeded'],
+    FLOOD_RISK: ['Soil saturation above 95th percentile', 'River gauge above 5.8m — flood stage', 'Flash flood watch — 180mm in 3h forecast', 'Levee stress indicators elevated'],
+    ICE_MELT: ['Glacial retreat +2.3x seasonal average', 'Sea ice extent below 2SD of baseline', 'Calving event detected via SAR interferometry', 'Ice sheet velocity anomaly detected'],
+    DROUGHT: ['NDVI anomaly −0.18 below 20yr baseline', 'SPI-3 below −1.5 drought threshold', 'Groundwater level critical: −2.3m below avg', 'Crop stress signature covering 340k ha'],
+    URBAN_HEAT: ['LST +4.2°C above rural baseline detected', 'Heat island intensity: 6.5°C differential', 'Urban impervious surface expansion: 12 km²', 'Albedo anomaly in new development zone'],
+    STORM_SURGE: ['Category 4 landfall risk 72h window', 'Surge forecast: 3.8m above mean sea level', 'Coastal evacuation zone at risk: 2.3M people', 'Rapid intensification +35kt/24h detected'],
+    CORAL_BLEACH: ['DHW value 9.2 — mass bleaching threshold', 'SST anomaly +2.1°C above MMM for 8 weeks', 'Bleaching extent: estimated 340 km reef', 'Recovery trajectory: 8-12 years minimum'],
+    OIL_SPILL: ['SAR backscatter anomaly: oil slick ~24 km²', 'MODIS true-color confirms surface sheen', 'Slick drift: NE at 2.1 knots', 'Wildlife impact zone: 3 MPAs affected'],
+    SEISMIC: ['M5.2 detected — landslide risk elevated', 'Aftershock sequence ongoing', 'Liquefaction potential HIGH in delta areas', 'Dam safety alert — within 50km of M6+ event'],
+  };
+  const msgList = msgs[type.type] || ['Environmental anomaly detected'];
+
+  ADV_ALERT_ITEMS.unshift({
+    id: 'ADV-' + Date.now().toString(36).toUpperCase().slice(-6),
+    type: type.type,
+    severity: type.severity,
+    region,
+    msg: msgList[Math.floor(Math.random() * msgList.length)],
+    icon: type.icon,
+    color: type.color,
+    ts: new Date(),
+    acknowledged: false,
+    lat: (Math.random() * 120 - 60),
+    lon: (Math.random() * 340 - 170),
+  });
+
+  // Keep max 80 items
+  if (ADV_ALERT_ITEMS.length > 80) ADV_ALERT_ITEMS.length = 80;
+
+  // Sound notification (if enabled and critical)
+  if (ADV_ALERT_SOUND && type.severity === 'CRITICAL') {
+    playAlertBeep();
+  }
+}
+
+function playAlertBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    osc.type = 'square';
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch(e) {}
+}
+
+function toggleAlertSound() {
+  ADV_ALERT_SOUND = !ADV_ALERT_SOUND;
+  const btn = document.getElementById('alert-sound-btn');
+  const icon = document.getElementById('alert-sound-icon');
+  if (btn) btn.classList.toggle('text-emerald-400', ADV_ALERT_SOUND);
+  if (icon) icon.className = ADV_ALERT_SOUND ? 'fas fa-volume-high mr-1' : 'fas fa-volume-xmark mr-1';
+}
+
+function filterAlerts(severity) {
+  ADV_ALERT_FILTER = severity;
+  document.querySelectorAll('.af-filter-btn').forEach(b => {
+    const isSel = b.id === `af-btn-${severity}`;
+    b.className = `af-filter-btn text-[9px] px-2.5 py-1.5 rounded-lg transition-all ${isSel ? 'bg-gray-700 border border-gray-600 text-gray-200' : 'bg-gray-800 border border-gray-700 text-gray-400'}`;
+  });
+  renderAdvAlertList();
+}
+
+function renderAdvAlertList() {
+  const list = document.getElementById('adv-alert-list');
+  if (!list) return;
+  const filtered = ADV_ALERT_FILTER === 'ALL' ? ADV_ALERT_ITEMS : ADV_ALERT_ITEMS.filter(a => a.severity === ADV_ALERT_FILTER);
+  const display = filtered.slice(0, 40);
+
+  if (display.length === 0) {
+    list.innerHTML = '<div class="text-xs text-gray-600 text-center py-4">No alerts matching filter</div>';
+    return;
+  }
+
+  list.innerHTML = display.map((a, i) => {
+    const color = a.severity === 'CRITICAL' ? 'red' : a.severity === 'HIGH' ? 'orange' : a.severity === 'MODERATE' ? 'yellow' : 'emerald';
+    const age = Math.round((Date.now() - a.ts.getTime()) / 1000);
+    const ageStr = age < 60 ? `${age}s ago` : age < 3600 ? `${Math.round(age/60)}m ago` : `${Math.round(age/3600)}h ago`;
+    return `
+    <div class="flex items-start gap-2 p-2 rounded-xl border transition-all ${a.acknowledged ? 'opacity-40 border-gray-800 bg-gray-900/20' : `border-${color}-900/40 bg-${color}-950/10 hover:bg-${color}-950/20`} ${i === 0 && !a.acknowledged ? 'alert-new-flash' : ''}">
+      <span class="text-lg mt-0.5">${a.icon}</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-[9px] font-black text-${color}-300">${a.severity}</span>
+          <span class="text-[9px] font-bold text-gray-200">${a.type}</span>
+          <span class="text-[8px] text-gray-500">·</span>
+          <span class="text-[8px] text-gray-400">${a.region}</span>
+          <span class="ml-auto text-[7px] text-gray-600 mono">${ageStr}</span>
+        </div>
+        <p class="text-[8px] text-gray-400 mt-0.5">${a.msg}</p>
+        <div class="text-[7px] text-gray-600 mono mt-0.5">${a.id}</div>
+      </div>
+      <button onclick="ackSingleAlert('${a.id}')" class="text-gray-600 hover:text-gray-300 transition-all flex-shrink-0" title="Acknowledge">
+        <i class="fas fa-check text-[9px]"></i>
+      </button>
+    </div>`;
+  }).join('');
+
+  const count = document.getElementById('adv-alert-count');
+  if (count) count.textContent = filtered.length;
+}
+
+function ackSingleAlert(id) {
+  const a = ADV_ALERT_ITEMS.find(x => x.id === id);
+  if (a) { a.acknowledged = true; renderAdvAlertList(); }
+}
+
+function clearAllAlertsFeed() {
+  ADV_ALERT_ITEMS.length = 0;
+  renderAdvAlertList();
+  renderAlertMap();
+  updateAlertTicker();
+  updateAlertCounts();
+}
+
+function updateAlertCounts() {
+  const counts = { CRITICAL: 0, HIGH: 0, MODERATE: 0, LOW: 0 };
+  ADV_ALERT_ITEMS.forEach(a => { if (counts[a.severity] !== undefined) counts[a.severity]++; });
+  const set = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  set('af-count-crit', counts.CRITICAL);
+  set('af-count-high', counts.HIGH);
+  set('af-count-mod', counts.MODERATE);
+  set('af-count-low', counts.LOW);
+}
+
+function updateAlertTicker() {
+  const ticker = document.getElementById('adv-alert-ticker');
+  if (!ticker) return;
+  const recent = ADV_ALERT_ITEMS.slice(0, 10);
+  if (recent.length === 0) return;
+  ticker.textContent = recent.map(a => `${a.icon} [${a.severity}] ${a.type} — ${a.region}: ${a.msg}`).join('  ·  ');
+}
+
+function renderAlertMap() {
+  const canvas = document.getElementById('alert-map-canvas');
+  if (!canvas || ADV_ALERT_ITEMS.length === 0) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#050d1a';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(34,211,238,0.07)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 6; i++) {
+    const x = (i / 6) * W; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    const y = (i / 6) * H; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // Plot alerts
+  ADV_ALERT_ITEMS.slice(0, 60).forEach(a => {
+    const x = ((a.lon + 180) / 360) * W;
+    const y = ((90 - a.lat) / 180) * H;
+    const color = a.severity === 'CRITICAL' ? '#ef4444' : a.severity === 'HIGH' ? '#f97316' : a.severity === 'MODERATE' ? '#f59e0b' : '#10b981';
+    const r = a.severity === 'CRITICAL' ? 6 : a.severity === 'HIGH' ? 4 : 3;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color + 'cc';
+    ctx.fill();
+    if (a.severity === 'CRITICAL') {
+      ctx.beginPath();
+      ctx.arc(x, y, r + 4, 0, Math.PI * 2);
+      ctx.strokeStyle = color + '55';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// SECTION 7: INJECT MODULES INTO SATELLITE TAB VIA 6-TAB NAV
+// ────────────────────────────────────────────────────────────────────────────
+// Extend the satellite HTML to add a second navigation row with new modules
+const _origSatelliteHTML = typeof satelliteHTML !== 'undefined' ? satelliteHTML : null;
+
+function injectAdvancedModulesPanel() {
+  // Find or create the advanced modules container
+  const tabContent = document.getElementById('tab-content');
+  if (!tabContent || document.getElementById('adv-modules-panel')) return;
+
+  // Find the satellite tab content to inject after
+  const satDiv = tabContent.querySelector('#sat-extras-injected') ||
+                 tabContent.querySelector('[class*="space-y"]');
+  if (!satDiv) return;
+
+  const panel = document.createElement('div');
+  panel.id = 'adv-modules-panel';
+  panel.className = 'space-y-4 mt-4';
+  panel.innerHTML = `
+  <!-- Advanced Modules Tab Bar -->
+  <div class="et-card p-3">
+    <div class="text-[8px] text-gray-600 uppercase mb-2 font-bold tracking-wider">Advanced Analysis Modules</div>
+    <div class="flex flex-wrap gap-2" id="adv-module-tabs">
+      <button onclick="loadAdvModule('globe')" id="adv-tab-globe"
+              class="adv-module-btn active-adv text-[9px] px-3 py-1.5 rounded-lg bg-cyan-900/40 border border-cyan-700 text-cyan-300 flex items-center gap-1.5">
+        <i class="fas fa-globe"></i> Globe
+      </button>
+      <button onclick="loadAdvModule('wind')" id="adv-tab-wind"
+              class="adv-module-btn text-[9px] px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 flex items-center gap-1.5">
+        <i class="fas fa-wind"></i> Atmos/Ocean
+      </button>
+      <button onclick="loadAdvModule('carbon')" id="adv-tab-carbon"
+              class="adv-module-btn text-[9px] px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 flex items-center gap-1.5">
+        <i class="fas fa-cloud-arrow-up"></i> Carbon Budget
+      </button>
+      <button onclick="loadAdvModule('defo3d')" id="adv-tab-defo3d"
+              class="adv-module-btn text-[9px] px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 flex items-center gap-1.5">
+        <i class="fas fa-layer-group"></i> 3D Forest
+      </button>
+      <button onclick="loadAdvModule('seismic')" id="adv-tab-seismic"
+              class="adv-module-btn text-[9px] px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 flex items-center gap-1.5">
+        <i class="fas fa-wave-square"></i> Seismic
+      </button>
+      <button onclick="loadAdvModule('alerts')" id="adv-tab-alerts"
+              class="adv-module-btn text-[9px] px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 flex items-center gap-1.5">
+        <i class="fas fa-bell"></i> Alert Feed
+      </button>
+    </div>
+  </div>
+  <!-- Module Content Area -->
+  <div id="adv-module-content" class="min-h-64"></div>
+  `;
+
+  // Append to the satellite tab container
+  const container = document.querySelector('#tab-content > div') || tabContent;
+  container.appendChild(panel);
+
+  // Load default module
+  setTimeout(() => loadAdvModule('globe'), 100);
+}
+
+let ADV_ACTIVE_MODULE = null;
+
+function loadAdvModule(module) {
+  ADV_ACTIVE_MODULE = module;
+
+  // Update tab styles
+  document.querySelectorAll('.adv-module-btn').forEach(b => {
+    const isActive = b.id === `adv-tab-${module}`;
+    b.className = `adv-module-btn text-[9px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+      isActive ? 'bg-cyan-900/40 border border-cyan-700 text-cyan-300' : 'bg-gray-800 border border-gray-700 text-gray-400'
+    }`;
+  });
+
+  // Render module HTML
+  const content = document.getElementById('adv-module-content');
+  if (!content) return;
+
+  // Clear previous intervals
+  Object.values(ADV).forEach(m => {
+    if (m && m.interval) { clearInterval(m.interval); m.interval = null; }
+  });
+  if (SEISMIC_ANIM) { cancelAnimationFrame(SEISMIC_ANIM); SEISMIC_ANIM = null; }
+
+  const htmlFns = {
+    globe:   globeHTML,
+    wind:    windOceanHTML,
+    carbon:  carbonBudgetHTML,
+    defo3d:  defo3dHTML,
+    seismic: seismicHTML,
+    alerts:  advAlertFeedHTML,
+  };
+
+  const initFns = {
+    globe:   initGlobe,
+    wind:    initWindOcean,
+    carbon:  initCarbonBudget,
+    defo3d:  initDefo3d,
+    seismic: initSeismic,
+    alerts:  initAdvAlertFeed,
+  };
+
+  if (htmlFns[module]) {
+    content.innerHTML = htmlFns[module]();
+    setTimeout(() => {
+      if (initFns[module]) initFns[module]();
+    }, 150);
+  }
+}
+
+// Patch initSatellite again to also inject advanced modules
+const _prevInitSatellite2 = window.initSatellite;
+window.initSatellite = function() {
+  _prevInitSatellite2();
+  setTimeout(() => {
+    injectAdvancedModulesPanel();
+  }, 600);
+};
+
+// Expose globals
+window.loadAdvModule    = loadAdvModule;
+window.initGlobe        = initGlobe;
+window.refreshGlobe     = refreshGlobe;
+window.globeSetView     = globeSetView;
+window.initWindOcean    = initWindOcean;
+window.windOceanTab     = windOceanTab;
+window.initCarbonBudget = initCarbonBudget;
+window.refreshCarbonBudget = refreshCarbonBudget;
+window.initDefo3d       = initDefo3d;
+window.refreshDefo3d    = refreshDefo3d;
+window.changeDefo3dRegion = changeDefo3dRegion;
+window.initSeismic      = initSeismic;
+window.refreshSeismic   = refreshSeismic;
+window.initAdvAlertFeed = initAdvAlertFeed;
+window.filterAlerts     = filterAlerts;
+window.toggleAlertSound = toggleAlertSound;
+window.clearAllAlertsFeed = clearAllAlertsFeed;
+window.ackSingleAlert   = ackSingleAlert;
+

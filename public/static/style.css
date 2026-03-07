@@ -1162,3 +1162,645 @@ input[type=number]:focus, textarea:focus, select:focus {
   97%     { opacity: 1; }
 }
 .live-flicker { animation: valueFlicker 5s ease-in-out infinite; }
+
+/* ═══════════════════════════════════════════════════════════════
+   ADVANCED INTERACTIVE & LIVE FEATURES — v4.0
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── SSE Live Pulse Indicator ───────────────────────────────── */
+@keyframes ssePulse {
+  0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16,185,129,0.7); }
+  50%     { transform: scale(1.2); box-shadow: 0 0 0 8px rgba(16,185,129,0); }
+}
+.sse-connected  { animation: ssePulse 1.4s ease-in-out infinite; background: #10b981; }
+.sse-connecting { animation: ssePulse 0.6s ease-in-out infinite; background: #f59e0b; }
+.sse-error      { background: #ef4444; }
+
+/* ─── Alert Stream Ticker ────────────────────────────────────── */
+@keyframes alertSlideIn {
+  from { opacity: 0; transform: translateX(100%); max-height: 0; }
+  to   { opacity: 1; transform: translateX(0);    max-height: 80px; }
+}
+@keyframes alertFadeOut {
+  from { opacity: 1; transform: translateX(0);    max-height: 80px; }
+  to   { opacity: 0; transform: translateX(-20%); max-height: 0; }
+}
+.alert-item-enter { animation: alertSlideIn 0.4s cubic-bezier(0.4,0,0.2,1) forwards; }
+.alert-item-exit  { animation: alertFadeOut 0.35s cubic-bezier(0.4,0,0.2,1) forwards; }
+
+/* ─── AI Chat Bubbles ────────────────────────────────────────── */
+.chat-bubble-user {
+  background: linear-gradient(135deg, rgba(8,145,178,0.2), rgba(6,182,212,0.15));
+  border: 1px solid rgba(34,211,238,0.3);
+  border-radius: 16px 16px 4px 16px;
+  padding: 10px 14px;
+  max-width: 85%;
+  align-self: flex-end;
+  font-size: 12px;
+  color: #e2e8f0;
+  position: relative;
+}
+.chat-bubble-ai {
+  background: linear-gradient(135deg, rgba(10,18,38,0.9), rgba(15,23,42,0.95));
+  border: 1px solid rgba(139,92,246,0.25);
+  border-radius: 16px 16px 16px 4px;
+  padding: 10px 14px;
+  max-width: 90%;
+  align-self: flex-start;
+  font-size: 12px;
+  color: #cbd5e1;
+  position: relative;
+}
+.chat-bubble-ai::before {
+  content: '';
+  position: absolute;
+  left: -1px; top: -1px; right: -1px; bottom: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(139,92,246,0.15), transparent 60%);
+  pointer-events: none;
+}
+@keyframes chatTyping {
+  0%,60%,100% { transform: translateY(0); }
+  30%         { transform: translateY(-6px); }
+}
+.typing-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #8b5cf6;
+  animation: chatTyping 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+/* ─── Speedometer / Gauge ────────────────────────────────────── */
+.speedometer-needle {
+  transform-origin: 50% 90%;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.speedometer-track { fill: none; stroke: rgba(30,58,95,0.5); stroke-width: 8; }
+.speedometer-fill  { fill: none; stroke-width: 8; stroke-linecap: round;
+                      transition: stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1),
+                                  stroke 0.5s; }
+
+/* ─── CO2 Particle Canvas ────────────────────────────────────── */
+#sat-particle-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  mix-blend-mode: screen;
+}
+
+/* ─── Split-screen comparison slider ────────────────────────── */
+.split-compare-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  cursor: col-resize;
+  user-select: none;
+}
+.split-before, .split-after {
+  position: absolute;
+  inset: 0;
+}
+.split-before { overflow: hidden; }
+.split-handle {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, transparent, #22d3ee 20%, #22d3ee 80%, transparent);
+  cursor: col-resize;
+  z-index: 20;
+  transform: translateX(-50%);
+}
+.split-handle::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: rgba(2,4,8,0.9);
+  border: 2px solid #22d3ee;
+  box-shadow: 0 0 16px rgba(34,211,238,0.4);
+}
+.split-handle::after {
+  content: '◀ ▶';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 8px;
+  color: #22d3ee;
+  white-space: nowrap;
+  letter-spacing: -1px;
+}
+.split-label {
+  position: absolute;
+  bottom: 8px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  backdrop-filter: blur(8px);
+}
+.split-label-before { left: 8px; background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.4); color: #6ee7b7; }
+.split-label-after  { right: 8px; background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.4); color: #fca5a5; }
+
+/* ─── CNN Inference Progress Bar ────────────────────────────── */
+@keyframes inferenceGlow {
+  0%   { box-shadow: 0 0 6px rgba(139,92,246,0.4); }
+  50%  { box-shadow: 0 0 18px rgba(139,92,246,0.8), 0 0 40px rgba(139,92,246,0.3); }
+  100% { box-shadow: 0 0 6px rgba(139,92,246,0.4); }
+}
+.cnn-inference-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #6d28d9, #8b5cf6, #a78bfa);
+  transition: width 0.4s ease;
+  animation: inferenceGlow 1.5s ease-in-out infinite;
+}
+
+/* ─── Live Score Pulse Ring ──────────────────────────────────── */
+@keyframes scoreRing {
+  0%   { r: 36; opacity: 0.8; }
+  100% { r: 52; opacity: 0; }
+}
+.score-ring-pulse {
+  animation: scoreRing 2s ease-out infinite;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+}
+
+/* ─── Alert severity animations ──────────────────────────────── */
+@keyframes criticalBlink {
+  0%,100% { border-color: rgba(239,68,68,0.5); box-shadow: 0 0 8px rgba(239,68,68,0.2); }
+  50%     { border-color: rgba(239,68,68,0.9); box-shadow: 0 0 20px rgba(239,68,68,0.5); }
+}
+.alert-critical-blink { animation: criticalBlink 1.5s ease-in-out infinite; }
+
+/* ─── Data stream console ────────────────────────────────────── */
+.sat-console {
+  background: rgba(2,4,8,0.95);
+  border: 1px solid rgba(34,211,238,0.1);
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  overflow: hidden;
+  position: relative;
+}
+.sat-console::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 20px;
+  background: linear-gradient(180deg, rgba(2,4,8,1), transparent);
+  z-index: 2;
+  pointer-events: none;
+}
+.sat-console-line {
+  padding: 1px 10px;
+  line-height: 1.6;
+  border-bottom: 1px solid rgba(34,211,238,0.03);
+  transition: background 0.2s;
+}
+.sat-console-line:hover { background: rgba(34,211,238,0.03); }
+.sat-console-line.info    { color: #6b7280; }
+.sat-console-line.success { color: #10b981; }
+.sat-console-line.warning { color: #f59e0b; }
+.sat-console-line.error   { color: #ef4444; }
+.sat-console-line.data    { color: #22d3ee; }
+
+/* ─── Interactive pixel diff grid ───────────────────────────── */
+.pixel-diff-cell {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.3s;
+  position: relative;
+}
+.pixel-diff-cell:hover { transform: scale(1.4); z-index: 10; }
+.pixel-diff-cell.severe   { background: rgba(239,68,68,0.8); }
+.pixel-diff-cell.moderate { background: rgba(249,115,22,0.6); }
+.pixel-diff-cell.low      { background: rgba(245,158,11,0.4); }
+.pixel-diff-cell.stable   { background: rgba(16,185,129,0.2); }
+
+/* ─── Region zoom overlay ────────────────────────────────────── */
+@keyframes zoomInRegion {
+  from { transform: scale(1); }
+  to   { transform: scale(1.08); }
+}
+.region-zoom-active { animation: zoomInRegion 0.4s ease forwards; }
+
+/* ─── Live waveform ──────────────────────────────────────────── */
+.waveform-path {
+  fill: none;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+}
+
+/* ─── Alert badge counter ────────────────────────────────────── */
+.alert-counter {
+  position: absolute;
+  top: -4px; right: -4px;
+  min-width: 16px; height: 16px;
+  border-radius: 8px;
+  background: #ef4444;
+  color: white;
+  font-size: 8px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  border: 1px solid rgba(2,4,8,0.8);
+  animation: ssePulse 2s ease-in-out infinite;
+}
+
+/* ─── Score speedometer arc ──────────────────────────────────── */
+.speedometer-bg  { fill: rgba(10,18,38,0.8); }
+.speedometer-rim { fill: none; stroke: rgba(34,211,238,0.06); stroke-width: 16; }
+
+/* ─── Trend sparkline live ───────────────────────────────────── */
+.live-sparkline { overflow: hidden; }
+.live-sparkline svg { overflow: visible; }
+@keyframes sparklineScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-8px); }
+}
+.sparkline-live { animation: sparklineScroll 1s linear infinite; }
+
+/* ─── Chat panel ─────────────────────────────────────────────── */
+.sat-chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: 420px;
+}
+.sat-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34,211,238,0.15) transparent;
+}
+.sat-chat-messages::-webkit-scrollbar { width: 3px; }
+.sat-chat-messages::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.15); }
+.sat-chat-input-row {
+  padding: 10px 12px;
+  border-top: 1px solid rgba(34,211,238,0.08);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.sat-chat-input {
+  flex: 1;
+  background: rgba(10,15,30,0.8);
+  border: 1px solid rgba(34,211,238,0.15);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 11px;
+  color: #e2e8f0;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.sat-chat-input:focus { border-color: rgba(139,92,246,0.5); }
+.sat-chat-send {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6d28d9, #8b5cf6);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.sat-chat-send:hover { transform: scale(1.1); box-shadow: 0 0 16px rgba(139,92,246,0.5); }
+
+/* ─── Source chips ───────────────────────────────────────────── */
+.source-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 8px;
+  font-weight: 600;
+  background: rgba(34,211,238,0.07);
+  border: 1px solid rgba(34,211,238,0.15);
+  color: #67e8f9;
+  margin: 2px 2px 0 0;
+}
+
+/* ─── Pixel diff legend ──────────────────────────────────────── */
+.diff-legend-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 9px; color: var(--text-secondary);
+}
+.diff-legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ─── Live metrics row ───────────────────────────────────────── */
+.live-metric-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+.live-metric-card.updating {
+  border-color: rgba(34,211,238,0.4);
+  box-shadow: 0 0 16px rgba(34,211,238,0.1);
+}
+.live-metric-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--metric-color, #22d3ee);
+  opacity: 0.4;
+}
+
+/* ─── SSE data feed console ──────────────────────────────────── */
+@keyframes consoleNewLine {
+  from { opacity: 0; transform: translateY(-4px); background: rgba(34,211,238,0.05); }
+  to   { opacity: 1; transform: translateY(0);    background: transparent; }
+}
+.console-new { animation: consoleNewLine 0.3s ease-out forwards; }
+
+/* ─── Interactive tooltip box ────────────────────────────────── */
+.interactive-tooltip {
+  position: absolute;
+  background: rgba(2,4,8,0.95);
+  border: 1px solid rgba(34,211,238,0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 10px;
+  color: #e2e8f0;
+  pointer-events: none;
+  z-index: 100;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  transition: opacity 0.15s;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ADVANCED MODULES v5.0 — Globe, Wind, Carbon, Seismic, Alerts
+   ═══════════════════════════════════════════════════════════════ */
+
+/* KPI Card Small */
+.kpi-card-sm {
+  background: rgba(17,24,39,0.6);
+  border: 1px solid rgba(55,65,81,0.5);
+  border-radius: 12px;
+  padding: 10px 12px;
+  transition: all 0.2s;
+}
+.kpi-card-sm:hover { border-color: rgba(34,211,238,0.3); }
+
+/* Globe HUD badges */
+.globe-hud-badge {
+  background: rgba(5,13,26,0.85);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 9px;
+  color: #9ca3af;
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+}
+
+.globe-tooltip {
+  position: absolute;
+  background: rgba(5,13,26,0.95);
+  border: 1px solid rgba(34,211,238,0.3);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 9px;
+  color: #e2e8f0;
+  pointer-events: none;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  min-width: 150px;
+}
+
+/* Advanced Module tabs */
+.adv-module-btn {
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.adv-module-btn:hover {
+  border-color: rgba(34,211,238,0.4) !important;
+  color: #e2e8f0 !important;
+}
+
+/* Alert ticker scroll animation */
+.adv-ticker-scroll {
+  display: inline-block;
+  animation: advTickerScroll 60s linear infinite;
+  white-space: nowrap;
+}
+@keyframes advTickerScroll {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Alert new flash animation */
+@keyframes alertNewFlash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; box-shadow: 0 0 12px rgba(239,68,68,0.4); }
+}
+.alert-new-flash {
+  animation: alertNewFlash 1.5s ease-in-out 3;
+}
+
+/* Seismic wave glow */
+#seismic-wave-canvas {
+  box-shadow: inset 0 0 20px rgba(167,139,250,0.05);
+}
+
+/* Carbon budget alarm */
+.carbon-alarm {
+  animation: carbonAlarm 2s ease-in-out infinite;
+}
+@keyframes carbonAlarm {
+  0%, 100% { border-color: rgba(249,115,22,0.5); }
+  50% { border-color: rgba(249,115,22,1); box-shadow: 0 0 20px rgba(249,115,22,0.2); }
+}
+
+/* Wind canvas glow overlay */
+#wind-canvas {
+  box-shadow: inset 0 0 30px rgba(59,130,246,0.05);
+}
+
+/* Deforestation canvas */
+#defo3d-canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+#defo3d-canvas:hover {
+  box-shadow: 0 0 20px rgba(16,185,129,0.15);
+}
+
+/* Region select dropdown */
+select.text-\[9px\] option {
+  background: #1a2744;
+  color: #e2e8f0;
+}
+
+/* Alert map canvas */
+#alert-map-canvas {
+  box-shadow: inset 0 0 20px rgba(239,68,68,0.05);
+}
+
+/* Globe canvas */
+#globe-canvas {
+  display: block;
+  box-shadow: inset 0 0 40px rgba(34,211,238,0.04);
+}
+#globe-canvas:hover {
+  cursor: crosshair;
+}
+
+/* Ocean SST chart */
+#ocean-sst-chart {
+  background: transparent !important;
+}
+
+/* Deforestation popup */
+#defo3d-popup {
+  animation: popupIn 0.2s ease-out;
+}
+@keyframes popupIn {
+  from { opacity: 0; transform: scale(0.9) translateY(-4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Ticker for module titles */
+.adv-modules-header {
+  background: linear-gradient(135deg, rgba(34,211,238,0.05) 0%, rgba(167,139,250,0.05) 100%);
+  border: 1px solid rgba(34,211,238,0.1);
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+/* Globe view toggle active state */
+.globe-view-btn.active {
+  background: rgba(8,51,68,0.6);
+  border-color: rgba(34,211,238,0.7);
+  color: #22d3ee;
+  box-shadow: 0 0 8px rgba(34,211,238,0.2);
+}
+
+/* Wind-ocean tab active */
+.wo-tab-btn:hover {
+  opacity: 0.85;
+}
+
+/* Net-zero progress */
+#nz-ontrack-bar, #nz-offtrack-bar {
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Carbon budget bar animated fill */
+#cb-budget-bar {
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+#cb-budget-bar::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; bottom: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: budgetShimmer 2s linear infinite;
+}
+@keyframes budgetShimmer {
+  to { left: 200%; }
+}
+
+/* Seismic magnitude color glow */
+.mag-critical {
+  box-shadow: 0 0 12px rgba(239,68,68,0.4);
+}
+.mag-high {
+  box-shadow: 0 0 8px rgba(249,115,22,0.3);
+}
+
+/* GHG concentration bars */
+#atm-co2-bar, #atm-ch4-bar, #atm-n2o-bar, #atm-temp-bar {
+  transition: width 0.8s ease, opacity 0.3s;
+}
+
+/* Sector emission bars animated */
+#cb-sector-bars > div > div > div {
+  transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Country emission bars */
+#cb-country-bars > div > div > div {
+  transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#cb-country-bars > div:hover {
+  transform: translateX(2px);
+}
+
+/* Alert list items */
+#adv-alert-list > div {
+  transition: all 0.2s ease;
+}
+#adv-alert-list > div:hover {
+  transform: translateX(2px);
+}
+
+/* Coral bleaching bars */
+#wo-coral-list > div > div > div > div {
+  transition: width 0.6s ease;
+}
+
+/* Module content area min height */
+#adv-module-content {
+  min-height: 400px;
+}
+
+/* Responsive: full width canvases on mobile */
+@media (max-width: 640px) {
+  #globe-canvas { height: 260px !important; }
+  #wind-canvas { height: 200px !important; }
+  #defo3d-canvas { height: 220px !important; }
+  #seismic-wave-canvas { height: 60px !important; }
+  #alert-map-canvas { height: 160px !important; }
+}
+
+/* Seismic event cards hover */
+#seismic-event-list > div {
+  transition: all 0.15s;
+}
+#seismic-event-list > div:hover {
+  transform: translateX(2px);
+  background: rgba(31,41,55,0.7) !important;
+}
+
+/* Alert sound button active state */
+#alert-sound-btn.text-emerald-400 {
+  border-color: rgba(16,185,129,0.5) !important;
+  background: rgba(6,78,59,0.3) !important;
+}
+
+/* Waveform path */
+.waveform-path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+

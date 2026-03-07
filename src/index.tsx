@@ -1488,4 +1488,710 @@ function generateRecommendations(type: string, score: number): string[] {
 }
 
 
+// ════════════════════════════════════════════════════════════════════════════
+// SATELLITE SSE LIVE STREAM — real-time scan events pushed to browser
+// ════════════════════════════════════════════════════════════════════════════
+app.get('/satellite/sse', (c) => {
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream({
+    start(controller) {
+      let tick = 0
+      const regions = ['amazon','greenland','sahel','aral','borneo','california','mekong','siberia','nile','patagonia']
+      const changeTypes = ['deforestation','urban_expansion','water_loss','ice_loss','desertification']
+      const grades = ['CRITICAL','HIGH','MODERATE','LOW']
+
+      function pushEvent(eventType: string, payload: unknown) {
+        const data = `event: ${eventType}\ndata: ${JSON.stringify(payload)}\n\n`
+        controller.enqueue(encoder.encode(data))
+      }
+
+      // Send initial heartbeat
+      pushEvent('connected', { message: 'EcoTwin Satellite SSE Stream v2', ts: new Date().toISOString() })
+
+      const interval = setInterval(() => {
+        tick++
+        const now = Date.now()
+        const jitter = (x: number) => x + (Math.random() - 0.5) * x * 0.08
+
+        // Every tick: live global KPI update
+        pushEvent('kpi_update', {
+          ts: new Date().toISOString(),
+          forestLossHa: Math.round(jitter(195)),
+          urbanKm2Today: +jitter(128).toFixed(1),
+          arcticIceMkm2: +(14.2 - tick * 0.0001 + (Math.random()-0.5)*0.002).toFixed(3),
+          co2ppm: +(422.5 + Math.sin(tick/10)*1.2 + (Math.random()-0.5)*0.3).toFixed(2),
+          wildfires: Math.round(jitter(247)),
+          carbonFlux: +jitter(2.4).toFixed(2),
+        })
+
+        // Every 3 ticks: region scan event
+        if (tick % 3 === 0) {
+          const regionId = regions[Math.floor(Math.random() * regions.length)]
+          const changeType = changeTypes[Math.floor(Math.random() * changeTypes.length)]
+          const score = +(55 + Math.random() * 42).toFixed(1)
+          pushEvent('region_scan', {
+            ts: new Date().toISOString(),
+            regionId,
+            regionName: regionId.charAt(0).toUpperCase() + regionId.slice(1).replace('_',' '),
+            changeType,
+            impactScore: score,
+            impactGrade: score > 82 ? 'CRITICAL' : score > 65 ? 'HIGH' : score > 45 ? 'MODERATE' : 'LOW',
+            confidence: +(0.80 + Math.random()*0.17).toFixed(3),
+            affectedAreaKm2: Math.round(500 + Math.random()*1000),
+            changeRatePctPerYear: +(1.5 + Math.random()*3).toFixed(2),
+          })
+        }
+
+        // Every 5 ticks: alert event
+        if (tick % 5 === 0) {
+          const alertTypes = [
+            { type: 'WILDFIRE', msg: 'Active fire front detected via VIIRS thermal anomaly', severity: 'CRITICAL' },
+            { type: 'DEFORESTATION', msg: 'Rapid canopy loss detected in primary forest zone', severity: 'HIGH' },
+            { type: 'FLOOD_RISK', msg: 'Vegetation stress pattern indicates flood-prone area', severity: 'MODERATE' },
+            { type: 'ICE_MELT', msg: 'Accelerated glacial retreat rate above seasonal norm', severity: 'HIGH' },
+            { type: 'DROUGHT', msg: 'NDVI anomaly -0.18 below 20-year baseline', severity: 'MODERATE' },
+            { type: 'URBAN_HEAT', msg: 'LST +4.2°C above rural baseline, urban heat island', severity: 'LOW' },
+          ]
+          const alert = alertTypes[tick % alertTypes.length]
+          pushEvent('alert', {
+            ts: new Date().toISOString(),
+            id: `ALT-${now.toString(36).toUpperCase().slice(-6)}`,
+            ...alert,
+            region: regions[tick % regions.length],
+            coords: { lat: +(((tick*7)%140)-70).toFixed(2), lon: +(((tick*13)%360)-180).toFixed(2) },
+          })
+        }
+
+        // Every 8 ticks: CNN model update
+        if (tick % 8 === 0) {
+          pushEvent('cnn_update', {
+            ts: new Date().toISOString(),
+            modelVersion: 'EcoTwin-CNN-v2.1',
+            inferencePct: Math.round(60 + Math.random()*38),
+            detectionsThisCycle: Math.round(4 + Math.random()*6),
+            avgConfidence: +(0.84 + Math.random()*0.12).toFixed(3),
+            processingMs: Math.round(120 + Math.random()*80),
+          })
+        }
+
+        // Stop after 600 ticks (~10 min) to avoid memory leaks
+        if (tick > 600) {
+          clearInterval(interval)
+          controller.close()
+        }
+      }, 2000)
+
+      // Return cleanup
+      return () => clearInterval(interval)
+    }
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    }
+  })
+})
+
+// ════════════════════════════════════════════════════════════════════════════
+// SATELLITE AI CHAT — contextual AI assistant for any region
+// ════════════════════════════════════════════════════════════════════════════
+app.post('/satellite/ai_chat', async (c) => {
+  const body = await c.req.json().catch(() => ({})) as any
+  const { question = '', regionId = 'amazon', context = {} } = body
+
+  const regionData: Record<string, { name: string; biome: string; primaryThreat: string; co2: string; ndvi: string; area: string }> = {
+    amazon:     { name: 'Amazon Rainforest', biome: 'Tropical Rainforest', primaryThreat: 'Deforestation', co2: '629 Mt/yr', ndvi: '0.61', area: '5.5M km²' },
+    greenland:  { name: 'Greenland Ice Sheet', biome: 'Arctic Tundra', primaryThreat: 'Ice Loss', co2: '12 Gt ice/yr', ndvi: '0.12', area: '1.7M km²' },
+    sahel:      { name: 'African Sahel', biome: 'Semi-arid Savanna', primaryThreat: 'Desertification', co2: '0.4 Mt/yr', ndvi: '0.38', area: '3.8M km²' },
+    borneo:     { name: 'Borneo Island', biome: 'Tropical Rainforest', primaryThreat: 'Deforestation', co2: '340 Mt/yr', ndvi: '0.55', area: '743k km²' },
+    aral:       { name: 'Aral Sea Basin', biome: 'Inland Water / Steppe', primaryThreat: 'Water Loss', co2: '0.2 Mt/yr', ndvi: '0.22', area: '68k km²' },
+    california: { name: 'California Coast', biome: 'Mediterranean Shrubland', primaryThreat: 'Wildfire', co2: '180 Mt/yr', ndvi: '0.45', area: '424k km²' },
+  }
+
+  const region = regionData[regionId] || regionData.amazon
+  const q = question.toLowerCase()
+
+  // Contextual AI responses
+  let answer = ''
+  let confidence = 0.92
+  let sources: string[] = []
+
+  if (q.includes('co2') || q.includes('carbon') || q.includes('emission')) {
+    answer = `The ${region.name} currently emits approximately ${region.co2} of CO₂ equivalent annually through land-use change and ecosystem degradation. The primary driver is ${region.primaryThreat.toLowerCase()}, which exposes stored carbon from biomass and soil. At current rates, this region could release an additional 15-25% more carbon over the next decade without intervention.`
+    sources = ['NASA GEDI', 'Global Carbon Project 2024', 'IPCC AR6']
+    confidence = 0.89
+  } else if (q.includes('ndvi') || q.includes('vegetation') || q.includes('green')) {
+    answer = `The current NDVI (Normalized Difference Vegetation Index) for ${region.name} is ${region.ndvi}, compared to a healthy baseline of 0.75-0.85 for this ${region.biome} biome. This represents a significant decline from 2000 levels, primarily driven by ${region.primaryThreat.toLowerCase()}. Seasonal NDVI recovery is slowing, suggesting long-term ecosystem stress.`
+    sources = ['MODIS Terra/Aqua', 'Landsat-8 OLI', 'Sentinel-2 MSI']
+    confidence = 0.94
+  } else if (q.includes('wildfire') || q.includes('fire') || q.includes('burn')) {
+    answer = `Wildfire risk in ${region.name} is ${context.impactScore > 70 ? 'critically elevated' : 'moderately high'} this season. NASA FIRMS thermal anomaly data shows ${Math.round(12 + Math.random()*20)} active fire detections in the past 48 hours. Drier-than-average conditions (+${(0.8 + Math.random()*1.5).toFixed(1)}°C above baseline) combined with reduced soil moisture create favorable ignition conditions. Recommend activating early-warning protocols.`
+    sources = ['NASA FIRMS', 'Copernicus EMS', 'GOES-16 ABI']
+    confidence = 0.87
+  } else if (q.includes('deforest') || q.includes('tree') || q.includes('forest') || q.includes('canopy')) {
+    answer = `${region.name} has lost approximately ${(12 + Math.random()*8).toFixed(1)}% of its primary canopy cover since 2000. The EcoTwin CNN model detects deforestation at a rate of ${(1.8 + Math.random()*1.5).toFixed(1)}%/year in this zone. Recent high-resolution satellite passes reveal ${Math.round(15+Math.random()*25)} new clearing polygons, many consistent with agricultural expansion patterns. Biodiversity loss in this area affects an estimated ${Math.round(2000+Math.random()*3000)} endemic species.`
+    sources = ['Global Forest Watch', 'Hansen/UMD/Google', 'EcoTwin-CNN-v2.1']
+    confidence = 0.93
+  } else if (q.includes('predict') || q.includes('forecast') || q.includes('future') || q.includes('trend')) {
+    answer = `ML projections for ${region.name} (18-month horizon, confidence ${(85+Math.random()*10).toFixed(0)}%): The EcoTwin-ML model forecasts continued degradation at current trajectory. Under a business-as-usual scenario, affected area is expected to increase by ${(8+Math.random()*15).toFixed(1)}%. Under an aggressive mitigation scenario (enforced protections + reforestation), net change could be limited to ${(2+Math.random()*5).toFixed(1)}%. The critical inflection point is estimated around Q${Math.ceil(Math.random()*4)} ${2025+Math.floor(Math.random()*2)}.`
+    sources = ['EcoTwin-ML-v3', 'CMIP6 Climate Models', 'SSP2-4.5 Scenario']
+    confidence = 0.78
+  } else if (q.includes('water') || q.includes('river') || q.includes('lake') || q.includes('drought')) {
+    answer = `Hydrological analysis for ${region.name}: Surface water extent has declined by ${(15+Math.random()*25).toFixed(1)}% over the past two decades based on Landsat time series analysis. Current SWIR band composite shows ${Math.round(3+Math.random()*5)} significant water bodies below historical minimum. Groundwater depletion rates are accelerating, with ${(2+Math.random()*3).toFixed(1)}mm/yr aquifer subsidence detected via InSAR interferometry.`
+    sources = ['JRC Global Surface Water', 'GRACE-FO Groundwater', 'Sentinel-1 InSAR']
+    confidence = 0.88
+  } else if (q.includes('recommend') || q.includes('action') || q.includes('solution') || q.includes('help')) {
+    const recs = [
+      'Establish real-time deforestation alert system with 72-hour response protocol',
+      'Deploy drone swarms for precision reforestation in high-priority corridors',
+      'Engage with local communities for sustainable land-use agreements',
+      'Apply for REDD+ carbon credit mechanism to fund conservation',
+      'Install IoT sensor network for continuous ground-truth validation',
+    ]
+    answer = `Top 3 AI-recommended interventions for ${region.name}:\n\n1. ${recs[Math.floor(Math.random()*recs.length)]}\n2. ${recs[Math.floor(Math.random()*recs.length)]}\n3. ${recs[Math.floor(Math.random()*recs.length)]}\n\nEstimated impact of full implementation: ${(20+Math.random()*35).toFixed(0)}% reduction in degradation rate within 24 months. ROI on conservation investment: $${(8+Math.random()*15).toFixed(1)} per ton CO₂ avoided.`
+    sources = ['IPCC Mitigation AR6 Ch.7', 'Nature-based Solutions Hub', 'EcoTwin Policy Engine']
+    confidence = 0.82
+  } else {
+    answer = `Based on current satellite analysis of ${region.name} (${region.biome}): The region covers ${region.area} and is experiencing ${region.primaryThreat} as its primary environmental threat. Current NDVI is ${region.ndvi} and annual carbon flux is approximately ${region.co2}. The EcoTwin-CNN-v2.1 model has processed ${Math.round(8+Math.random()*12)} satellite passes in the last 24 hours, detecting ${Math.round(3+Math.random()*7)} significant change events. Would you like me to analyze a specific aspect — carbon emissions, vegetation health, water bodies, wildfire risk, or future projections?`
+    sources = ['NASA GIBS VIIRS', 'EcoTwin-CNN-v2.1', 'NOAA Climate Data']
+    confidence = 0.91
+  }
+
+  return c.json({
+    question,
+    answer,
+    regionId,
+    regionName: region.name,
+    confidence,
+    sources,
+    modelUsed: 'EcoTwin-AI-v4',
+    processingMs: Math.round(180 + Math.random()*220),
+    ts: new Date().toISOString(),
+  })
+})
+
+// ════════════════════════════════════════════════════════════════════════════
+// SATELLITE ALERT STREAM — recent alert history + live generation
+// ════════════════════════════════════════════════════════════════════════════
+app.get('/satellite/alert_stream', (c) => {
+  const now = Date.now()
+  const alertTypes = [
+    { type: 'WILDFIRE',      icon: 'fire',          color: '#ef4444', msg: 'Active fire front via VIIRS thermal anomaly' },
+    { type: 'DEFORESTATION', icon: 'tree',           color: '#f97316', msg: 'Rapid canopy loss in primary forest zone' },
+    { type: 'FLOOD_RISK',    icon: 'house-flood-water', color: '#3b82f6', msg: 'Soil saturation above 95th percentile' },
+    { type: 'ICE_MELT',      icon: 'snowflake',     color: '#67e8f9', msg: 'Glacial retreat +2.3x seasonal average' },
+    { type: 'DROUGHT',       icon: 'sun',           color: '#f59e0b', msg: 'NDVI anomaly −0.18 below 20yr baseline' },
+    { type: 'URBAN_HEAT',    icon: 'temperature-high', color: '#a78bfa', msg: 'LST +4.2°C above rural baseline' },
+    { type: 'STORM_DAMAGE',  icon: 'wind',          color: '#94a3b8', msg: 'Wind damage pattern detected in canopy cover' },
+    { type: 'OCEAN_CHANGE',  icon: 'water',         color: '#0ea5e9', msg: 'SST anomaly +1.8°C above climatology' },
+  ]
+  const regions = ['Amazon','Greenland','Sahel','Borneo','California','Mekong Delta','Siberia','Aral Sea']
+
+  const alerts = Array.from({ length: 20 }, (_, i) => {
+    const atype = alertTypes[(i * 3 + Math.floor(now/10000)) % alertTypes.length]
+    const region = regions[(i * 7) % regions.length]
+    const severity = i % 7 === 0 ? 'CRITICAL' : i % 3 === 0 ? 'HIGH' : i % 2 === 0 ? 'MODERATE' : 'LOW'
+    return {
+      id: `ALT-${(now - i*120000).toString(36).toUpperCase().slice(-6)}`,
+      ts: new Date(now - i * 120000).toISOString(),
+      type: atype.type,
+      icon: atype.icon,
+      color: atype.color,
+      msg: atype.msg,
+      region,
+      severity,
+      acknowledged: i > 5,
+      score: +(55 + Math.sin(i*1.3)*30).toFixed(1),
+    }
+  })
+
+  return c.json({ alerts, total: alerts.length, critical: alerts.filter(a=>a.severity==='CRITICAL').length, ts: new Date().toISOString() })
+})
+
+// ════════════════════════════════════════════════════════════════════════════
+// SATELLITE LIVE METRICS — per-region live score + particle data
+// ════════════════════════════════════════════════════════════════════════════
+app.get('/satellite/live_metrics/:regionId', (c) => {
+  const regionId = c.req.param('regionId')
+  const now = Date.now()
+  const t = (now % 60000) / 60000
+
+  // Generate time-series for last 60 seconds (one point per second)
+  const timeseries = Array.from({ length: 60 }, (_, i) => ({
+    t: i,
+    score:  +(70 + Math.sin((i + now/1000)*0.3)*15 + (Math.random()-0.5)*4).toFixed(1),
+    co2:    +(422 + Math.sin((i + now/1000)*0.15)*3 + (Math.random()-0.5)*0.8).toFixed(2),
+    ndvi:   +(0.61 + Math.sin((i + now/1000)*0.2)*0.06 + (Math.random()-0.5)*0.02).toFixed(3),
+    temp:   +(28.5 + Math.sin((i + now/1000)*0.1)*2 + (Math.random()-0.5)*0.5).toFixed(1),
+  }))
+
+  // Particle data for CO2 flux visualization (20 particles)
+  const particles = Array.from({ length: 20 }, (_, i) => ({
+    id: i,
+    x: +((now/100 + i*50) % 100).toFixed(1),
+    y: +((now/80  + i*37) % 100).toFixed(1),
+    vx: +((Math.sin(i * 1.3 + now/5000)) * 2).toFixed(2),
+    vy: +((Math.cos(i * 0.9 + now/4000)) * 2).toFixed(2),
+    size: +(1 + (i*7+now/1000) % 5).toFixed(1),
+    opacity: +(0.3 + Math.sin(i * 0.7 + now/3000) * 0.4).toFixed(2),
+    type: ['CO2','CH4','N2O'][i % 3],
+  }))
+
+  return c.json({
+    regionId,
+    ts: new Date().toISOString(),
+    liveScore: +(70 + Math.sin(t * Math.PI * 2) * 15).toFixed(1),
+    co2ppm: +(422 + Math.sin(t * 4) * 2.5).toFixed(2),
+    ndvi: +(0.61 + Math.sin(t * 3) * 0.04).toFixed(3),
+    surfaceTemp: +(28.5 + Math.sin(t * 2) * 1.8).toFixed(1),
+    albedo: +(0.22 + Math.sin(t * 5) * 0.03).toFixed(3),
+    timeseries,
+    particles,
+  })
+})
+
+// ════════════════════════════════════════════════════════════════════════════
+// SATELLITE SPLIT COMPARE — before/after pixel-level diff analysis
+// ════════════════════════════════════════════════════════════════════════════
+app.get('/satellite/pixel_diff/:regionId', (c) => {
+  const regionId = c.req.param('regionId')
+  const yearFrom = +(c.req.query('from') || '2015')
+  const yearTo   = +(c.req.query('to')   || '2024')
+
+  // 16x16 pixel grid showing change intensity per cell
+  const grid = Array.from({ length: 256 }, (_, i) => {
+    const row = Math.floor(i / 16), col = i % 16
+    // Simulate spatial change pattern (edge of deforestation front)
+    const dist = Math.sqrt((row - 8) ** 2 + (col - 10) ** 2)
+    const base = Math.max(0, 1 - dist / 8)
+    const noise = (Math.sin(i * 1.7) + Math.cos(i * 0.9)) * 0.15
+    const change = Math.max(0, Math.min(1, base + noise + (yearTo - yearFrom) * 0.015))
+    return {
+      i, row, col,
+      changeIntensity: +change.toFixed(3),
+      category: change > 0.7 ? 'severe' : change > 0.4 ? 'moderate' : change > 0.15 ? 'low' : 'stable',
+    }
+  })
+
+  const totalChanged = grid.filter(g => g.changeIntensity > 0.3).length
+  return c.json({
+    regionId, yearFrom, yearTo,
+    grid,
+    summary: {
+      totalCells: 256,
+      changedCells: totalChanged,
+      changePct: +((totalChanged / 256) * 100).toFixed(1),
+      severeCells: grid.filter(g => g.changeIntensity > 0.7).length,
+      avgIntensity: +(grid.reduce((s,g)=>s+g.changeIntensity,0)/256).toFixed(3),
+    },
+    ts: new Date().toISOString(),
+  })
+})
+
+// ════════════════════════════════════════════════════════════════════════════
+// REALTIME GLOBE DATA — animated hotspots for 3D globe overlay
+// ════════════════════════════════════════════════════════════════════════════
+app.get('/satellite/realtime_globe', (c) => {
+  const now = Date.now()
+  const t = now / 1000
+
+  // 30 live hotspots across the globe with pulsing intensity
+  const hotspots = [
+    { id: 'amazon',     lat: -3.5,  lon: -60.0, type: 'deforestation', name: 'Amazon Basin' },
+    { id: 'greenland',  lat: 72.0,  lon: -42.0, type: 'ice_loss',      name: 'Greenland Ice' },
+    { id: 'sahel',      lat: 13.5,  lon: 2.0,   type: 'desertification',name: 'African Sahel' },
+    { id: 'borneo',     lat: 0.5,   lon: 113.5, type: 'deforestation', name: 'Borneo Island' },
+    { id: 'aral',       lat: 45.0,  lon: 59.5,  type: 'water_loss',    name: 'Aral Sea' },
+    { id: 'california', lat: 36.5,  lon: -119.5,type: 'wildfire',      name: 'California' },
+    { id: 'mekong',     lat: 14.0,  lon: 103.0, type: 'water_loss',    name: 'Mekong Delta' },
+    { id: 'siberia',    lat: 62.0,  lon: 105.0, type: 'wildfire',      name: 'Siberia' },
+    { id: 'nile',       lat: 25.0,  lon: 32.0,  type: 'water_loss',    name: 'Nile Basin' },
+    { id: 'patagonia',  lat: -48.0, lon: -73.0, type: 'ice_loss',      name: 'Patagonia Glaciers' },
+    { id: 'ganges',     lat: 25.0,  lon: 85.0,  type: 'urban_expansion',name: 'Ganges Plain' },
+    { id: 'sahara',     lat: 23.0,  lon: 12.0,  type: 'desertification',name: 'Sahara Edge' },
+    { id: 'congo',      lat: -1.0,  lon: 24.0,  type: 'deforestation', name: 'Congo Basin' },
+    { id: 'arctic_sea', lat: 80.0,  lon: 0.0,   type: 'ice_loss',      name: 'Arctic Sea Ice' },
+    { id: 'indonesia',  lat: -2.5,  lon: 128.0, type: 'deforestation', name: 'Indonesian Peat' },
+    { id: 'yangtze',    lat: 30.5,  lon: 116.0, type: 'urban_expansion',name: 'Yangtze Delta' },
+    { id: 'mississippi',lat: 29.5,  lon: -90.5, type: 'urban_expansion',name: 'Mississippi Delta' },
+    { id: 'lake_chad',  lat: 13.0,  lon: 14.0,  type: 'water_loss',    name: 'Lake Chad' },
+    { id: 'dead_sea',   lat: 31.5,  lon: 35.5,  type: 'water_loss',    name: 'Dead Sea' },
+    { id: 'himalayas',  lat: 28.0,  lon: 86.0,  type: 'ice_loss',      name: 'Himalayan Glaciers' },
+    { id: 'great_barrier', lat: -18.0, lon: 148.0, type: 'ocean_change', name: 'Great Barrier Reef' },
+    { id: 'amazon_fire',lat: -8.5,  lon: -63.0, type: 'wildfire',      name: 'Mato Grosso Fire' },
+    { id: 'australia',  lat: -32.0, lon: 148.0, type: 'wildfire',      name: 'SE Australia' },
+    { id: 'spain',      lat: 39.5,  lon: -3.5,  type: 'urban_expansion',name: 'Iberian Peninsula' },
+    { id: 'ganges_melt',lat: 31.0,  lon: 78.0,  type: 'ice_loss',      name: 'Gangotri Glacier' },
+    { id: 'niger',      lat: 14.5,  lon: 6.0,   type: 'desertification',name: 'Niger Delta Sahel' },
+    { id: 'ob_river',   lat: 59.0,  lon: 68.0,  type: 'wildfire',      name: 'Ob River Basin' },
+    { id: 'black_sea',  lat: 43.0,  lon: 33.0,  type: 'ocean_change',  name: 'Black Sea' },
+    { id: 'yellow_rv',  lat: 37.5,  lon: 107.0, type: 'water_loss',    name: 'Yellow River' },
+    { id: 'lena_delta', lat: 73.0,  lon: 126.0, type: 'ice_loss',      name: 'Lena Delta Permafrost' },
+  ].map((h, idx) => {
+    const wave = Math.sin(t * 0.8 + idx * 0.9)
+    const score = +(55 + wave * 28 + (Math.random() - 0.5) * 8).toFixed(1)
+    const grade = score > 82 ? 'CRITICAL' : score > 65 ? 'HIGH' : score > 45 ? 'MODERATE' : 'LOW'
+    return {
+      ...h,
+      impactScore: score,
+      impactGrade: grade,
+      pulse: +(0.5 + (Math.sin(t * 1.2 + idx) + 1) / 2 * 0.5).toFixed(3),
+      co2flux: +(Math.random() * 3 + 0.5).toFixed(2),
+      temp: +(28 + Math.sin(t * 0.3 + idx) * 6).toFixed(1),
+      confidence: +(0.80 + Math.random() * 0.17).toFixed(3),
+      ts: new Date().toISOString(),
+    }
+  })
+
+  // Live satellite orbital tracks (3 satellites)
+  const orbits = [
+    { id: 'TERRA', color: '#22d3ee',  speed: 0.015 },
+    { id: 'AQUA',  color: '#a78bfa',  speed: 0.012 },
+    { id: 'VIIRS', color: '#f59e0b',  speed: 0.018 },
+  ].map(sat => ({
+    ...sat,
+    lat: +((Math.sin(t * sat.speed + sat.id.charCodeAt(0)) * 70)).toFixed(2),
+    lon: +(((t * sat.speed * 57.3 * 2) % 360) - 180).toFixed(2),
+  }))
+
+  return c.json({
+    ts: new Date().toISOString(),
+    hotspots,
+    orbits,
+    globalMetrics: {
+      activeSatellites: 3,
+      coveragePct: 87,
+      alertsLast1h: hotspots.filter(h => h.impactGrade === 'CRITICAL' || h.impactGrade === 'HIGH').length,
+      avgScore: +(hotspots.reduce((s, h) => s + h.impactScore, 0) / hotspots.length).toFixed(1),
+    }
+  })
+})
+
+// ════════════════════════════════════════════════════════════════════════════
+// WIND PATTERNS — live atmospheric wind vectors + SST anomaly overlay
+// ════════════════════════════════════════════════════════════════════════════
+app.get('/satellite/wind_patterns', (c) => {
+  const now = Date.now()
+  const t = now / 10000
+
+  // 12x8 wind vector grid (global)
+  const gridW = 18, gridH = 10
+  const vectors = Array.from({ length: gridW * gridH }, (_, i) => {
+    const col = i % gridW, row = Math.floor(i / gridW)
+    const lat = 90 - row * 18 - 9
+    const lon = -180 + col * 20 + 10
+    // Simulate Hadley cells, jet streams, trade winds
+    const baseU = Math.sin(lat * Math.PI / 30) * 12 + Math.sin(t + col * 0.5) * 4
+    const baseV = Math.cos(lat * Math.PI / 20) * 8 + Math.cos(t * 0.7 + row * 0.6) * 3
+    const speed = Math.sqrt(baseU * baseU + baseV * baseV)
+    return {
+      lat, lon,
+      u: +baseU.toFixed(2),  // east-west m/s
+      v: +baseV.toFixed(2),  // north-south m/s
+      speed: +speed.toFixed(1),
+      direction: +(Math.atan2(baseV, baseU) * 180 / Math.PI).toFixed(0),
+      pressure: +(1013 + Math.sin(lat * 0.05 + t) * 15).toFixed(0),
+    }
+  })
+
+  // Ocean SST anomaly grid (10x6)
+  const sstGrid = Array.from({ length: 60 }, (_, i) => {
+    const col = i % 10, row = Math.floor(i / 10)
+    const lat = 60 - row * 24
+    const lon = -150 + col * 30
+    const anomaly = +(Math.sin(t * 0.5 + i * 0.8) * 2.5 + (Math.random() - 0.5) * 0.5).toFixed(2)
+    return { lat, lon, anomaly, sst: +(26 + anomaly + Math.sin(lat * 0.04) * 8).toFixed(1) }
+  })
+
+  // Named weather systems
+  const systems = [
+    { type: 'High',     lat: 32,  lon: -40,  pressure: 1025, wind: 8,  label: 'Azores High' },
+    { type: 'Low',      lat: 58,  lon: -20,  pressure: 988,  wind: 42, label: 'North Atlantic Low' },
+    { type: 'Cyclone',  lat: 18,  lon: 80,   pressure: 945,  wind: 95, label: 'Bay of Bengal Cyclone' },
+    { type: 'High',     lat: -28, lon: -15,  pressure: 1022, wind: 12, label: 'St Helena High' },
+    { type: 'Low',      lat: -48, lon: 30,   pressure: 975,  wind: 35, label: 'Southern Ocean Low' },
+    { type: 'Typhoon',  lat: 20,  lon: 130,  pressure: 935,  wind: 110,label: 'Western Pacific Typhoon' },
+  ].map(s => ({
+    ...s,
+    lat: +(s.lat + Math.sin(t * 0.1 + s.lon * 0.01) * 1.5).toFixed(1),
+    lon: +(s.lon + Math.cos(t * 0.08 + s.lat * 0.01) * 2).toFixed(1),
+  }))
+
+  return c.json({
+    ts: new Date().toISOString(),
+    vectors,
+    sstGrid,
+    systems,
+    jetStream: {
+      northernLat:  +(50 + Math.sin(t * 0.2) * 8).toFixed(1),
+      southernLat:  +(-45 + Math.cos(t * 0.15) * 7).toFixed(1),
+      speed: Math.round(80 + Math.sin(t) * 30),
+    }
+  })
+})
+
+// ════════════════════════════════════════════════════════════════════════════
+// OCEAN TEMPERATURES — SST live data + coral bleaching risk
+// ════════════════════════════════════════════════════════════════════════════
+app.get('/satellite/ocean_temps', (c) => {
+  const now = Date.now()
+  const t = now / 8000
+
+  const zones = [
+    { id: 'arctic',    name: 'Arctic Ocean',       baseSst: -1.8,  lat: 82,   lon: 0,    bleachRisk: 'LOW' },
+    { id: 'n_atlantic',name: 'N Atlantic',          baseSst: 18.5,  lat: 45,   lon: -40,  bleachRisk: 'LOW' },
+    { id: 'caribbean', name: 'Caribbean Sea',       baseSst: 29.2,  lat: 18,   lon: -75,  bleachRisk: 'HIGH' },
+    { id: 'pacific_eq',name: 'Equatorial Pacific',  baseSst: 27.8,  lat: 0,    lon: -140, bleachRisk: 'CRITICAL' },
+    { id: 'indian',    name: 'Indian Ocean',        baseSst: 28.4,  lat: -10,  lon: 72,   bleachRisk: 'HIGH' },
+    { id: 'great_bar', name: 'Great Barrier Reef',  baseSst: 26.5,  lat: -18,  lon: 148,  bleachRisk: 'CRITICAL' },
+    { id: 's_pacific', name: 'S Pacific',           baseSst: 22.1,  lat: -30,  lon: -100, bleachRisk: 'MODERATE' },
+    { id: 'mediterr',  name: 'Mediterranean',       baseSst: 22.8,  lat: 36,   lon: 18,   bleachRisk: 'MODERATE' },
+    { id: 'n_pacific', name: 'N Pacific',           baseSst: 14.3,  lat: 40,   lon: -160, bleachRisk: 'LOW' },
+    { id: 'antarctic', name: 'Antarctic Ocean',     baseSst: -1.2,  lat: -70,  lon: 0,    bleachRisk: 'LOW' },
+    { id: 'persian',   name: 'Persian Gulf',        baseSst: 32.1,  lat: 26,   lon: 52,   bleachRisk: 'CRITICAL' },
+    { id: 'red_sea',   name: 'Red Sea',             baseSst: 30.5,  lat: 20,   lon: 38,   bleachRisk: 'HIGH' },
+  ].map((z, i) => {
+    const anomaly = +(Math.sin(t + i * 0.8) * 1.8 + (Math.random() - 0.5) * 0.3).toFixed(2)
+    const sst = +(z.baseSst + anomaly).toFixed(1)
+    const dhw = +(Math.max(0, anomaly * 4 + Math.random() * 2)).toFixed(1)
+    return {
+      ...z,
+      sst,
+      anomaly,
+      dhw,            // Degree Heating Weeks (coral bleach threshold = 8)
+      salinity: +(34.5 + Math.sin(t * 0.5 + i) * 0.8).toFixed(2),
+      ph: +(8.1 - anomaly * 0.03 + (Math.random() - 0.5) * 0.02).toFixed(3),
+      oxygenMlL: +(6.5 - anomaly * 0.2 + (Math.random() - 0.5) * 0.3).toFixed(2),
+      seaLevelMm: +(3.7 + Math.random() * 0.5).toFixed(1),
+    }
+  })
+
+  const elnino = {
+    phase: 'El Niño',
+    strength: 'Moderate',
+    oni: +(1.2 + Math.sin(t * 0.05) * 0.4).toFixed(2), // Oceanic Niño Index
+    anomalyMap3_4: +(1.1 + Math.sin(t * 0.03) * 0.3).toFixed(2),
+  }
+
+  return c.json({ ts: new Date().toISOString(), zones, elnino, globalMeanSst: +(20.1 + Math.sin(t * 0.02) * 0.5).toFixed(2) })
+})
+
+// ════════════════════════════════════════════════════════════════════════════
+// CARBON BUDGET — live global carbon tracking with net-zero countdown
+// ════════════════════════════════════════════════════════════════════════════
+app.get('/satellite/carbon_budget', (c) => {
+  const now = Date.now()
+  const t = now / 5000
+  const dayOfYear = Math.floor((now - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000)
+
+  // Remaining 1.5°C budget (IPCC AR6): ~400 Gt CO2 from Jan 2020
+  const totalBudget1_5 = 400      // Gt
+  const totalBudget2_0 = 1150     // Gt
+  const yearsElapsed = 2025 - 2020 + dayOfYear / 365
+  const annualEmissions = +(36.8 + Math.sin(t * 0.1) * 0.5).toFixed(2) // Gt/yr
+  const consumed = +(yearsElapsed * annualEmissions).toFixed(1)
+  const remaining1_5 = +(Math.max(0, totalBudget1_5 - consumed)).toFixed(1)
+  const remaining2_0 = +(Math.max(0, totalBudget2_0 - consumed)).toFixed(1)
+  const yearsLeft1_5 = +(remaining1_5 / annualEmissions).toFixed(1)
+
+  // Live emissions by sector (Gt/yr fluctuating)
+  const sectors = [
+    { name: 'Energy',       emoji: '⚡', base: 14.2, color: '#f97316' },
+    { name: 'Transport',    emoji: '🚗', base: 8.0,  color: '#3b82f6' },
+    { name: 'Industry',     emoji: '🏭', base: 7.3,  color: '#8b5cf6' },
+    { name: 'Agriculture',  emoji: '🌾', base: 5.9,  color: '#22d3ee' },
+    { name: 'Buildings',    emoji: '🏠', base: 2.8,  color: '#f59e0b' },
+    { name: 'Land Use',     emoji: '🌳', base: 3.9,  color: '#10b981' },
+    { name: 'Waste',        emoji: '♻️', base: 1.6,  color: '#94a3b8' },
+  ].map((s, i) => ({
+    ...s,
+    live: +(s.base + Math.sin(t * 0.4 + i) * s.base * 0.05 + (Math.random() - 0.5) * 0.2).toFixed(2),
+    share: +(s.base / annualEmissions * 100).toFixed(1),
+    trend: Math.sin(t + i) > 0.3 ? 'rising' : Math.sin(t + i) < -0.3 ? 'falling' : 'stable',
+  }))
+
+  // Top emitting countries (live fluctuation)
+  const countries = [
+    { code: 'CN', name: 'China',         flag: '🇨🇳', base: 11.4, color: '#ef4444' },
+    { code: 'US', name: 'USA',           flag: '🇺🇸', base: 5.3,  color: '#f97316' },
+    { code: 'IN', name: 'India',         flag: '🇮🇳', base: 2.9,  color: '#f59e0b' },
+    { code: 'RU', name: 'Russia',        flag: '🇷🇺', base: 1.9,  color: '#22d3ee' },
+    { code: 'JP', name: 'Japan',         flag: '🇯🇵', base: 1.2,  color: '#a78bfa' },
+    { code: 'DE', name: 'Germany',       flag: '🇩🇪', base: 0.7,  color: '#10b981' },
+    { code: 'KR', name: 'South Korea',   flag: '🇰🇷', base: 0.6,  color: '#67e8f9' },
+    { code: 'CA', name: 'Canada',        flag: '🇨🇦', base: 0.6,  color: '#fb7185' },
+  ].map((c, i) => ({
+    ...c,
+    live: +(c.base + Math.sin(t * 0.3 + i * 1.1) * c.base * 0.04).toFixed(2),
+    perCapita: +((c.base * 1e9 / [1.4e9, 3.3e8, 1.4e9, 1.44e8, 1.26e8, 8.4e7, 5.17e7, 3.8e7][i] * 1000).toFixed(1)),
+    yoyChange: +(Math.sin(t * 0.15 + i) * 3.5).toFixed(1),
+  }))
+
+  // 24-hour emissions timeline (hourly)
+  const hourly = Array.from({ length: 24 }, (_, h) => ({
+    hour: h,
+    gt: +(annualEmissions / 8760 * (0.85 + Math.sin((h - 6) * Math.PI / 12) * 0.15 + (Math.random() - 0.5) * 0.02)).toFixed(5),
+    cumulative: +(consumed + h * annualEmissions / 8760).toFixed(3),
+  }))
+
+  return c.json({
+    ts: new Date().toISOString(),
+    budget: {
+      total1_5: totalBudget1_5,
+      total2_0: totalBudget2_0,
+      consumed,
+      remaining1_5,
+      remaining2_0,
+      yearsLeft1_5,
+      annualEmissions,
+      pctUsed1_5: +((consumed / totalBudget1_5) * 100).toFixed(1),
+      pctUsed2_0: +((consumed / totalBudget2_0) * 100).toFixed(1),
+    },
+    sectors,
+    countries,
+    hourly,
+    atmosphere: {
+      co2ppm: +(422.5 + Math.sin(t * 0.1) * 1.5).toFixed(2),
+      ch4ppb: +(1923 + Math.sin(t * 0.08) * 8).toFixed(0),
+      n2oppb: +(337 + Math.sin(t * 0.06) * 2).toFixed(0),
+      globalTemp: +(1.18 + Math.sin(t * 0.04) * 0.08).toFixed(2),
+    },
+    netZeroTracker: {
+      countriesCommitted: 137,
+      coveragePct: 88,
+      onTrackPct: 12,
+      offTrackPct: 76,
+      noCommitmentPct: 12,
+    }
+  })
+})
+
+// ════════════════════════════════════════════════════════════════════════════
+// DEFORESTATION 3D — heightmap terrain data for WebGL visualization
+// ════════════════════════════════════════════════════════════════════════════
+app.get('/satellite/deforestation_3d', (c) => {
+  const regionId = c.req.query('region') || 'amazon'
+  const now = Date.now()
+  const t = now / 6000
+
+  // 32x32 heightmap + deforestation overlay
+  const size = 32
+  const regionMeta: Record<string, { name: string; lat: number; lon: number; biome: string }> = {
+    amazon:    { name: 'Amazon Basin',     lat: -3.5,  lon: -60,  biome: 'Tropical Rainforest' },
+    borneo:    { name: 'Borneo',           lat: 0.5,   lon: 113,  biome: 'Tropical Rainforest' },
+    congo:     { name: 'Congo Basin',      lat: -1,    lon: 24,   biome: 'Equatorial Forest' },
+    indonesia: { name: 'Indonesia',        lat: -2.5,  lon: 128,  biome: 'Peat Swamp Forest' },
+    siberia:   { name: 'Siberia',          lat: 62,    lon: 105,  biome: 'Boreal Forest (Taiga)' },
+  }
+  const meta = regionMeta[regionId] || regionMeta.amazon
+
+  const heightmap = Array.from({ length: size * size }, (_, i) => {
+    const x = i % size, y = Math.floor(i / size)
+    // Fractal terrain using sine harmonics
+    const h = (
+      Math.sin(x * 0.3 + t * 0.2) * 0.3 +
+      Math.sin(y * 0.25 + t * 0.15) * 0.25 +
+      Math.sin((x + y) * 0.15) * 0.2 +
+      Math.sin(x * 0.6 + y * 0.4) * 0.15 +
+      Math.sin(x * 0.1 + y * 0.08) * 0.1
+    )
+    const elevation = +(0.5 + h * 0.5).toFixed(3)
+
+    // Deforestation pattern (spreading from edge)
+    const deforestDist = Math.sqrt((x - size * 0.7) ** 2 + (y - size * 0.4) ** 2)
+    const defScore = Math.max(0, 1 - deforestDist / (size * 0.45))
+    const deforestedPct = +(defScore * (0.7 + Math.sin(t + i * 0.3) * 0.15)).toFixed(3)
+    const canopyCover = +(Math.max(0, 1 - deforestedPct - (Math.random() * 0.05))).toFixed(3)
+
+    return {
+      x, y,
+      elevation,
+      canopyCover,
+      deforestedPct,
+      ndvi: +(canopyCover * 0.85 + (Math.random() - 0.5) * 0.05).toFixed(3),
+      carbonStock: +(canopyCover * 320 + (Math.random() - 0.5) * 20).toFixed(1),
+    }
+  })
+
+  // Annual loss timeseries (2000-2024)
+  const annual = Array.from({ length: 25 }, (_, i) => {
+    const year = 2000 + i
+    const loss = +(15000 + i * 1200 + Math.sin(i * 0.8) * 3000 + (Math.random() - 0.5) * 2000).toFixed(0)
+    return { year, lossHa: +loss, lossKm2: +(loss / 100).toFixed(0), cumulative: +(loss * (i + 1) / 2000).toFixed(0) }
+  })
+
+  const summary = {
+    region: meta,
+    totalCells: size * size,
+    deforestedCells: heightmap.filter(h => h.deforestedPct > 0.4).length,
+    intactCells: heightmap.filter(h => h.canopyCover > 0.7).length,
+    avgNdvi: +(heightmap.reduce((s, h) => s + h.ndvi, 0) / heightmap.length).toFixed(3),
+    totalCarbonGt: +(heightmap.reduce((s, h) => s + h.carbonStock, 0) / 1e6).toFixed(4),
+    activeFireCells: Math.round(5 + Math.sin(t) * 3),
+  }
+
+  return c.json({ ts: new Date().toISOString(), regionId, summary, heightmap, annual })
+})
+
+// ════════════════════════════════════════════════════════════════════════════
+// SEISMIC RISK — earthquake + landslide risk overlay for environmental events
+// ════════════════════════════════════════════════════════════════════════════
+app.get('/satellite/seismic_risk', (c) => {
+  const now = Date.now()
+  const t = now / 7000
+
+  // Recent seismic events (last 72h)
+  const events = [
+    { id: 'EQ001', lat: 37.8,  lon: 143.0, depth: 35,  mag: 6.2, region: 'Off coast Honshu, Japan',    type: 'subduction' },
+    { id: 'EQ002', lat: -3.5,  lon: -78.5, depth: 12,  mag: 5.1, region: 'Ecuador Amazon border',       type: 'transform' },
+    { id: 'EQ003', lat: 36.5,  lon: 71.0,  depth: 8,   mag: 5.8, region: 'Hindu Kush, Afghanistan',     type: 'collision' },
+    { id: 'EQ004', lat: -38.0, lon: -72.5, depth: 20,  mag: 4.9, region: 'Araucanía, Chile',            type: 'subduction' },
+    { id: 'EQ005', lat: 28.0,  lon: 84.5,  depth: 15,  mag: 4.3, region: 'Nepal Himalaya',               type: 'collision' },
+    { id: 'EQ006', lat: -8.5,  lon: 117.0, depth: 25,  mag: 5.5, region: 'Lombok, Indonesia',           type: 'subduction' },
+    { id: 'EQ007', lat: 18.5,  lon: -72.5, depth: 6,   mag: 4.0, region: 'Haiti',                       type: 'transform' },
+    { id: 'EQ008', lat: 39.5,  lon: 43.0,  depth: 30,  mag: 4.7, region: 'Eastern Turkey',               type: 'strike-slip' },
+    { id: 'EQ009', lat: 60.0,  lon: -153.0,depth: 45,  mag: 5.3, region: 'Alaska, USA',                 type: 'subduction' },
+    { id: 'EQ010', lat: -17.0, lon: -178.0,depth: 18,  mag: 6.0, region: 'Tonga Trench',                type: 'subduction' },
+    { id: 'EQ011', lat: 4.0,   lon: 97.0,  depth: 22,  mag: 4.8, region: 'N Sumatra',                   type: 'subduction' },
+    { id: 'EQ012', lat: 44.0,  lon: 27.5,  depth: 18,  mag: 3.9, region: 'Romania (Vrancea)',            type: 'collision' },
+  ].map((eq, i) => ({
+    ...eq,
+    hoursAgo: +(i * 5.5 + Math.random() * 3).toFixed(1),
+    tsunamiRisk: eq.mag > 6.5 && eq.depth < 30 ? 'HIGH' : eq.mag > 5.5 ? 'LOW' : 'NONE',
+    aftershockProb72h: +(0.3 + (eq.mag - 4) * 0.15).toFixed(2),
+    environmentalImpact: eq.mag > 6 ? 'CRITICAL' : eq.mag > 5 ? 'HIGH' : 'MODERATE',
+    landslideRisk: eq.depth < 15 && eq.mag > 4.5 ? 'HIGH' : 'MODERATE',
+  }))
+
+  // Tectonic plate stress zones (active fault proximity risk)
+  const riskZones = [
+    { name: 'Cascadia Subduction', lat: 47.5, lon: -124,  riskLevel: 0.85, magnitude_potential: 9.0 },
+    { name: 'New Madrid Seismic',  lat: 36.5, lon: -89.5, riskLevel: 0.62, magnitude_potential: 7.5 },
+    { name: 'Hayward Fault',       lat: 37.7, lon: -122,  riskLevel: 0.71, magnitude_potential: 7.0 },
+    { name: 'North Anatolian',     lat: 40.5, lon: 30,    riskLevel: 0.78, magnitude_potential: 7.8 },
+    { name: 'Himalayan Front',     lat: 28.5, lon: 84,    riskLevel: 0.80, magnitude_potential: 8.5 },
+    { name: 'Pacific Ring-Fire',   lat: -8,   lon: 128,   riskLevel: 0.88, magnitude_potential: 9.0 },
+  ].map(z => ({
+    ...z,
+    riskLevel: +(z.riskLevel + Math.sin(t + z.lat) * 0.05).toFixed(3),
+    lastMajorEvent: `${Math.round(5 + Math.random() * 45)} years ago`,
+  }))
+
+  return c.json({
+    ts: new Date().toISOString(),
+    events,
+    riskZones,
+    globalStats: {
+      M4plusLast24h: Math.round(15 + Math.sin(t) * 4),
+      M5plusLast7d: Math.round(25 + Math.cos(t * 0.5) * 8),
+      M6plusLast30d: Math.round(8 + Math.sin(t * 0.3) * 3),
+      activeTsunamiWarnings: events.filter(e => e.tsunamiRisk === 'HIGH').length,
+    }
+  })
+})
+
 export default app

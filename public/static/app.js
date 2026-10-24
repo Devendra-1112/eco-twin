@@ -46,13 +46,13 @@ function startSSE() {
         const d = JSON.parse(e.data);
         // Update live ticker bar with SSE data
         updateTickerFromSSE(d);
-      } catch {}
+      } catch { }
     };
     ST.sseSource.onerror = () => {
       // Auto-reconnect after 5s
       setTimeout(() => { if (ST.activeTab !== 'none') startSSE(); }, 5000);
     };
-  } catch {}
+  } catch { }
 }
 
 function updateTickerFromSSE(d) {
@@ -86,29 +86,29 @@ async function updateGlobalTicker() {
     renderTickerBar(d);
     // Also update dashboard KPI counters if on dashboard
     if (ST.activeTab === 'dashboard') updateDashboardLiveKPIs(d);
-  } catch {}
+  } catch { }
 }
 
 function renderTickerBar(d) {
   const bar = document.getElementById('live-ticker-bar');
   if (!bar) return;
   const items = [
-    { id:'ticker-co2ppm', icon:'fa-cloud', label:'CO₂', value: d.globalCO2ppm + ' ppm', color: d.globalCO2ppm > 422 ? 'text-red-400' : 'text-yellow-400' },
-    { id:'ticker-temp', icon:'fa-thermometer-half', label:'Temp Δ', value: '+' + d.globalTemp + '°C', color: d.globalTemp > 1.2 ? 'text-orange-400' : 'text-yellow-400' },
-    { id:'ticker-carbon-credit', icon:'fa-euro-sign', label:'EU ETS', value: '€' + d.carbonCreditEUR + '/t', color: 'text-emerald-400' },
-    { id:'ticker-renewable-idx', icon:'fa-solar-panel', label:'Renew.Idx', value: d.renewableIndex, color: 'text-cyan-400' },
-    { id:'ticker-fossil-idx', icon:'fa-industry', label:'Fossil Idx', value: d.fossilIndex, color: d.fossilIndex > 100 ? 'text-red-400' : 'text-gray-400' },
-    { id:'ticker-solar', icon:'fa-sun', label:'Solar', value: (+d.solarCapacity).toLocaleString() + ' GW', color: 'text-yellow-400' },
-    { id:'ticker-wind', icon:'fa-wind', label:'Wind', value: (+d.windCapacity).toLocaleString() + ' GW', color: 'text-blue-400' },
-    { id:'ticker-renew-share', icon:'fa-leaf', label:'Renew%', value: d.renewableShare + '%', color: 'text-emerald-400' },
-    { id:'ticker-ocean-ph', icon:'fa-water', label:'Ocean pH', value: d.oceanPh, color: d.oceanPh < 8.05 ? 'text-red-400' : 'text-blue-400' },
-    { id:'ticker-energy', icon:'fa-bolt', label:'Live Energy', value: (ST.tickerData?.energy || '—'), color: 'text-yellow-300' },
+    { id: 'ticker-co2ppm', icon: 'fa-cloud', label: 'CO₂', value: d.globalCO2ppm + ' ppm', color: d.globalCO2ppm > 422 ? 'text-red-400' : 'text-yellow-400' },
+    { id: 'ticker-temp', icon: 'fa-thermometer-half', label: 'Temp Δ', value: '+' + d.globalTemp + '°C', color: d.globalTemp > 1.2 ? 'text-orange-400' : 'text-yellow-400' },
+    { id: 'ticker-carbon-credit', icon: 'fa-euro-sign', label: 'EU ETS', value: '€' + d.carbonCreditEUR + '/t', color: 'text-emerald-400' },
+    { id: 'ticker-renewable-idx', icon: 'fa-solar-panel', label: 'Renew. Idx', value: d.renewableIndex, color: 'text-cyan-400' },
+    { id: 'ticker-fossil-idx', icon: 'fa-industry', label: 'Fossil Idx', value: d.fossilIndex, color: d.fossilIndex > 100 ? 'text-red-400' : 'text-gray-400' },
+    { id: 'ticker-solar', icon: 'fa-sun', label: 'Solar', value: (+d.solarCapacity).toLocaleString() + ' GW', color: 'text-yellow-400' },
+    { id: 'ticker-wind', icon: 'fa-wind', label: 'Wind', value: (+d.windCapacity).toLocaleString() + ' GW', color: 'text-blue-400' },
+    { id: 'ticker-renew-share', icon: 'fa-leaf', label: 'Renewable %', value: d.renewableShare + '%', color: 'text-emerald-400' },
+    { id: 'ticker-ocean-ph', icon: 'fa-water', label: 'Ocean pH', value: d.oceanPh, color: d.oceanPh < 8.05 ? 'text-red-400' : 'text-blue-400' },
+    { id: 'ticker-energy', icon: 'fa-bolt', label: 'Live Energy', value: (ST.tickerData?.energy || '—') + ' kWh', color: 'text-yellow-300' },
   ];
-  bar.innerHTML = items.map(it => `
-    <span class="flex items-center gap-1 flex-none px-3 py-1 border-r border-gray-800/60">
-      <i class="fas ${it.icon} text-[9px] ${it.color}"></i>
-      <span class="text-[9px] text-gray-500">${it.label}:</span>
-      <span id="${it.id}" class="text-[9px] font-bold ${it.color} transition-colors duration-700">${it.value}</span>
+  bar.innerHTML = '<div class="flex items-center gap-0.5 px-2 flex-none border-r border-gray-800/40"><span class="text-[9px] text-emerald-500 font-bold tracking-widest uppercase opacity-70">LIVE</span><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-1"></span></div>' + items.map(it => `
+    <span class="ticker-item flex-none" id="item-wrap-${it.id}">
+      <i class="fas ${it.icon} text-[9px] ${it.color} opacity-70"></i>
+      <span class="ticker-label text-gray-500">${it.label}:</span>
+      <span id="${it.id}" class="ticker-val ${it.color} transition-colors duration-500">${it.value}</span>
     </span>`).join('');
 }
 
@@ -118,8 +118,8 @@ function updateDashboardLiveKPIs(d) {
   const renEl = document.getElementById('kpi-renewable-live');
   const co2ppmEl = document.getElementById('kpi-co2ppm-live');
   const ccEl = document.getElementById('kpi-carbon-credit-live');
-  if (co2El) animateValue(co2El, parseFloat(co2El.dataset.val||'6.2'), 6.2 + (Math.random()-0.5)*0.1, 800, 2);
-  if (renEl) animateValue(renEl, parseFloat(renEl.dataset.val||'40'), d.renewableShare, 800, 1);
+  if (co2El) animateValue(co2El, parseFloat(co2El.dataset.val || '6.2'), 6.2 + (Math.random() - 0.5) * 0.1, 800, 2);
+  if (renEl) animateValue(renEl, parseFloat(renEl.dataset.val || '40'), d.renewableShare, 800, 1);
   if (co2ppmEl) { co2ppmEl.textContent = d.globalCO2ppm; co2ppmEl.dataset.val = d.globalCO2ppm; }
   if (ccEl) { ccEl.textContent = '€' + d.carbonCreditEUR; ccEl.dataset.val = d.carbonCreditEUR; }
 }
@@ -138,54 +138,66 @@ function animateValue(el, start, end, duration, decimals) {
 
 // ─── Country Coords for Globe ─────────────────────────────────────────────────
 const CC = {
-  USA:{lat:37.09,lon:-95.71},CHN:{lat:35.86,lon:104.19},IND:{lat:20.59,lon:78.96},
-  DEU:{lat:51.16,lon:10.45},NOR:{lat:60.47,lon:8.46},BRA:{lat:-14.23,lon:-51.92},
-  RUS:{lat:61.52,lon:105.31},AUS:{lat:-25.27,lon:133.77},JPN:{lat:36.20,lon:138.25},
-  FRA:{lat:46.22,lon:2.21},CAN:{lat:56.13,lon:-106.34},GBR:{lat:55.37,lon:-3.43},
-  SWE:{lat:60.12,lon:18.64},DNK:{lat:56.26,lon:9.50},ZAF:{lat:-30.55,lon:22.93},
-  NGA:{lat:9.08,lon:8.67},MEX:{lat:23.63,lon:-102.55},IDN:{lat:-0.78,lon:113.92},
-  SAU:{lat:23.88,lon:45.07},KOR:{lat:35.90,lon:127.76},TUR:{lat:38.96,lon:35.24},
-  ESP:{lat:40.46,lon:-3.74},ITA:{lat:41.87,lon:12.56},NLD:{lat:52.13,lon:5.29},
-  CHE:{lat:46.81,lon:8.22},FIN:{lat:61.92,lon:25.74},NZL:{lat:-40.90,lon:174.88},
-  ISL:{lat:64.96,lon:-19.02},AUT:{lat:47.51,lon:14.55},PRT:{lat:39.39,lon:-8.22},
-  ARG:{lat:-38.41,lon:-63.61},EGY:{lat:26.82,lon:30.80},CHL:{lat:-35.67,lon:-71.54},
-  KEN:{lat:0.02,lon:37.90},ETH:{lat:9.14,lon:40.49},MAR:{lat:31.79,lon:-7.09},
-  IRN:{lat:32.42,lon:53.68},PAK:{lat:30.37,lon:69.34},BGD:{lat:23.68,lon:90.35},
-  VNM:{lat:14.06,lon:108.27},THA:{lat:15.87,lon:100.99},POL:{lat:51.91,lon:19.14},
-  SGP:{lat:1.35,lon:103.81},PHL:{lat:12.87,lon:121.77},MYS:{lat:4.21,lon:101.97},
-  COL:{lat:4.57,lon:-74.29},PER:{lat:-9.19,lon:-75.01},GRC:{lat:39.07,lon:21.82},
+  USA: { lat: 37.09, lon: -95.71 }, CHN: { lat: 35.86, lon: 104.19 }, IND: { lat: 20.59, lon: 78.96 },
+  DEU: { lat: 51.16, lon: 10.45 }, NOR: { lat: 60.47, lon: 8.46 }, BRA: { lat: -14.23, lon: -51.92 },
+  RUS: { lat: 61.52, lon: 105.31 }, AUS: { lat: -25.27, lon: 133.77 }, JPN: { lat: 36.20, lon: 138.25 },
+  FRA: { lat: 46.22, lon: 2.21 }, CAN: { lat: 56.13, lon: -106.34 }, GBR: { lat: 55.37, lon: -3.43 },
+  SWE: { lat: 60.12, lon: 18.64 }, DNK: { lat: 56.26, lon: 9.50 }, ZAF: { lat: -30.55, lon: 22.93 },
+  NGA: { lat: 9.08, lon: 8.67 }, MEX: { lat: 23.63, lon: -102.55 }, IDN: { lat: -0.78, lon: 113.92 },
+  SAU: { lat: 23.88, lon: 45.07 }, KOR: { lat: 35.90, lon: 127.76 }, TUR: { lat: 38.96, lon: 35.24 },
+  ESP: { lat: 40.46, lon: -3.74 }, ITA: { lat: 41.87, lon: 12.56 }, NLD: { lat: 52.13, lon: 5.29 },
+  CHE: { lat: 46.81, lon: 8.22 }, FIN: { lat: 61.92, lon: 25.74 }, NZL: { lat: -40.90, lon: 174.88 },
+  ISL: { lat: 64.96, lon: -19.02 }, AUT: { lat: 47.51, lon: 14.55 }, PRT: { lat: 39.39, lon: -8.22 },
+  ARG: { lat: -38.41, lon: -63.61 }, EGY: { lat: 26.82, lon: 30.80 }, CHL: { lat: -35.67, lon: -71.54 },
+  KEN: { lat: 0.02, lon: 37.90 }, ETH: { lat: 9.14, lon: 40.49 }, MAR: { lat: 31.79, lon: -7.09 },
+  IRN: { lat: 32.42, lon: 53.68 }, PAK: { lat: 30.37, lon: 69.34 }, BGD: { lat: 23.68, lon: 90.35 },
+  VNM: { lat: 14.06, lon: 108.27 }, THA: { lat: 15.87, lon: 100.99 }, POL: { lat: 51.91, lon: 19.14 },
+  SGP: { lat: 1.35, lon: 103.81 }, PHL: { lat: 12.87, lon: 121.77 }, MYS: { lat: 4.21, lon: 101.97 },
+  COL: { lat: 4.57, lon: -74.29 }, PER: { lat: -9.19, lon: -75.01 }, GRC: { lat: 39.07, lon: 21.82 },
 };
 
 // ─── Utility Helpers ──────────────────────────────────────────────────────────
-const scoreColor  = s => s>=75?'#10b981':s>=50?'#f59e0b':'#ef4444';
-const scoreLabel  = s => s>=75?t('sustainable'):s>=50?t('moderate'):t('critical');
-const scoreGrade  = s => s>=85?'A+':s>=75?'A':s>=65?'B':s>=55?'C':s>=45?'D':'F';
-const clamp = (v,lo,hi) => Math.max(lo,Math.min(hi,v));
+const scoreColor = s => s >= 75 ? '#10b981' : s >= 50 ? '#f59e0b' : '#ef4444';
+const scoreLabel = s => s >= 75 ? t('sustainable') : s >= 50 ? t('moderate') : t('critical');
+const scoreGrade = s => s >= 85 ? 'A+' : s >= 75 ? 'A' : s >= 65 ? 'B' : s >= 55 ? 'C' : s >= 45 ? 'D' : 'F';
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const t = (key) => ST.i18n[key] || key;
-const authHeaders = () => ST.token ? {'Authorization':`Bearer ${ST.token}`,'Content-Type':'application/json'} : {'Content-Type':'application/json'};
-function hexToRgb(hex){const r=parseInt(hex.slice(1,3),16)/255,g=parseInt(hex.slice(3,5),16)/255,b=parseInt(hex.slice(5,7),16)/255;return[r,g,b];}
-function toast(msg,type='info'){
-  const el=document.createElement('div');
-  const colors={info:'bg-blue-800 border-blue-600',success:'bg-emerald-800 border-emerald-600',error:'bg-red-800 border-red-600',warn:'bg-yellow-800 border-yellow-600'};
-  el.className=`pointer-events-auto px-4 py-3 rounded-lg border text-xs text-white shadow-2xl max-w-xs ${colors[type]||colors.info} toast-item`;
-  el.innerHTML=`<div class="flex items-start gap-2"><i class="fas ${type==='success'?'fa-check-circle text-emerald-400':type==='error'?'fa-circle-xmark text-red-400':type==='warn'?'fa-triangle-exclamation text-yellow-400':'fa-circle-info text-blue-400'} mt-0.5"></i><span>${msg}</span></div>`;
-  document.getElementById('toast-container').appendChild(el);
-  setTimeout(()=>el.remove(),4000);
+const authHeaders = () => ST.token ? { 'Authorization': `Bearer ${ST.token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+function hexToRgb(hex) { const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255; return [r, g, b]; }
+function provenanceBadge(tier, source = '', lastUpdated = '') {
+  const tiers = {
+    live: { cls: 'et-prov-live', label: 'Live external data' },
+    retrieved: { cls: 'et-prov-retrieved', label: 'Retrieved external data' },
+    calculated: { cls: 'et-prov-calculated', label: 'Calculated estimate' },
+    heuristic: { cls: 'et-prov-heuristic', label: 'Heuristic result' },
+    simulated: { cls: 'et-prov-simulated', label: 'Simulated demo data' },
+  };
+  const item = tiers[tier] || tiers.calculated;
+  const tip = [item.label, source ? `Source: ${source}` : '', lastUpdated ? `Updated: ${lastUpdated}` : ''].filter(Boolean).join(' · ');
+  return `<span class="et-provenance-badge ${item.cls}" title="${tip}">● ${item.label}${source ? ' (' + source + ')' : ''}</span>`;
 }
-function showModal(html){const ov=document.getElementById('modal-overlay');ov.classList.remove('hidden');ov.innerHTML=`<div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl relative">${html}</div>`;ov.onclick=e=>{if(e.target===ov)closeModal()};}
-function closeModal(){document.getElementById('modal-overlay').classList.add('hidden');}
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  const colors = { info: 'bg-blue-800 border-blue-600', success: 'bg-emerald-800 border-emerald-600', error: 'bg-red-800 border-red-600', warn: 'bg-yellow-800 border-yellow-600' };
+  el.className = `pointer-events-auto px-4 py-3 rounded-lg border text-xs text-white shadow-2xl max-w-xs ${colors[type] || colors.info} toast-item`;
+  el.innerHTML = `<div class="flex items-start gap-2"><i class="fas ${type === 'success' ? 'fa-check-circle text-emerald-400' : type === 'error' ? 'fa-circle-xmark text-red-400' : type === 'warn' ? 'fa-triangle-exclamation text-yellow-400' : 'fa-circle-info text-blue-400'} mt-0.5"></i><span>${msg}</span></div>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+function showModal(html) { const ov = document.getElementById('modal-overlay'); ov.classList.remove('hidden'); ov.innerHTML = `<div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl relative">${html}</div>`; ov.onclick = e => { if (e.target === ov) closeModal() }; }
+function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
 
 // ─── i18n Load ────────────────────────────────────────────────────────────────
-async function loadI18n(lang){
-  try{const r=await fetch(`/i18n/${lang}`);ST.i18n=await r.json();}
-  catch(e){ST.i18n={};}
-  ST.i18n.sustainable='Sustainable';ST.i18n.moderate='Moderate';ST.i18n.critical='Critical';
+async function loadI18n(lang) {
+  try { const r = await fetch(`/i18n/${lang}`); ST.i18n = await r.json(); }
+  catch (e) { ST.i18n = {}; }
+  ST.i18n.sustainable = 'Sustainable'; ST.i18n.moderate = 'Moderate'; ST.i18n.critical = 'Critical';
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // AUTH SYSTEM
 // ════════════════════════════════════════════════════════════════════════════
-function showLoginModal(){
+function showLoginModal() {
   showModal(`
     <button onclick="closeModal()" class="absolute top-3 right-3 text-gray-500 hover:text-white"><i class="fas fa-xmark"></i></button>
     <div class="text-center mb-6">
@@ -218,29 +230,35 @@ function showLoginModal(){
     </div>`);
 }
 
-function togglePassVis(){const inp=document.getElementById('auth-pass'),ico=document.getElementById('pass-eye-icon');
-  if(inp.type==='password'){inp.type='text';ico.classList.replace('fa-eye','fa-eye-slash');}
-  else{inp.type='password';ico.classList.replace('fa-eye-slash','fa-eye');}}
+function togglePassVis() {
+  const inp = document.getElementById('auth-pass'), ico = document.getElementById('pass-eye-icon');
+  if (inp.type === 'password') { inp.type = 'text'; ico.classList.replace('fa-eye', 'fa-eye-slash'); }
+  else { inp.type = 'password'; ico.classList.replace('fa-eye-slash', 'fa-eye'); }
+}
 
-async function doLogin(){
-  const btn=document.getElementById('login-btn');
-  btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Signing in...'; btn.disabled=true;
-  const email=document.getElementById('auth-email').value;
-  const pass=document.getElementById('auth-pass').value;
-  const r=await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
-  const d=await r.json();
-  if(!r.ok){
-    const err=document.getElementById('auth-error');err.textContent=d.error||'Login failed';err.classList.remove('hidden');
-    btn.innerHTML=`<i class="fas fa-sign-in-alt"></i> ${t('login')}`; btn.disabled=false; return;
+async function doLogin() {
+  const btn = document.getElementById('login-btn');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...'; btn.disabled = true;
+  const email = document.getElementById('auth-email').value;
+  const pass = document.getElementById('auth-pass').value;
+  const r = await fetch('/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: pass }) });
+  const d = await r.json();
+  if (!r.ok) {
+    if (d.needsOtp) {
+      showOtpModal(email);
+      return;
+    }
+    const err = document.getElementById('auth-error'); err.textContent = d.error || 'Login failed'; err.classList.remove('hidden');
+    btn.innerHTML = `<i class="fas fa-sign-in-alt"></i> ${t('login')}`; btn.disabled = false; return;
   }
-  ST.token=d.token; ST.user=d.user;
-  localStorage.setItem('ecotwin_token',d.token); localStorage.setItem('ecotwin_user',JSON.stringify(d.user));
-  if(d.user.lang&&d.user.lang!==ST.lang){ST.lang=d.user.lang;localStorage.setItem('ecotwin_lang',d.user.lang);}
-  closeModal(); toast(`Welcome back, ${d.user.name}!`,'success');
+  ST.token = d.token; ST.user = d.user;
+  localStorage.setItem('ecotwin_token', d.token); localStorage.setItem('ecotwin_user', JSON.stringify(d.user));
+  if (d.user.lang && d.user.lang !== ST.lang) { ST.lang = d.user.lang; localStorage.setItem('ecotwin_lang', d.user.lang); }
+  closeModal(); toast(`Welcome back, ${d.user.name}!`, 'success');
   renderShell();
 }
 
-function showRegisterModal(){
+function showRegisterModal() {
   showModal(`
     <button onclick="closeModal()" class="absolute top-3 right-3 text-gray-500 hover:text-white"><i class="fas fa-xmark"></i></button>
     <h2 class="text-lg font-bold text-cyan-300 mb-4 text-center">${t('register')} — EcoTwin</h2>
@@ -263,20 +281,24 @@ function showRegisterModal(){
     </div>`);
 }
 
-async function doRegister(){
-  const btn=document.getElementById('reg-btn');
-  btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>...'; btn.disabled=true;
-  const body={name:document.getElementById('reg-name').value,email:document.getElementById('reg-email').value,
-    password:document.getElementById('reg-pass').value,org:document.getElementById('reg-org').value,
-    lang:document.getElementById('reg-lang').value};
-  const r=await fetch('/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  const d=await r.json();
-  if(!r.ok){const err=document.getElementById('reg-error');err.textContent=d.error||'Error';err.classList.remove('hidden');
-    btn.innerHTML='<i class="fas fa-user-plus"></i> Create Account'; btn.disabled=false; return;}
-  showOtpModal(body.email, d.otp);
+async function doRegister() {
+  const btn = document.getElementById('reg-btn');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...'; btn.disabled = true;
+  const body = {
+    name: document.getElementById('reg-name').value, email: document.getElementById('reg-email').value,
+    password: document.getElementById('reg-pass').value, org: document.getElementById('reg-org').value,
+    lang: document.getElementById('reg-lang').value
+  };
+  const r = await fetch('/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const d = await r.json();
+  if (!r.ok) {
+    const err = document.getElementById('reg-error'); err.textContent = d.error || 'Error'; err.classList.remove('hidden');
+    btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account'; btn.disabled = false; return;
+  }
+  showOtpModal(body.email);
 }
 
-function showOtpModal(email, demoOtp){
+function showOtpModal(email) {
   showModal(`
     <button onclick="closeModal()" class="absolute top-3 right-3 text-gray-500 hover:text-white"><i class="fas fa-xmark"></i></button>
     <div class="text-center mb-4">
@@ -284,9 +306,9 @@ function showOtpModal(email, demoOtp){
       <h2 class="text-base font-bold text-cyan-300">Email Verification</h2>
       <p class="text-xs text-gray-400 mt-1">OTP sent to <strong>${email}</strong></p>
     </div>
-    <div class="bg-emerald-900/30 border border-emerald-700/50 rounded-lg p-3 mb-4 text-center">
-      <p class="text-xs text-emerald-300">Demo OTP (shown for testing):</p>
-      <p class="text-2xl font-black text-emerald-400 tracking-widest mt-1">${demoOtp||'------'}</p>
+    <div class="bg-cyan-900/30 border border-cyan-700/50 rounded-lg p-3 mb-4 text-center">
+      <p class="text-xs text-cyan-300">Verification Code</p>
+      <p class="text-[11px] text-gray-300 mt-1">Verification code sent. In local dev mode, check your server terminal console.</p>
     </div>
     <div class="space-y-3">
       <input id="otp-input" type="text" placeholder="Enter 6-digit OTP" maxlength="6"
@@ -296,78 +318,98 @@ function showOtpModal(email, demoOtp){
               class="w-full py-2.5 rounded-lg bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-bold text-sm hover:opacity-90">
         Verify OTP & Login
       </button>
+      <div class="flex justify-between items-center text-xs pt-1 px-1">
+        <button onclick="doResendOtp('${email}')" type="button" class="text-cyan-400 hover:text-cyan-300 underline"><i class="fas fa-rotate mr-1"></i>Resend Code</button>
+        <button onclick="closeModal()" type="button" class="text-gray-400 hover:text-gray-200">Cancel</button>
+      </div>
     </div>`);
 }
 
-async function doVerifyOtp(email){
-  const otp=document.getElementById('otp-input').value.trim();
-  const btn=document.getElementById('otp-btn');btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>...';btn.disabled=true;
-  const r=await fetch('/auth/verify-otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,otp})});
-  const d=await r.json();
-  if(!r.ok){const err=document.getElementById('otp-error');err.textContent=d.error||'Invalid OTP';err.classList.remove('hidden');
-    btn.innerHTML='Verify OTP & Login';btn.disabled=false;return;}
-  ST.token=d.token;ST.user=d.user;
-  localStorage.setItem('ecotwin_token',d.token);localStorage.setItem('ecotwin_user',JSON.stringify(d.user));
-  closeModal();toast('Account verified! Welcome to EcoTwin.','success');renderShell();
+async function doResendOtp(email) {
+  try {
+    const r = await fetch('/auth/resend-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const d = await r.json();
+    toast(d.message || 'Verification code resent.', 'info');
+  } catch (e) {
+    toast('Failed to resend code', 'error');
+  }
 }
 
-async function doLogout(){
-  await fetch('/auth/logout',{method:'POST',headers:authHeaders()});
-  ST.token=null;ST.user=null;
-  localStorage.removeItem('ecotwin_token');localStorage.removeItem('ecotwin_user');
-  toast('Logged out successfully.','info');renderShell();
+async function doVerifyOtp(email) {
+  const otp = document.getElementById('otp-input').value.trim();
+  const btn = document.getElementById('otp-btn'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...'; btn.disabled = true;
+  const r = await fetch('/auth/verify-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, otp }) });
+  const d = await r.json();
+  if (!r.ok) {
+    const err = document.getElementById('otp-error'); err.textContent = d.error || 'Invalid OTP'; err.classList.remove('hidden');
+    btn.innerHTML = 'Verify OTP & Login'; btn.disabled = false; return;
+  }
+  ST.token = d.token; ST.user = d.user;
+  localStorage.setItem('ecotwin_token', d.token); localStorage.setItem('ecotwin_user', JSON.stringify(d.user));
+  closeModal(); toast('Account verified! Welcome to EcoTwin.', 'success'); renderShell();
+}
+
+async function doLogout() {
+  await fetch('/auth/logout', { method: 'POST', headers: authHeaders() });
+  ST.token = null; ST.user = null;
+  localStorage.removeItem('ecotwin_token'); localStorage.removeItem('ecotwin_user');
+  toast('Logged out successfully.', 'info'); renderShell();
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // SHELL & NAV
 // ════════════════════════════════════════════════════════════════════════════
 const NAV_TABS = [
-  ['dashboard','fa-chart-line','dashboard'],
-  ['map','fa-earth-americas','worldMap'],
-  ['realtime','fa-signal','realtime'],
-  ['simulator','fa-sliders','simulator'],
-  ['compare','fa-code-compare','compare'],
-  ['shap','fa-magnifying-glass-chart','shap'],
-  ['rl','fa-brain','rlOptimizer'],
-  ['anomaly','fa-triangle-exclamation','anomaly'],
-  ['globe3d','fa-globe','globe3d'],
-  ['sdg','fa-bullseye','sdgTracker'],
-  ['history','fa-clock-rotate-left','history'],
-  ['analytics','fa-chart-bar','analytics'],
-  ['risk','fa-shield-virus','riskTab'],
-  ['carbon','fa-fire','carbonTab'],
-  ['cities','fa-building-columns','citiesTab'],
-  ['policy','fa-scale-balanced','policyTab'],
-  ['market','fa-chart-candlestick','marketTab'],
-  ['news','fa-newspaper','newsTab'],
-  ['ai','fa-comments','askAI'],
-  ['satellite','fa-satellite','satelliteTab'],
-  ['threat','fa-radiation','threatTab'],
-  ['health','fa-heart-pulse','healthTab'],
-  ['race','fa-ranking-star','raceTab'],
-  ['admin','fa-shield-halved','admin'],
+  ['dashboard', 'fa-chart-line', 'dashboard'],
+  ['map', 'fa-earth-americas', 'worldMap'],
+  ['realtime', 'fa-signal', 'realtime'],
+  ['simulator', 'fa-sliders', 'simulator'],
+  ['compare', 'fa-code-compare', 'compare'],
+  ['shap', 'fa-magnifying-glass-chart', 'shap'],
+  ['rl', 'fa-brain', 'rlOptimizer'],
+  ['anomaly', 'fa-triangle-exclamation', 'anomaly'],
+  ['globe3d', 'fa-globe', 'globe3d'],
+  ['sdg', 'fa-bullseye', 'sdgTracker'],
+  ['history', 'fa-clock-rotate-left', 'history'],
+  ['analytics', 'fa-chart-bar', 'analytics'],
+  ['risk', 'fa-shield-virus', 'riskTab'],
+  ['carbon', 'fa-fire', 'carbonTab'],
+  ['cities', 'fa-building-columns', 'citiesTab'],
+  ['policy', 'fa-scale-balanced', 'policyTab'],
+  ['market', 'fa-chart-candlestick', 'marketTab'],
+  ['news', 'fa-newspaper', 'newsTab'],
+  ['ai', 'fa-comments', 'askAI'],
+  ['satellite', 'fa-satellite', 'satelliteTab'],
+  ['threat', 'fa-radiation', 'threatTab'],
+  ['health', 'fa-heart-pulse', 'healthTab'],
+  ['race', 'fa-ranking-star', 'raceTab'],
+  ['admin', 'fa-shield-halved', 'admin'],
 ];
 
-function renderShell(){
-  const isRTL = ST.lang==='ar';
-  document.getElementById('html-root').setAttribute('dir', isRTL?'rtl':'ltr');
+function renderShell() {
+  const isRTL = ST.lang === 'ar';
+  document.getElementById('html-root').setAttribute('dir', isRTL ? 'rtl' : 'ltr');
   document.getElementById('html-root').setAttribute('lang', ST.lang);
 
-  const LANGS = [{v:'en',l:'EN 🇬🇧'},{v:'es',l:'ES 🇪🇸'},{v:'fr',l:'FR 🇫🇷'},{v:'de',l:'DE 🇩🇪'},
-                 {v:'zh',l:'ZH 🇨🇳'},{v:'ar',l:'AR 🇸🇦'},{v:'hi',l:'HI 🇮🇳'},{v:'pt',l:'PT 🇧🇷'}];
+  const LANGS = [{ v: 'en', l: 'EN 🇬🇧' }, { v: 'es', l: 'ES 🇪🇸' }, { v: 'fr', l: 'FR 🇫🇷' }, { v: 'de', l: 'DE 🇩🇪' },
+  { v: 'zh', l: 'ZH 🇨🇳' }, { v: 'ar', l: 'AR 🇸🇦' }, { v: 'hi', l: 'HI 🇮🇳' }, { v: 'pt', l: 'PT 🇧🇷' }];
 
   document.getElementById('root').innerHTML = `
   <div class="min-h-screen flex flex-col" id="app-wrapper">
     <!-- HEADER -->
     <header class="et-header sticky top-0 z-50">
-      <div class="max-w-screen-2xl mx-auto px-3 py-2 flex items-center gap-3">
+      <div class="max-w-screen-2xl mx-auto px-4 py-2.5 flex items-center gap-3">
         <!-- Logo -->
-        <div class="flex items-center gap-2.5 flex-none">
+        <div class="flex items-center gap-3 flex-none">
           <div class="et-logo-icon w-9 h-9 rounded-xl flex items-center justify-center shadow-lg">
             <i class="fas fa-leaf text-emerald-300 text-sm"></i></div>
           <div class="hidden sm:block">
             <div class="et-logo-text">ECO<span>TWIN</span></div>
-            <div class="text-[8px] text-gray-500 tracking-[0.2em] uppercase font-medium">${t('nav.title')}</div>
+            <div class="et-logo-sub">${t('nav.title') || 'AI Sustainability Platform'}</div>
           </div>
         </div>
         <!-- Spacer -->
@@ -379,51 +421,61 @@ function renderShell(){
         </div>
         <!-- Lang selector -->
         <select id="lang-selector" onchange="changeLang(this.value)"
-                class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-gray-200 cursor-pointer focus:outline-none focus:border-cyan-500">
-          ${LANGS.map(l=>`<option value="${l.v}" ${ST.lang===l.v?'selected':''}>${l.l}</option>`).join('')}
+                class="bg-gray-900/80 border border-gray-700/60 rounded-lg px-2 py-1.5 text-xs text-gray-200 cursor-pointer focus:outline-none focus:border-cyan-500/70 transition-colors">
+          ${LANGS.map(l => `<option value="${l.v}" ${ST.lang === l.v ? 'selected' : ''}>${l.l}</option>`).join('')}
         </select>
         <!-- Auth buttons -->
         ${ST.user ? `
           <div class="flex items-center gap-2">
-            <button onclick="showProfileModal()" class="flex items-center gap-2 px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 transition-all border border-gray-700">
-              <div class="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-600 to-emerald-600 flex items-center justify-center text-[10px] font-bold">${(ST.user.name||'U')[0]}</div>
-              <span class="text-xs text-gray-200 hidden sm:block">${ST.user.name}</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded text-[9px] font-bold ${ST.user.role==='admin'?'bg-red-900 text-red-300':ST.user.role==='analyst'?'bg-cyan-900 text-cyan-300':'bg-gray-700 text-gray-400'}">${ST.user.role}</span>
+            <button onclick="showProfileModal()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900/80 hover:bg-gray-800 transition-all border border-gray-700/60 hover:border-cyan-800/50">
+              <div class="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-600 to-emerald-600 flex items-center justify-center text-[10px] font-bold shadow-lg">${(ST.user.name || 'U')[0]}</div>
+              <span class="text-xs text-gray-200 hidden sm:block font-medium">${ST.user.name}</span>
+              <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${ST.user.role === 'admin' ? 'bg-red-900/50 text-red-300 border border-red-800/50' : ST.user.role === 'analyst' ? 'bg-cyan-900/50 text-cyan-300 border border-cyan-800/50' : 'bg-gray-700/50 text-gray-400 border border-gray-600/50'}">${ST.user.role}</span>
             </button>
-            <button onclick="doLogout()" class="px-2 py-1 text-xs text-gray-400 hover:text-red-400 transition-all" title="${t('logout')}"><i class="fas fa-sign-out-alt"></i></button>
+            <button onclick="doLogout()" class="px-2 py-1.5 text-xs text-gray-500 hover:text-red-400 transition-all rounded-lg hover:bg-red-900/20" title="${t('logout')}"><i class="fas fa-sign-out-alt"></i></button>
           </div>` : `
-          <button onclick="showLoginModal()" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-700 to-emerald-700 text-white text-xs font-bold hover:opacity-90 transition-all">
-            <i class="fas fa-sign-in-alt mr-1"></i>${t('login')}
+          <button onclick="showLoginModal()" class="et-btn-primary text-xs px-4 py-2">
+            <i class="fas fa-sign-in-alt"></i>${t('login')}
           </button>`}
       </div>
       <!-- LIVE TICKER BAR -->
-      <div class="border-t border-gray-800/60 bg-gray-950/80 overflow-hidden">
+      <div class="bg-gray-950/90 overflow-hidden" style='border-top:1px solid rgba(34,211,238,0.05); border-bottom:1px solid rgba(34,211,238,0.06)'>
         <div class="flex overflow-x-auto scrollbar-hide" id="live-ticker-bar">
-          <span class="flex items-center gap-1 flex-none px-3 py-0.5 text-[9px] text-gray-600 animate-pulse">Loading live data...</span>
+          <span class="flex items-center gap-2 flex-none px-4 py-1.5 text-[10px] text-gray-600 animate-pulse">
+            <span class="w-1.5 h-1.5 rounded-full bg-cyan-800 animate-pulse"></span>Loading live data...
+          </span>
         </div>
       </div>
       <!-- NAV TABS -->
       <nav class="max-w-screen-2xl mx-auto px-2 flex gap-0.5 overflow-x-auto pb-0.5 scrollbar-hide" id="nav-tabs">
-        ${NAV_TABS.filter(([id])=>id!=='admin'||(ST.user&&ST.user.role==='admin')).map(([id,icon,key])=>`
+        ${NAV_TABS.filter(([id]) => id !== 'admin' || (ST.user && ST.user.role === 'admin')).map(([id, icon, key]) => `
           <button onclick="switchTab('${id}')" id="tab-${id}"
-            class="tab-btn flex-none px-2.5 py-1.5 text-[10px] font-semibold flex items-center gap-1.5 transition-all rounded-t whitespace-nowrap
-                   ${ST.activeTab===id?'bg-cyan-900/50 text-cyan-300 border-b border-cyan-500':'text-gray-500 hover:text-gray-300'}">
+            class="tab-btn flex-none flex items-center gap-1.5 whitespace-nowrap
+                   ${ST.activeTab === id ? 'bg-cyan-900/50 text-cyan-300 border-b border-cyan-500' : 'text-gray-500 hover:text-gray-300'}">
             <i class="fas ${icon} text-[9px]"></i>${t(key)}
-            ${id==='market'?'<span class="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>':''}
-            ${id==='satellite'?'<span class="w-1 h-1 rounded-full bg-cyan-400 animate-pulse"></span>':''}
-            ${id==='threat'?'<span class="w-1 h-1 rounded-full bg-red-400 animate-pulse"></span>':''}
-            ${id==='health'?'<span class="w-1 h-1 rounded-full bg-emerald-300 animate-pulse"></span>':''}
-            ${id==='race'?'<span class="w-1 h-1 rounded-full bg-orange-400 animate-pulse"></span>':''}
+            ${id === 'market' ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>' : ''}
+            ${id === 'satellite' ? '<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>' : ''}
+            ${id === 'threat' ? '<span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>' : ''}
+            ${id === 'health' ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>' : ''}
+            ${id === 'race' ? '<span class="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>' : ''}
           </button>`).join('')}
       </nav>
     </header>
     <!-- CONTENT -->
-    <main class="flex-1 max-w-screen-2xl w-full mx-auto px-3 py-5" id="main-content">
+    <main class="flex-1 max-w-screen-2xl w-full mx-auto px-4 py-6" id="main-content">
       <div id="tab-content"></div>
     </main>
     <!-- FOOTER -->
-    <footer class="border-t border-gray-800/30 py-3 text-center text-[9px] text-gray-600">
-      <span class="gradient-text-cyber font-bold">EcoTwin v4</span> · AI Digital Sustainability Platform · Live APIs: Open-Meteo · REST Countries · Carbon Market · NOAA CO₂ · NASA GIBS · © 2025
+    <footer class="border-t border-gray-800/20 py-4 text-center">
+      <div class="text-[10px] text-gray-600">
+        <span class="gradient-text-cyber font-bold text-xs">EcoTwin v5</span>
+        <span class="mx-2 opacity-30">·</span>
+        AI Digital Sustainability Platform
+        <span class="mx-2 opacity-30">·</span>
+        Open-Meteo · REST Countries · Carbon Market · NOAA CO₂ · NASA GIBS
+        <span class="mx-2 opacity-30">·</span>
+        © 2025
+      </div>
     </footer>
   </div>`;
   renderTab(ST.activeTab);
@@ -432,69 +484,89 @@ function renderShell(){
   startSSE();
 }
 
-function switchTab(id){
-  ST.activeTab=id;
-  if(ST.globeAnimFrame){cancelAnimationFrame(ST.globeAnimFrame);ST.globeAnimFrame=null;}
-  if(ST.realtimeInterval&&id!=='realtime'){clearInterval(ST.realtimeInterval);ST.realtimeInterval=null;}
-  if(ST.dashboardInterval&&id!=='dashboard'){clearInterval(ST.dashboardInterval);ST.dashboardInterval=null;}
-  if(ST.threatInterval&&id!=='threat'){clearInterval(ST.threatInterval);ST.threatInterval=null;}
-  if(ST.healthInterval&&id!=='health'){clearInterval(ST.healthInterval);ST.healthInterval=null;}
-  if(ST.raceInterval&&id!=='race'){clearInterval(ST.raceInterval);ST.raceInterval=null;}
-  document.querySelectorAll('.tab-btn').forEach(b=>{
-    const bid=b.id.replace('tab-','');
-    b.className=b.className
-      .replace('bg-cyan-900/50 text-cyan-300 border-b border-cyan-500','')
-      .replace('text-gray-500 hover:text-gray-300','');
-    if(bid===id)b.classList.add('bg-cyan-900/50','text-cyan-300','border-b','border-cyan-500');
-    else b.classList.add('text-gray-500','hover:text-gray-300');
+function switchTab(id) {
+  ST.activeTab = id;
+  if (ST.globeAnimFrame) { cancelAnimationFrame(ST.globeAnimFrame); ST.globeAnimFrame = null; }
+  if (ST.realtimeInterval && id !== 'realtime') { clearInterval(ST.realtimeInterval); ST.realtimeInterval = null; }
+  if (ST.dashboardInterval && id !== 'dashboard') { clearInterval(ST.dashboardInterval); ST.dashboardInterval = null; }
+  if (ST.threatInterval && id !== 'threat') { clearInterval(ST.threatInterval); ST.threatInterval = null; }
+  if (ST.healthInterval && id !== 'health') { clearInterval(ST.healthInterval); ST.healthInterval = null; }
+  if (ST.raceInterval && id !== 'race') { clearInterval(ST.raceInterval); ST.raceInterval = null; }
+  if (typeof marketInterval !== 'undefined' && marketInterval && id !== 'market') { clearInterval(marketInterval); marketInterval = null; }
+  if (id !== 'satellite') {
+    if (typeof SAT_STATE !== 'undefined' && SAT_STATE && SAT_STATE.scanInterval) {
+      clearInterval(SAT_STATE.scanInterval);
+      SAT_STATE.scanInterval = null;
+    }
+    if (typeof SAT_SSE !== 'undefined' && SAT_SSE && SAT_SSE.liveMetricInterval) {
+      clearInterval(SAT_SSE.liveMetricInterval);
+      SAT_SSE.liveMetricInterval = null;
+    }
+    if (typeof ADV !== 'undefined' && ADV) {
+      Object.values(ADV).forEach(m => {
+        if (m && m.interval) { clearInterval(m.interval); m.interval = null; }
+      });
+    }
+    if (typeof SEISMIC_ANIM !== 'undefined' && SEISMIC_ANIM) {
+      cancelAnimationFrame(SEISMIC_ANIM);
+      SEISMIC_ANIM = null;
+    }
+  }
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const bid = b.id.replace('tab-', '');
+    b.className = b.className
+      .replace('bg-cyan-900/50 text-cyan-300 border-b border-cyan-500', '')
+      .replace('text-gray-500 hover:text-gray-300', '');
+    if (bid === id) b.classList.add('bg-cyan-900/50', 'text-cyan-300', 'border-b', 'border-cyan-500');
+    else b.classList.add('text-gray-500', 'hover:text-gray-300');
   });
   renderTab(id);
 }
 
-async function changeLang(lang){
-  ST.lang=lang; localStorage.setItem('ecotwin_lang',lang);
+async function changeLang(lang) {
+  ST.lang = lang; localStorage.setItem('ecotwin_lang', lang);
   await loadI18n(lang);
-  if(ST.user){await fetch('/auth/profile',{method:'PUT',headers:authHeaders(),body:JSON.stringify({lang})});}
+  if (ST.user) { await fetch('/auth/profile', { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ lang }) }); }
   renderShell();
 }
 
-function renderTab(id){
-  const el=document.getElementById('tab-content');
-  if(!el)return;
-  const renders={
-    dashboard:()=>{el.innerHTML=dashboardHTML();initDashboard();},
-    map:()=>{el.innerHTML=mapHTML();initMap();},
-    realtime:()=>{el.innerHTML=realtimeHTML();initRealtime();},
-    simulator:()=>{el.innerHTML=simulatorHTML();},
-    compare:()=>{el.innerHTML=compareHTML();},
-    shap:()=>{el.innerHTML=shapHTML();},
-    rl:()=>{el.innerHTML=rlHTML();},
-    anomaly:()=>{el.innerHTML=anomalyHTML();loadAnomaly();},
-    globe3d:()=>{el.innerHTML=globe3dHTML();initGlobe3D();},
-    sdg:()=>{el.innerHTML=sdgHTML();loadSDG();},
-    history:()=>{el.innerHTML=historyHTML();loadHistory();},
-    analytics:()=>{el.innerHTML=analyticsHTML();loadAnalytics();},
-    risk:()=>{el.innerHTML=riskHTML();},
-    carbon:()=>{el.innerHTML=carbonHTML();loadCarbon();},
-    cities:()=>{el.innerHTML=citiesHTML();loadCities();},
-    policy:()=>{el.innerHTML=policyHTML();},
-    market:()=>{el.innerHTML=marketHTML();loadMarket();},
-    news:()=>{el.innerHTML=newsHTML();loadNews();},
-    ai:()=>{el.innerHTML=aiHTML();},
-    satellite:()=>{el.innerHTML=satelliteHTML();initSatellite();},
-    threat:()=>{el.innerHTML=threatHTML();initThreat();},
-    health:()=>{el.innerHTML=healthHTML();initPlanetHealth();},
-    race:()=>{el.innerHTML=raceHTML();initRace();},
-    admin:()=>{el.innerHTML=adminHTML();loadAdmin();},
+function renderTab(id) {
+  const el = document.getElementById('tab-content');
+  if (!el) return;
+  const renders = {
+    dashboard: () => { el.innerHTML = dashboardHTML(); initDashboard(); },
+    map: () => { el.innerHTML = mapHTML(); initMap(); },
+    realtime: () => { el.innerHTML = realtimeHTML(); initRealtime(); },
+    simulator: () => { el.innerHTML = simulatorHTML(); },
+    compare: () => { el.innerHTML = compareHTML(); },
+    shap: () => { el.innerHTML = shapHTML(); },
+    rl: () => { el.innerHTML = rlHTML(); },
+    anomaly: () => { el.innerHTML = anomalyHTML(); loadAnomaly(); },
+    globe3d: () => { el.innerHTML = globe3dHTML(); initGlobe3D(); },
+    sdg: () => { el.innerHTML = sdgHTML(); loadSDG(); },
+    history: () => { el.innerHTML = historyHTML(); loadHistory(); },
+    analytics: () => { el.innerHTML = analyticsHTML(); loadAnalytics(); },
+    risk: () => { el.innerHTML = riskHTML(); },
+    carbon: () => { el.innerHTML = carbonHTML(); loadCarbon(); },
+    cities: () => { el.innerHTML = citiesHTML(); loadCities(); },
+    policy: () => { el.innerHTML = policyHTML(); },
+    market: () => { el.innerHTML = marketHTML(); loadMarket(); },
+    news: () => { el.innerHTML = newsHTML(); loadNews(); },
+    ai: () => { el.innerHTML = aiHTML(); },
+    satellite: () => { el.innerHTML = satelliteHTML(); initSatellite(); },
+    threat: () => { el.innerHTML = threatHTML(); initThreat(); },
+    health: () => { el.innerHTML = healthHTML(); initPlanetHealth(); },
+    race: () => { el.innerHTML = raceHTML(); initRace(); },
+    admin: () => { el.innerHTML = adminHTML(); loadAdmin(); },
   };
-  (renders[id]||renders.dashboard)();
+  (renders[id] || renders.dashboard)();
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // PROFILE MODAL
 // ════════════════════════════════════════════════════════════════════════════
-function showProfileModal(){
-  if(!ST.user)return;
+function showProfileModal() {
+  if (!ST.user) return;
   showModal(`
     <button onclick="closeModal()" class="absolute top-3 right-3 text-gray-500 hover:text-white"><i class="fas fa-xmark"></i></button>
     <h2 class="text-base font-bold text-cyan-300 mb-4">User Profile</h2>
@@ -503,19 +575,19 @@ function showProfileModal(){
       <div>
         <div class="font-bold text-white">${ST.user.name}</div>
         <div class="text-xs text-gray-400">${ST.user.email}</div>
-        <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${ST.user.role==='admin'?'bg-red-900 text-red-300':'bg-cyan-900 text-cyan-300'}">${ST.user.role}</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${ST.user.role === 'admin' ? 'bg-red-900 text-red-300' : 'bg-cyan-900 text-cyan-300'}">${ST.user.role}</span>
       </div>
     </div>
     <div class="space-y-2">
       <div><label class="text-xs text-gray-400">Display Name</label>
         <input id="prof-name" value="${ST.user.name}" class="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-cyan-500"/></div>
       <div><label class="text-xs text-gray-400">Organization</label>
-        <input id="prof-org" value="${ST.user.org||''}" class="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-cyan-500"/></div>
+        <input id="prof-org" value="${ST.user.org || ''}" class="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-cyan-500"/></div>
       <div><label class="text-xs text-gray-400">Preferred Language</label>
         <select id="prof-lang" class="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-cyan-500">
-          ${[{v:'en',l:'English'},{v:'es',l:'Español'},{v:'fr',l:'Français'},{v:'de',l:'Deutsch'},
-             {v:'zh',l:'中文'},{v:'ar',l:'العربية'},{v:'hi',l:'हिन्दी'},{v:'pt',l:'Português'}]
-            .map(l=>`<option value="${l.v}" ${ST.lang===l.v?'selected':''}>${l.l}</option>`).join('')}
+          ${[{ v: 'en', l: 'English' }, { v: 'es', l: 'Español' }, { v: 'fr', l: 'Français' }, { v: 'de', l: 'Deutsch' },
+    { v: 'zh', l: '中文' }, { v: 'ar', l: 'العربية' }, { v: 'hi', l: 'हिन्दी' }, { v: 'pt', l: 'Português' }]
+      .map(l => `<option value="${l.v}" ${ST.lang === l.v ? 'selected' : ''}>${l.l}</option>`).join('')}
         </select></div>
       <button onclick="saveProfile()" class="w-full py-2 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-white text-sm font-bold transition-all mt-2">
         <i class="fas fa-save mr-1"></i> Save Profile
@@ -523,163 +595,199 @@ function showProfileModal(){
     </div>`);
 }
 
-async function saveProfile(){
-  const name=document.getElementById('prof-name').value;
-  const org=document.getElementById('prof-org').value;
-  const lang=document.getElementById('prof-lang').value;
-  const r=await fetch('/auth/profile',{method:'PUT',headers:authHeaders(),body:JSON.stringify({name,org,lang})});
-  if(r.ok){
-    ST.user={...ST.user,name,org,lang}; ST.lang=lang;
-    localStorage.setItem('ecotwin_user',JSON.stringify(ST.user));
-    localStorage.setItem('ecotwin_lang',lang);
-    await loadI18n(lang); closeModal(); toast('Profile updated!','success'); renderShell();
-  } else toast('Update failed','error');
+async function saveProfile() {
+  const name = document.getElementById('prof-name').value;
+  const org = document.getElementById('prof-org').value;
+  const lang = document.getElementById('prof-lang').value;
+  const r = await fetch('/auth/profile', { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ name, org, lang }) });
+  if (r.ok) {
+    ST.user = { ...ST.user, name, org, lang }; ST.lang = lang;
+    localStorage.setItem('ecotwin_user', JSON.stringify(ST.user));
+    localStorage.setItem('ecotwin_lang', lang);
+    await loadI18n(lang); closeModal(); toast('Profile updated!', 'success'); renderShell();
+  } else toast('Update failed', 'error');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // DASHBOARD
 // ════════════════════════════════════════════════════════════════════════════
-function dashboardHTML(){return `
+function dashboardHTML() {
+  return `
   <div class="space-y-5">
     <!-- Hero Header -->
-    <div class="flex items-center justify-between flex-wrap gap-2">
-      <div>
-        <h2 class="text-xl font-black gradient-text-cyber flex items-center gap-2.5">
-          <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-900/80 to-emerald-900/80 border border-cyan-700/50 flex items-center justify-center">
-            <i class="fas fa-chart-line text-cyan-400 text-sm"></i>
-          </span>
-          ${t('dashboard')}
-        </h2>
-        <p class="text-[10px] text-gray-500 mt-0.5 ml-10">AI Digital Sustainability Intelligence · Live data from REST Countries, Open-Meteo, Carbon Markets & NASA</p>
+    <div class="relative et-card p-6 overflow-hidden bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-800/50">
+      <div class="absolute inset-0 opacity-10" style="background-image:url('/assets/img/grid-pattern.svg'); background-size:30px 30px;"></div>
+      <div class="relative z-10 flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h2 class="text-2xl font-black gradient-text-cyber flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-900/80 to-emerald-900/80 border border-cyan-700/50 flex items-center justify-center shadow-lg">
+              <i class="fas fa-chart-line text-cyan-400 text-base"></i>
+            </span>
+            ${t('dashboard')}
+          </h2>
+          <p class="text-sm text-gray-400 mt-1 ml-12">AI Digital Sustainability Intelligence · Live data from REST Countries, Open-Meteo, Carbon Markets & NASA</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-gray-500 mono" id="dash-last-update">Loading...</span>
+          <button onclick="refreshDashboard()" class="et-btn-secondary text-xs px-3.5 py-2">
+            <i class="fas fa-rotate-right"></i> Refresh
+          </button>
+        </div>
       </div>
-      <div class="flex items-center gap-2">
-        <span class="text-[10px] text-gray-600 mono" id="dash-last-update">Loading...</span>
-        <button onclick="refreshDashboard()" class="px-3 py-1.5 text-[10px] rounded-lg bg-gray-900 border border-gray-700 text-gray-400 hover:text-cyan-300 hover:border-cyan-700 transition-all flex items-center gap-1.5">
-          <i class="fas fa-rotate-right"></i> Refresh
-        </button>
+
+      <!-- Gradient Stats Row -->
+      <div class="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        <div class="p-4 rounded-xl bg-gradient-to-br from-cyan-900/40 to-emerald-900/40 border border-cyan-700/50 shadow-lg flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-cyan-800/50 flex items-center justify-center text-cyan-300 text-lg"><i class="fas fa-earth-americas"></i></div>
+          <div>
+            <div class="text-xs text-gray-300 font-medium uppercase tracking-wider">Countries Monitored</div>
+            <div class="text-2xl font-black text-white mt-0.5">50+</div>
+          </div>
+        </div>
+        <div class="p-4 rounded-xl bg-gradient-to-br from-emerald-900/40 to-green-900/40 border border-emerald-700/50 shadow-lg flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-emerald-800/50 flex items-center justify-center text-emerald-300 text-lg"><i class="fas fa-leaf"></i></div>
+          <div>
+            <div class="text-xs text-gray-300 font-medium uppercase tracking-wider">Avg. EcoTwin Score</div>
+            <div class="text-2xl font-black text-white mt-0.5">61<span class="text-base text-gray-400">/100</span></div>
+          </div>
+        </div>
+        <div class="p-4 rounded-xl bg-gradient-to-br from-amber-900/40 to-orange-900/40 border border-amber-700/50 shadow-lg flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-amber-800/50 flex items-center justify-center text-amber-300 text-lg"><i class="fas fa-cloud"></i></div>
+          <div>
+            <div class="text-xs text-gray-300 font-medium uppercase tracking-wider">Atmospheric CO₂</div>
+            <div class="text-2xl font-black text-white mt-0.5"><span id="kpi-co2ppm-live">422.5</span><span class="text-base text-gray-400"> ppm</span></div>
+          </div>
+        </div>
+        <div class="p-4 rounded-xl bg-gradient-to-br from-violet-900/40 to-purple-900/40 border border-violet-700/50 shadow-lg flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-violet-800/50 flex items-center justify-center text-violet-300 text-lg"><i class="fas fa-euro-sign"></i></div>
+          <div>
+            <div class="text-xs text-gray-300 font-medium uppercase tracking-wider">EU ETS Carbon Price</div>
+            <div class="text-2xl font-black text-white mt-0.5"><span id="kpi-carbon-credit-live">€68</span><span class="text-base text-gray-400">/t</span></div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Premium KPI Cards Row 1 — with sparklines + glow rings -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <!-- KPI Cards Row 1 — with sparklines + glow rings -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Countries -->
       <div class="et-card-kpi neon-border-cyan" style="color:#22d3ee">
-        <div class="flex items-center gap-1.5 mb-2">
-          <div class="w-7 h-7 rounded-lg bg-cyan-900/50 border border-cyan-800/60 flex items-center justify-center">
-            <i class="fas fa-earth-americas text-cyan-400 text-[10px]"></i>
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-8 h-8 rounded-lg bg-cyan-900/50 border border-cyan-800/60 flex items-center justify-center">
+            <i class="fas fa-earth-americas text-cyan-400 text-sm"></i>
           </div>
-          <span class="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">${t('kpi.countries')}</span>
+          <span class="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">${t('kpi.countries')}</span>
         </div>
         <div class="flex items-end justify-between">
           <div>
-            <div class="text-3xl font-black text-cyan-300 glow-cyan mono leading-none">50+</div>
-            <div class="text-[9px] text-emerald-400 mt-1 font-semibold">↑ +5 this year</div>
+            <div class="text-4xl font-black text-cyan-300 glow-cyan mono leading-none">50+</div>
+            <div class="text-xs text-emerald-400 mt-1 font-semibold">↑ +5 this year</div>
           </div>
-          <svg class="kpi-sparkline-svg opacity-60" width="60" height="28" viewBox="0 0 60 28" fill="none">
-            <polyline points="0,22 10,18 20,20 30,14 40,16 50,10 60,8" stroke="#22d3ee" stroke-width="1.5" fill="none"/>
-            <polygon points="0,22 10,18 20,20 30,14 40,16 50,10 60,8 60,28 0,28" fill="#22d3ee" opacity="0.1"/>
+          <svg class="kpi-sparkline-svg opacity-60" width="70" height="35" viewBox="0 0 70 35" fill="none">
+            <polyline points="0,28 12,22 24,25 36,18 48,20 60,12 70,10" stroke="#22d3ee" stroke-width="2" fill="none"/>
+            <polygon points="0,28 12,22 24,25 36,18 48,20 60,12 70,10 70,35 0,35" fill="#22d3ee" opacity="0.1"/>
           </svg>
         </div>
-        <div class="text-[8px] text-gray-600 mt-2">✅ REST Countries API</div>
+        <div class="text-[9px] text-gray-600 mt-2">✅ REST Countries API</div>
       </div>
 
       <!-- Avg Score -->
       <div class="et-card-kpi neon-border-green" style="color:#10b981">
-        <div class="flex items-center gap-1.5 mb-2">
-          <div class="w-7 h-7 rounded-lg bg-emerald-900/50 border border-emerald-800/60 flex items-center justify-center">
-            <i class="fas fa-leaf text-emerald-400 text-[10px]"></i>
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-8 h-8 rounded-lg bg-emerald-900/50 border border-emerald-800/60 flex items-center justify-center">
+            <i class="fas fa-leaf text-emerald-400 text-sm"></i>
           </div>
-          <span class="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">${t('kpi.avgScore')}</span>
+          <span class="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">${t('kpi.avgScore')}</span>
         </div>
         <div class="flex items-end justify-between">
           <div>
-            <div class="text-3xl font-black text-emerald-300 glow-emerald mono leading-none">61<span class="text-base text-gray-500 font-normal">/100</span></div>
-            <div class="text-[9px] text-emerald-400 mt-1 font-semibold">↑ +1.8 YoY</div>
+            <div class="text-4xl font-black text-emerald-300 glow-emerald mono leading-none">61<span class="text-lg text-gray-500 font-normal">/100</span></div>
+            <div class="text-xs text-emerald-400 mt-1 font-semibold">↑ +1.8 YoY</div>
           </div>
-          <svg class="opacity-60" width="60" height="28" viewBox="0 0 60 28" fill="none">
-            <polyline points="0,20 10,20 20,18 30,17 40,16 50,14 60,13" stroke="#10b981" stroke-width="1.5" fill="none"/>
-            <polygon points="0,20 10,20 20,18 30,17 40,16 50,14 60,13 60,28 0,28" fill="#10b981" opacity="0.1"/>
+          <svg class="opacity-60" width="70" height="35" viewBox="0 0 70 35" fill="none">
+            <polyline points="0,25 12,25 24,22 36,20 48,18 60,15 70,14" stroke="#10b981" stroke-width="2" fill="none"/>
+            <polygon points="0,25 12,25 24,22 36,20 48,18 60,15 70,14 70,35 0,35" fill="#10b981" opacity="0.1"/>
           </svg>
         </div>
-        <div class="text-[8px] text-gray-600 mt-2">🔄 Updates every 30s</div>
+        <div class="text-[9px] text-gray-600 mt-2">🔄 Updates every 30s</div>
       </div>
 
       <!-- Atm CO2 -->
       <div class="et-card-kpi" style="color:#f59e0b; border-color:rgba(245,158,11,0.3); box-shadow: 0 0 12px rgba(245,158,11,0.08)">
-        <div class="flex items-center gap-1.5 mb-2">
-          <div class="w-7 h-7 rounded-lg bg-amber-900/50 border border-amber-800/60 flex items-center justify-center">
-            <i class="fas fa-cloud text-amber-400 text-[10px]"></i>
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-8 h-8 rounded-lg bg-amber-900/50 border border-amber-800/60 flex items-center justify-center">
+            <i class="fas fa-cloud text-amber-400 text-sm"></i>
           </div>
-          <span class="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">Atm. CO₂</span>
+          <span class="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">Atm. CO₂</span>
         </div>
         <div class="flex items-end justify-between">
           <div>
-            <div class="text-3xl font-black text-amber-300 mono leading-none"><span id="kpi-co2ppm-live">422.5</span><span class="text-base text-gray-500 font-normal"> ppm</span></div>
-            <div class="text-[9px] text-red-400 mt-1 font-semibold">↑ +2.5 ppm/yr</div>
+            <div class="text-4xl font-black text-amber-300 mono leading-none"><span id="kpi-co2ppm-live">422.5</span><span class="text-lg text-gray-500 font-normal"> ppm</span></div>
+            <div class="text-xs text-red-400 mt-1 font-semibold">↑ +2.5 ppm/yr</div>
           </div>
-          <svg class="opacity-60" width="60" height="28" viewBox="0 0 60 28" fill="none">
-            <polyline points="0,24 10,22 20,21 30,19 40,17 50,14 60,12" stroke="#f59e0b" stroke-width="1.5" fill="none"/>
-            <polygon points="0,24 10,22 20,21 30,19 40,17 50,14 60,12 60,28 0,28" fill="#f59e0b" opacity="0.1"/>
+          <svg class="opacity-60" width="70" height="35" viewBox="0 0 70 35" fill="none">
+            <polyline points="0,30 12,27 24,26 36,24 48,21 60,18 70,16" stroke="#f59e0b" stroke-width="2" fill="none"/>
+            <polygon points="0,30 12,27 24,26 36,24 48,21 60,18 70,16 70,35 0,35" fill="#f59e0b" opacity="0.1"/>
           </svg>
         </div>
-        <div class="text-[8px] text-gray-600 mt-2">📡 NOAA seasonal model</div>
+        <div class="text-[9px] text-gray-600 mt-2">📡 NOAA seasonal model</div>
       </div>
 
       <!-- EU ETS Carbon Price -->
       <div class="et-card-kpi neon-border-violet" style="color:#8b5cf6">
-        <div class="flex items-center gap-1.5 mb-2">
-          <div class="w-7 h-7 rounded-lg bg-violet-900/50 border border-violet-800/60 flex items-center justify-center">
-            <i class="fas fa-euro-sign text-violet-400 text-[10px]"></i>
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-8 h-8 rounded-lg bg-violet-900/50 border border-violet-800/60 flex items-center justify-center">
+            <i class="fas fa-euro-sign text-violet-400 text-sm"></i>
           </div>
-          <span class="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">EU ETS Carbon</span>
+          <span class="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">EU ETS Carbon</span>
         </div>
         <div class="flex items-end justify-between">
           <div>
-            <div class="text-3xl font-black text-violet-300 mono leading-none"><span id="kpi-carbon-credit-live">€68</span><span class="text-base text-gray-500 font-normal">/t</span></div>
-            <div class="text-[9px] text-emerald-400 mt-1 font-semibold" id="kpi-cc-change">Live market</div>
+            <div class="text-4xl font-black text-violet-300 mono leading-none"><span id="kpi-carbon-credit-live">€68</span><span class="text-lg text-gray-500 font-normal">/t</span></div>
+            <div class="text-xs text-emerald-400 mt-1 font-semibold" id="kpi-cc-change">Live market</div>
           </div>
-          <svg class="opacity-60" width="60" height="28" viewBox="0 0 60 28" fill="none">
-            <polyline points="0,16 10,18 20,14 30,17 40,12 50,15 60,11" stroke="#8b5cf6" stroke-width="1.5" fill="none"/>
-            <polygon points="0,16 10,18 20,14 30,17 40,12 50,15 60,11 60,28 0,28" fill="#8b5cf6" opacity="0.1"/>
+          <svg class="opacity-60" width="70" height="35" viewBox="0 0 70 35" fill="none">
+            <polyline points="0,20 12,22 24,18 36,21 48,15 60,19 70,14" stroke="#8b5cf6" stroke-width="2" fill="none"/>
+            <polygon points="0,20 12,22 24,18 36,21 48,15 60,19 70,14 70,35 0,35" fill="#8b5cf6" opacity="0.1"/>
           </svg>
         </div>
-        <div class="text-[8px] text-gray-600 mt-2">💹 Carbon market live</div>
+        <div class="text-[9px] text-gray-600 mt-2">💹 Carbon market live</div>
       </div>
     </div>
 
     <!-- Secondary KPI Row with mini gauges -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="et-card">
         <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center gap-1.5"><i class="fas fa-solar-panel text-yellow-400 text-xs"></i><span class="text-[9px] text-gray-500 uppercase tracking-wider">Global Renewable</span></div>
-          <span class="text-[9px] font-bold text-yellow-300 mono" id="kpi-renewable-live" data-val="40">40%</span>
+          <div class="flex items-center gap-1.5"><i class="fas fa-solar-panel text-yellow-400 text-xs"></i><span class="text-[10px] text-gray-500 uppercase tracking-wider">Global Renewable</span></div>
+          <span class="text-xs font-bold text-yellow-300 mono" id="kpi-renewable-live" data-val="40">40%</span>
         </div>
         <div class="metric-bar"><div class="metric-bar-fill bg-gradient-to-r from-yellow-600 to-yellow-400 progress-animate" style="width:40%"></div></div>
-        <div class="text-[8px] text-gray-600 mt-1.5">Target: 60% by 2030 · Live</div>
+        <div class="text-[9px] text-gray-600 mt-1.5">Target: 60% by 2030 · Live</div>
       </div>
       <div class="et-card">
         <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center gap-1.5"><i class="fas fa-thermometer-half text-orange-400 text-xs"></i><span class="text-[9px] text-gray-500 uppercase tracking-wider">Temp. Anomaly</span></div>
-          <span class="text-[9px] font-bold text-orange-300 mono">+1.18°C</span>
+          <div class="flex items-center gap-1.5"><i class="fas fa-thermometer-half text-orange-400 text-xs"></i><span class="text-[10px] text-gray-500 uppercase tracking-wider">Temp. Anomaly</span></div>
+          <span class="text-xs font-bold text-orange-300 mono">+1.18°C</span>
         </div>
         <div class="metric-bar"><div class="metric-bar-fill bg-gradient-to-r from-orange-700 to-orange-500 progress-animate" style="width:59%"></div></div>
-        <div class="text-[8px] text-gray-600 mt-1.5">vs pre-industrial · NOAA</div>
+        <div class="text-[9px] text-gray-600 mt-1.5">vs pre-industrial · NOAA</div>
       </div>
       <div class="et-card">
         <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center gap-1.5"><i class="fas fa-wind text-blue-400 text-xs"></i><span class="text-[9px] text-gray-500 uppercase tracking-wider">Live Weather</span></div>
-          <span class="text-[9px] font-bold text-blue-300 mono" id="dash-weather-temp">—</span>
+          <div class="flex items-center gap-1.5"><i class="fas fa-wind text-blue-400 text-xs"></i><span class="text-[10px] text-gray-500 uppercase tracking-wider">Live Weather</span></div>
+          <span class="text-xs font-bold text-blue-300 mono" id="dash-weather-temp">—</span>
         </div>
         <div class="metric-bar"><div id="dash-weather-bar" class="metric-bar-fill bg-gradient-to-r from-blue-700 to-blue-400" style="width:50%"></div></div>
-        <div class="text-[8px] text-gray-600 mt-1.5" id="dash-weather-city">Open-Meteo API</div>
+        <div class="text-[9px] text-gray-600 mt-1.5" id="dash-weather-city">Open-Meteo API</div>
       </div>
       <div class="et-card">
         <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center gap-1.5"><i class="fas fa-satellite-dish text-cyan-400 text-xs"></i><span class="text-[9px] text-gray-500 uppercase tracking-wider">API Health</span></div>
-          <span class="text-[9px] font-bold text-emerald-300 mono">7/7</span>
+          <div class="flex items-center gap-1.5"><i class="fas fa-satellite-dish text-cyan-400 text-xs"></i><span class="text-[10px] text-gray-500 uppercase tracking-wider">API Health</span></div>
+          <span class="text-xs font-bold text-emerald-300 mono">7/7</span>
         </div>
         <div class="metric-bar"><div class="metric-bar-fill bg-gradient-to-r from-emerald-700 to-emerald-400 progress-animate" style="width:100%"></div></div>
-        <div class="text-[8px] text-emerald-500 mt-1.5">✅ All systems nominal</div>
+        <div class="text-[9px] text-emerald-500 mt-1.5">✅ All systems nominal</div>
       </div>
     </div>
 
@@ -709,72 +817,85 @@ function dashboardHTML(){return `
     </div>
 
     <!-- Live API Status Grid -->
+    <!-- Audited Platform Data Provenance Grid -->
     <div class="et-card grad-border">
-      <div class="flex items-center gap-2 mb-3">
+      <div class="flex items-center gap-3 mb-4">
         <div class="et-live-dot"></div>
-        <h3 class="et-card-title text-sm">Live Data Sources</h3>
-        <span class="ml-auto text-[9px] text-gray-600 mono" id="api-status-time"></span>
+        <h3 class="et-card-title" style="font-size:12px;margin-bottom:0">Data Pipeline & Provenance</h3>
+        <span class="text-[10px] text-gray-500 hidden sm:inline">Audited transparency: live, cached, calculated & simulated</span>
+        <span class="ml-auto text-xs text-gray-600 mono" id="api-status-time"></span>
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2" id="api-status-grid">
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2.5" id="api-status-grid">
         ${[
-          {name:'REST Countries',  icon:'fa-globe',          color:'emerald', url:'restcountries.com'},
-          {name:'Open-Meteo',      icon:'fa-cloud-sun',       color:'blue',    url:'Weather API'},
-          {name:'NOAA CO₂',        icon:'fa-smog',            color:'yellow',  url:'Seasonal model'},
-          {name:'EU ETS Carbon',   icon:'fa-chart-candlestick',color:'violet', url:'Market data'},
-          {name:'NASA GIBS',       icon:'fa-satellite',       color:'cyan',    url:'VIIRS 250m'},
-          {name:'SSE Push',        icon:'fa-bolt',            color:'orange',  url:'2s stream'},
-          {name:'AI CNN Model',    icon:'fa-brain',           color:'pink',    url:'v2.1 satellite'},
-        ].map(s=>`
-          <div class="bg-gray-900/60 rounded-xl p-2.5 border border-gray-800/60 hover:border-gray-700 transition-all">
-            <div class="flex items-center gap-1.5 mb-1.5">
-              <i class="fas ${s.icon} text-${s.color}-400 text-[10px]"></i>
-              <span class="text-[9px] font-semibold text-gray-300 leading-none">${s.name}</span>
+      { name: 'Open-Meteo', icon: 'fa-cloud-sun', color: 'blue', url: 'Current Weather API', prov: 'Live external data', provType: 'live' },
+      { name: 'REST Countries', icon: 'fa-globe', color: 'emerald', url: 'Country metadata (1h cache)', prov: 'Retrieved external data', provType: 'retrieved' },
+      { name: 'NASA GIBS', icon: 'fa-satellite', color: 'cyan', url: 'VIIRS 250m WMTS tiles', prov: 'Retrieved external data', provType: 'retrieved' },
+      { name: 'NOAA CO₂', icon: 'fa-smog', color: 'yellow', url: 'Mauna Loa seasonal curve', prov: 'Calculated estimate', provType: 'calculated' },
+      { name: 'EU ETS Carbon', icon: 'fa-chart-candlestick', color: 'violet', url: 'Market reference model', prov: 'Calculated estimate', provType: 'calculated' },
+      { name: 'SSE Push', icon: 'fa-bolt', color: 'orange', url: 'Simulated 2s sensor tick', prov: 'Simulated demo data', provType: 'simulated' },
+      { name: 'Vision Pipeline', icon: 'fa-brain', color: 'pink', url: 'Synthetic detection overlay', prov: 'Simulated demo data', provType: 'simulated' },
+    ].map(s => `
+          <div class="bg-gray-900/60 rounded-xl p-3 border border-gray-800/60 hover:border-gray-700/80 transition-all flex flex-col justify-between">
+            <div>
+              <div class="flex items-center gap-2 mb-1.5">
+                <div class="w-5 h-5 rounded-md bg-${s.color}-900/40 border border-${s.color}-800/40 flex items-center justify-center">
+                  <i class="fas ${s.icon} text-${s.color}-400 text-[9px]"></i>
+                </div>
+                <span class="text-[10px] font-semibold text-gray-300 leading-none">${s.name}</span>
+              </div>
+              <div class="text-[9px] text-gray-500 mb-2 leading-tight">${s.url}</div>
             </div>
-            <div class="flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span class="text-[8px] text-emerald-400 font-bold">LIVE</span>
+            <div>
+              ${provenanceBadge(s.provType, s.prov)}
             </div>
-            <div class="text-[8px] text-gray-600 mt-0.5">${s.url}</div>
           </div>`).join('')}
       </div>
     </div>
 
     <!-- Country Status Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       ${[
-        {title:'🟢 SUSTAINABLE ≥75',count:14,color:'emerald',names:['Norway','Iceland','Denmark','Sweden','Switzerland','Austria','New Zealand','Finland']},
-        {title:'🟡 MODERATE 50–74', count:24,color:'yellow', names:['USA','Germany','UK','France','Japan','Brazil','Spain','Australia']},
-        {title:'🔴 CRITICAL <50',   count:12,color:'red',    names:['Saudi Arabia','Iraq','Syria','Nigeria','Sudan','Iran']},
-      ].map(g=>`
-        <div class="et-card">
-          <div class="text-[9px] text-${g.color}-400 font-bold uppercase tracking-wider mb-1.5">${g.title}</div>
-          <div class="text-3xl font-black text-${g.color}-300 mono mb-2">${g.count} <span class="text-xs text-gray-500 font-normal">countries</span></div>
-          <div class="flex flex-wrap gap-1">
-            ${g.names.map(n=>`<span class="px-1.5 py-0.5 bg-${g.color}-900/20 border border-${g.color}-900/40 text-${g.color}-400 rounded-md text-[8px]">${n}</span>`).join('')}
+      { title: 'Sustainable', subtitle: 'Score ≥ 75', count: 14, color: 'emerald', emoji: '🟢', gradient: 'from-emerald-900/30 to-transparent', border: 'rgba(6,78,59,0.35)', names: ['Norway', 'Iceland', 'Denmark', 'Sweden', 'Switzerland', 'Austria', 'New Zealand', 'Finland'] },
+      { title: 'Moderate', subtitle: 'Score 50–74', count: 24, color: 'yellow', emoji: '🟡', gradient: 'from-yellow-900/25 to-transparent', border: 'rgba(120,53,15,0.35)', names: ['USA', 'Germany', 'UK', 'France', 'Japan', 'Brazil', 'Spain', 'Australia'] },
+      { title: 'Critical', subtitle: 'Score < 50', count: 12, color: 'red', emoji: '🔴', gradient: 'from-red-900/25 to-transparent', border: 'rgba(127,29,29,0.35)', names: ['Saudi Arabia', 'Iraq', 'Syria', 'Nigeria', 'Sudan', 'Iran'] },
+    ].map(g => `
+        <div class="et-card bg-gradient-to-br ${g.gradient}" style="border-color:${g.border}">
+          <div class="flex items-center gap-2.5 mb-3">
+            <span class="text-xl">${g.emoji}</span>
+            <div class="flex-1">
+              <div class="text-sm font-bold text-${g.color}-300">${g.title}</div>
+              <div class="text-[10px] text-${g.color}-600 font-medium">${g.subtitle}</div>
+            </div>
+            <div class="text-3xl font-black text-${g.color}-300 mono">${g.count}</div>
+          </div>
+          <div class="h-px bg-gradient-to-r from-${g.color}-800/30 to-transparent mb-3"></div>
+          <div class="flex flex-wrap gap-1.5">
+            ${g.names.map(n => `<span class="px-2 py-0.5 bg-${g.color}-900/20 border border-${g.color}-900/40 text-${g.color}-400/90 rounded-lg text-[9px] font-medium">${n}</span>`).join('')}
           </div>
         </div>`).join('')}
     </div>
 
     <!-- Export Bar -->
     <div class="et-card flex flex-wrap items-center gap-3">
-      <span class="text-xs font-bold text-gray-400"><i class="fas fa-download mr-1 text-cyan-500"></i>Export Live Data:</span>
-      <button onclick="exportData('csv')" class="px-3 py-1.5 text-[10px] rounded-lg bg-emerald-900/30 border border-emerald-800/50 text-emerald-300 hover:bg-emerald-800/30 transition-all flex items-center gap-1.5">
+      <span class="text-sm font-semibold text-gray-400"><i class="fas fa-download mr-1.5 text-cyan-500"></i>Export Live Data:</span>
+      <button onclick="exportData('csv')" class="px-3 py-1.5 text-xs rounded-lg bg-emerald-900/30 border border-emerald-800/50 text-emerald-300 hover:bg-emerald-800/30 transition-all flex items-center gap-1.5 font-medium">
         <i class="fas fa-file-csv"></i>CSV (live)
       </button>
-      <button onclick="exportData('json')" class="px-3 py-1.5 text-[10px] rounded-lg bg-blue-900/30 border border-blue-800/50 text-blue-300 hover:bg-blue-800/30 transition-all flex items-center gap-1.5">
+      <button onclick="exportData('json')" class="px-3 py-1.5 text-xs rounded-lg bg-blue-900/30 border border-blue-800/50 text-blue-300 hover:bg-blue-800/30 transition-all flex items-center gap-1.5 font-medium">
         <i class="fas fa-file-code"></i>JSON (live)
       </button>
-      <span class="text-[9px] text-gray-600 ml-2">50+ countries · CO₂ · Renewables · Water · Recycling · Real-time enriched</span>
+      <span class="text-[10px] text-gray-600 ml-2">50+ countries · CO₂ · Renewables · Water · Recycling · Real-time enriched</span>
     </div>
-  </div>`;}
+  </div>`;
+}
 
-async function refreshDashboard(){
+async function refreshDashboard() {
   ST.worldData = []; // force re-fetch
   await initDashboard();
   toast('Dashboard refreshed with live data!', 'success');
 }
 
-async function initDashboard(){
+async function initDashboard() {
   // Always fetch fresh data (TTL: 30 seconds since world_data changes every 30s)
   const shouldRefetch = !ST.worldData.length || (Date.now() - ST.lastWorldUpdate > 30000);
   if (shouldRefetch) {
@@ -783,15 +904,15 @@ async function initDashboard(){
     ST.lastWorldUpdate = Date.now();
   }
   const data = ST.worldData;
-  const top12 = [...data].sort((a,b)=>b.score-a.score).slice(0,12);
-  const pl = {paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',font:{color:'#9ca3af',size:10},margin:{l:90,r:30,t:8,b:30}};
+  const top12 = [...data].sort((a, b) => b.score - a.score).slice(0, 12);
+  const pl = { paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)', font: { color: '#9ca3af', size: 10 }, margin: { l: 90, r: 30, t: 8, b: 30 } };
 
   // Update timestamp
   const timeEl = document.getElementById('dash-last-update');
   const chartTimeEl = document.getElementById('chart-data-time');
   if (timeEl) timeEl.textContent = 'Updated: ' + new Date().toLocaleTimeString();
   if (chartTimeEl) chartTimeEl.textContent = new Date().toLocaleTimeString();
-  
+
   // Update API status time
   const apiTimeEl = document.getElementById('api-status-time');
   if (apiTimeEl) apiTimeEl.textContent = 'Last checked: ' + new Date().toLocaleTimeString();
@@ -806,43 +927,54 @@ async function initDashboard(){
       weatherTempEl.textContent = rtD.temp + '°C';
       if (weatherCityEl) weatherCityEl.textContent = (rtD.city || '') + (rtD.weatherDesc ? ' · ' + rtD.weatherDesc : '') + (rtD.isRealWeather ? ' 🌤️' : '');
     }
-  } catch {}
+  } catch { }
 
-  Plotly.newPlot('dash-bar',[{type:'bar',orientation:'h',x:top12.map(d=>d.score),y:top12.map(d=>d.name),
-    marker:{color:top12.map(d=>scoreColor(d.score)),opacity:0.85},
-    text:top12.map(d=>`${d.score} ${scoreGrade(d.score)}`),textposition:'outside',
-  }],{...pl,xaxis:{color:'#4b5563',range:[0,105],gridcolor:'#1f2937'},yaxis:{color:'#9ca3af'}},{responsive:true,displayModeBar:false});
+  Plotly.newPlot('dash-bar', [{
+    type: 'bar', orientation: 'h', x: top12.map(d => d.score), y: top12.map(d => d.name),
+    marker: { color: top12.map(d => scoreColor(d.score)), opacity: 0.85 },
+    text: top12.map(d => `${d.score} ${scoreGrade(d.score)}`), textposition: 'outside',
+  }], { ...pl, xaxis: { color: '#4b5563', range: [0, 105], gridcolor: '#1f2937' }, yaxis: { color: '#9ca3af' } }, { responsive: true, displayModeBar: false });
 
-  const cats=[{n:'Sustainable',c:'#10b981',f:d=>d.score>=75},{n:'Moderate',c:'#f59e0b',f:d=>d.score>=50&&d.score<75},{n:'Critical',c:'#ef4444',f:d=>d.score<50}];
-  Plotly.newPlot('dash-pie',[{type:'pie',labels:cats.map(c=>c.n),values:cats.map(c=>data.filter(c.f).length),
-    marker:{colors:cats.map(c=>c.c)},hole:0.5,textinfo:'label+percent',
-    textfont:{color:'#e5e7eb',size:11},
-  }],{paper_bgcolor:'transparent',margin:{l:10,r:10,t:10,b:10},showlegend:false},{responsive:true,displayModeBar:false});
+  const cats = [{ n: 'Sustainable', c: '#10b981', f: d => d.score >= 75 }, { n: 'Moderate', c: '#f59e0b', f: d => d.score >= 50 && d.score < 75 }, { n: 'Critical', c: '#ef4444', f: d => d.score < 50 }];
+  Plotly.newPlot('dash-pie', [{
+    type: 'pie', labels: cats.map(c => c.n), values: cats.map(c => data.filter(c.f).length),
+    marker: { colors: cats.map(c => c.c) }, hole: 0.5, textinfo: 'label+percent',
+    textfont: { color: '#e5e7eb', size: 11 },
+  }], { paper_bgcolor: 'transparent', margin: { l: 10, r: 10, t: 10, b: 10 }, showlegend: false }, { responsive: true, displayModeBar: false });
 
-  Plotly.newPlot('dash-scatter',[{type:'scatter',mode:'markers+text',x:data.map(d=>d.renewable),y:data.map(d=>d.co2),
-    text:data.map(d=>d.code),textposition:'top center',
-    marker:{size:data.map(d=>6+d.score/14),color:data.map(d=>d.score),
-      colorscale:[[0,'#ef4444'],[0.5,'#f59e0b'],[1,'#10b981']],showscale:true,
-      colorbar:{title:'Score',titlefont:{color:'#6b7280'},tickfont:{color:'#6b7280'},len:0.8,thickness:10}},
-    hovertemplate:'<b>%{text}</b><br>Renewable: %{x}%<br>CO₂: %{y}t<extra></extra>',
-  }],{paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',
-    margin:{l:45,r:20,t:8,b:40},font:{color:'#9ca3af',size:10},
-    xaxis:{title:'Renewable %',color:'#4b5563',gridcolor:'#1f2937'},
-    yaxis:{title:'CO₂ t/cap',color:'#4b5563',gridcolor:'#1f2937'},
-  },{responsive:true,displayModeBar:false});
+  Plotly.newPlot('dash-scatter', [{
+    type: 'scatter', mode: 'markers+text', x: data.map(d => d.renewable), y: data.map(d => d.co2),
+    text: data.map(d => d.code), textposition: 'top center',
+    marker: {
+      size: data.map(d => 6 + d.score / 14), color: data.map(d => d.score),
+      colorscale: [[0, '#ef4444'], [0.5, '#f59e0b'], [1, '#10b981']], showscale: true,
+      colorbar: { title: 'Score', titlefont: { color: '#6b7280' }, tickfont: { color: '#6b7280' }, len: 0.8, thickness: 10 }
+    },
+    hovertemplate: '<b>%{text}</b><br>Renewable: %{x}%<br>CO₂: %{y}t<extra></extra>',
+  }], {
+    paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)',
+    margin: { l: 45, r: 20, t: 8, b: 40 }, font: { color: '#9ca3af', size: 10 },
+    xaxis: { title: 'Renewable %', color: '#4b5563', gridcolor: '#1f2937' },
+    yaxis: { title: 'CO₂ t/cap', color: '#4b5563', gridcolor: '#1f2937' },
+  }, { responsive: true, displayModeBar: false });
 
-  const yrs=[2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
-  const scrs=[52,53,54,55,56,56,57,58,59,60,61];
-  Plotly.newPlot('dash-trend',[
-    {type:'scatter',mode:'lines+markers',x:yrs,y:scrs,name:'Actual',
-      line:{color:'#22d3ee',width:2.5},marker:{size:5},fill:'tozeroy',fillcolor:'rgba(34,211,238,0.06)'},
-    {type:'scatter',mode:'lines',x:[2025,2026,2027,2028],y:[61,62.5,64,65.5],name:'Forecast',
-      line:{color:'#22d3ee',width:2,dash:'dot'},marker:{size:5}},
-  ],{paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',
-    margin:{l:35,r:15,t:8,b:35},font:{color:'#9ca3af',size:10},
-    xaxis:{color:'#4b5563',gridcolor:'#1f2937'},yaxis:{color:'#4b5563',gridcolor:'#1f2937',range:[40,75]},
-    legend:{bgcolor:'transparent',font:{color:'#9ca3af',size:9}},
-  },{responsive:true,displayModeBar:false});
+  const yrs = [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
+  const scrs = [52, 53, 54, 55, 56, 56, 57, 58, 59, 60, 61];
+  Plotly.newPlot('dash-trend', [
+    {
+      type: 'scatter', mode: 'lines+markers', x: yrs, y: scrs, name: 'Actual',
+      line: { color: '#22d3ee', width: 2.5 }, marker: { size: 5 }, fill: 'tozeroy', fillcolor: 'rgba(34,211,238,0.06)'
+    },
+    {
+      type: 'scatter', mode: 'lines', x: [2025, 2026, 2027, 2028], y: [61, 62.5, 64, 65.5], name: 'Forecast',
+      line: { color: '#22d3ee', width: 2, dash: 'dot' }, marker: { size: 5 }
+    },
+  ], {
+    paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)',
+    margin: { l: 35, r: 15, t: 8, b: 35 }, font: { color: '#9ca3af', size: 10 },
+    xaxis: { color: '#4b5563', gridcolor: '#1f2937' }, yaxis: { color: '#4b5563', gridcolor: '#1f2937', range: [40, 75] },
+    legend: { bgcolor: 'transparent', font: { color: '#9ca3af', size: 9 } },
+  }, { responsive: true, displayModeBar: false });
 
   // Auto-refresh every 30 seconds
   if (ST.dashboardInterval) clearInterval(ST.dashboardInterval);
@@ -858,26 +990,27 @@ async function refreshDashboardCharts() {
     ST.worldData = await r.json();
     ST.lastWorldUpdate = Date.now();
     const data = ST.worldData;
-    const top12 = [...data].sort((a,b)=>b.score-a.score).slice(0,12);
-    Plotly.update('dash-bar', { x: [top12.map(d=>d.score)], y: [top12.map(d=>d.name)] }, {}, [0]);
+    const top12 = [...data].sort((a, b) => b.score - a.score).slice(0, 12);
+    Plotly.update('dash-bar', { x: [top12.map(d => d.score)], y: [top12.map(d => d.name)] }, {}, [0]);
     const timeEl = document.getElementById('dash-last-update');
     if (timeEl) timeEl.textContent = 'Live · Updated: ' + new Date().toLocaleTimeString();
     toast('Dashboard data refreshed from live APIs', 'info');
-  } catch {}
+  } catch { }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // WORLD MAP
 // ════════════════════════════════════════════════════════════════════════════
-function mapHTML(){return `
+function mapHTML() {
+  return `
   <div class="space-y-4">
     <div class="flex flex-wrap items-center gap-3">
       <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-earth-americas"></i> ${t('worldMap')}</h2>
       <div class="flex flex-wrap gap-1 ml-auto">
-        ${['all','green','yellow','red'].map(f=>`
+        ${['all', 'green', 'yellow', 'red'].map(f => `
           <button onclick="filterMap('${f}')" id="mf-${f}"
-                  class="map-filter px-2.5 py-1 text-[10px] rounded-lg font-bold transition-all ${f==='all'?'bg-cyan-700 text-white':'bg-gray-800 text-gray-400'}">
-            ${f==='all'?'All':f==='green'?'🟢 Sustainable':f==='yellow'?'🟡 Moderate':'🔴 Critical'}
+                  class="map-filter px-2.5 py-1 text-[10px] rounded-lg font-bold transition-all ${f === 'all' ? 'bg-cyan-700 text-white' : 'bg-gray-800 text-gray-400'}">
+            ${f === 'all' ? 'All' : f === 'green' ? '🟢 Sustainable' : f === 'yellow' ? '🟡 Moderate' : '🔴 Critical'}
           </button>`).join('')}
       </div>
     </div>
@@ -899,93 +1032,105 @@ function mapHTML(){return `
         <span class="text-cyan-300 font-black text-lg w-14 text-center" id="year-label">2025</span>
       </div>
     </div>
-  </div>`;}
+  </div>`;
+}
 
-let mapFilter='all';
-async function initMap(){
-  if(!ST.worldData.length){const r=await fetch('/world_data');ST.worldData=await r.json();}
+let mapFilter = 'all';
+async function initMap() {
+  if (!ST.worldData.length) { const r = await fetch('/world_data'); ST.worldData = await r.json(); }
   drawMap(ST.worldData);
 }
-function filterMap(f){
-  mapFilter=f;
-  document.querySelectorAll('.map-filter').forEach(b=>{
-    b.className=b.className.replace('bg-cyan-700 text-white','bg-gray-800 text-gray-400');
+function filterMap(f) {
+  mapFilter = f;
+  document.querySelectorAll('.map-filter').forEach(b => {
+    b.className = b.className.replace('bg-cyan-700 text-white', 'bg-gray-800 text-gray-400');
   });
-  document.getElementById('mf-'+f).className=document.getElementById('mf-'+f).className.replace('bg-gray-800 text-gray-400','bg-cyan-700 text-white');
-  let d=ST.worldData;
-  if(f==='green')d=d.filter(x=>x.score>=75);
-  if(f==='yellow')d=d.filter(x=>x.score>=50&&x.score<75);
-  if(f==='red')d=d.filter(x=>x.score<50);
+  document.getElementById('mf-' + f).className = document.getElementById('mf-' + f).className.replace('bg-gray-800 text-gray-400', 'bg-cyan-700 text-white');
+  let d = ST.worldData;
+  if (f === 'green') d = d.filter(x => x.score >= 75);
+  if (f === 'yellow') d = d.filter(x => x.score >= 50 && x.score < 75);
+  if (f === 'red') d = d.filter(x => x.score < 50);
   drawMap(d);
 }
-function drawMap(data){
-  Plotly.newPlot('world-map',[{type:'choropleth',locationmode:'ISO-3',locations:data.map(d=>d.code),z:data.map(d=>d.score),
-    text:data.map(d=>`<b>${d.name}</b><br>Score: ${d.score}/100 (${scoreGrade(d.score)})<br>CO₂: ${d.co2}t/cap<br>Renewable: ${d.renewable}%<br>Water: ${d.waterAccess}%<br>Recycling: ${d.recycling}%<br>Traffic: ${d.traffic}%`),
-    hovertemplate:'%{text}<extra></extra>',zmin:0,zmax:100,
-    colorscale:[[0,'#7f1d1d'],[0.2,'#ef4444'],[0.5,'#78350f'],[0.55,'#f59e0b'],[0.75,'#064e3b'],[1,'#10b981']],
-    colorbar:{title:'Score',titlefont:{color:'#6b7280'},tickfont:{color:'#6b7280'},bgcolor:'rgba(0,0,0,0.3)',thickness:12},
-  }],{paper_bgcolor:'#030712',geo:{bgcolor:'#030712',landcolor:'#0f172a',oceancolor:'#0c1a2e',lakecolor:'#0c1a2e',
-    showocean:true,showlakes:true,showcoastlines:true,coastlinecolor:'#1e3a5f',showframe:false,projection:{type:'natural earth'}},
-    margin:{l:0,r:0,t:0,b:0}},{responsive:true,displayModeBar:false});
-  document.getElementById('world-map').on('plotly_click',d=>{
-    if(!d.points.length)return;
-    const c=data[d.points[0].pointIndex];
-    if(c)showCountryDetail(c);
-  });
+function drawMap(data) {
+  Plotly.newPlot('world-map', [{
+    type: 'choropleth', locationmode: 'ISO-3', locations: data.map(d => d.code), z: data.map(d => d.score),
+    text: data.map(d => `<b>${d.name}</b><br>Score: ${d.score}/100 (${scoreGrade(d.score)})<br>CO₂: ${d.co2}t/cap<br>Renewable: ${d.renewable}%<br>Water: ${d.waterAccess}%<br>Recycling: ${d.recycling}%<br>Traffic: ${d.traffic}%`),
+    hovertemplate: '%{text}<extra></extra>', zmin: 0, zmax: 100,
+    colorscale: [[0, '#7f1d1d'], [0.2, '#ef4444'], [0.5, '#78350f'], [0.55, '#f59e0b'], [0.75, '#064e3b'], [1, '#10b981']],
+    colorbar: { title: 'Score', titlefont: { color: '#6b7280' }, tickfont: { color: '#6b7280' }, bgcolor: 'rgba(0,0,0,0.3)', thickness: 12 },
+  }], {
+    paper_bgcolor: '#030712', geo: {
+      bgcolor: '#030712', landcolor: '#0f172a', oceancolor: '#0c1a2e', lakecolor: '#0c1a2e',
+      showocean: true, showlakes: true, showcoastlines: true, coastlinecolor: '#1e3a5f', showframe: false, projection: { type: 'natural earth' }
+    },
+    margin: { l: 0, r: 0, t: 0, b: 0 }
+  }, { responsive: true, displayModeBar: false });
+  const mapEl = document.getElementById('world-map');
+  if (mapEl) {
+    if (mapEl.removeAllListeners) mapEl.removeAllListeners('plotly_click');
+    mapEl.on('plotly_click', d => {
+      if (!d.points || !d.points.length) return;
+      const c = data[d.points[0].pointIndex];
+      if (c) showCountryDetail(c);
+    });
+  }
 }
-function showCountryDetail(c){
-  const el=document.getElementById('country-detail');el.classList.remove('hidden');
-  const col=c.score>=75?'emerald':c.score>=50?'yellow':'red';
-  const pred=Array.from({length:6},(_,i)=>Math.min(100,c.score+i*(c.renewable>50?0.8:0.3)).toFixed(1));
-  el.innerHTML=`
+function showCountryDetail(c) {
+  const el = document.getElementById('country-detail'); el.classList.remove('hidden');
+  const col = c.score >= 75 ? 'emerald' : c.score >= 50 ? 'yellow' : 'red';
+  const pred = Array.from({ length: 6 }, (_, i) => Math.min(100, c.score + i * (c.renewable > 50 ? 0.8 : 0.3)).toFixed(1));
+  el.innerHTML = `
     <div class="flex justify-between items-start mb-4">
       <div class="flex items-center gap-3">
         ${c.flag ? `<img src="${c.flag}" class="w-10 h-6 object-cover rounded" alt="${c.name} flag" onerror="this.style.display='none'"/>` : ''}
         <div>
           <h3 class="text-lg font-black text-${col}-300">${c.name}</h3>
           <span class="text-[10px] px-2 py-0.5 rounded-full bg-${col}-900/50 text-${col}-400 font-bold">${scoreLabel(c.score)} · Grade ${scoreGrade(c.score)}</span>
-          ${c.capital ? `<div class="text-[9px] text-gray-500 mt-0.5">🏛️ ${c.capital} · ${c.region||c.continent||''}</div>` : ''}
+          ${c.capital ? `<div class="text-[9px] text-gray-500 mt-0.5">🏛️ ${c.capital} · ${c.region || c.continent || ''}</div>` : ''}
         </div>
       </div>
       <div class="text-5xl font-black text-${col}-300">${c.score}<span class="text-xl text-gray-400">/100</span></div>
     </div>
     <div class="grid grid-cols-3 md:grid-cols-6 gap-2 mb-4">
-      ${[{l:'CO₂',v:c.co2+'t',i:'fa-cloud',c:'red'},{l:'Renewable',v:c.renewable+'%',i:'fa-solar-panel',c:'emerald'},
-         {l:'Water',v:c.waterAccess+'%',i:'fa-droplet',c:'blue'},{l:'Recycling',v:c.recycling+'%',i:'fa-recycle',c:'cyan'},
-         {l:'Traffic',v:c.traffic+'%',i:'fa-car',c:'orange'},{l:'Energy',v:c.energy+'kWh',i:'fa-bolt',c:'yellow'}]
-        .map(m=>`<div class="bg-gray-800 rounded-lg p-2 text-center"><i class="fas ${m.i} text-${m.c}-400 text-sm mb-1"></i>
+      ${[{ l: 'CO₂', v: c.co2 + 't', i: 'fa-cloud', c: 'red' }, { l: 'Renewable', v: c.renewable + '%', i: 'fa-solar-panel', c: 'emerald' },
+    { l: 'Water', v: c.waterAccess + '%', i: 'fa-droplet', c: 'blue' }, { l: 'Recycling', v: c.recycling + '%', i: 'fa-recycle', c: 'cyan' },
+    { l: 'Traffic', v: c.traffic + '%', i: 'fa-car', c: 'orange' }, { l: 'Energy', v: c.energy + 'kWh', i: 'fa-bolt', c: 'yellow' }]
+      .map(m => `<div class="bg-gray-800 rounded-lg p-2 text-center"><i class="fas ${m.i} text-${m.c}-400 text-sm mb-1"></i>
           <div class="text-sm font-bold text-white">${m.v}</div><div class="text-[9px] text-gray-400">${m.l}</div></div>`).join('')}
     </div>
-    ${c.languages ? `<div class="text-[9px] text-gray-500 mb-3">🌐 Languages: ${c.languages} · 💰 ${c.currencies || 'N/A'} · 👥 Pop: ${c.realPopulation ? (c.realPopulation/1e6).toFixed(1)+'M (real)' : c.pop+'M'}</div>` : ''}
-    <div><h4 class="text-[10px] font-bold text-cyan-400 mb-1">🤖 5-Year AI Forecast</h4>
-      <div class="flex gap-2">${[2025,2026,2027,2028,2029,2030].map((yr,i)=>`
+    ${c.languages ? `<div class="text-[9px] text-gray-500 mb-3">🌐 Languages: ${c.languages} · 💰 ${c.currencies || 'N/A'} · 👥 Pop: ${c.realPopulation ? (c.realPopulation / 1e6).toFixed(1) + 'M (real)' : c.pop + 'M'}</div>` : ''}
+    <div><h4 class="text-[10px] font-bold text-cyan-400 mb-1">📈 5-Year Trend Projection (Heuristic Estimate)</h4>
+      <div class="flex gap-2">${[2025, 2026, 2027, 2028, 2029, 2030].map((yr, i) => `
         <div class="flex-1 text-center bg-gray-800 rounded p-1">
           <div class="text-xs font-bold" style="color:${scoreColor(parseFloat(pred[i]))}">${pred[i]}</div>
           <div class="text-[9px] text-gray-500">${yr}</div>
         </div>`).join('')}</div>
     </div>`;
 }
-function animateYear(y){
-  document.getElementById('year-label').textContent=y;
-  const f=(y-2015)/15;
-  const animated=ST.worldData.map(d=>({...d,score:clamp(d.score*(0.75+0.25*f)+(Math.random()-0.5)*3,15,100)}));
+function animateYear(y) {
+  document.getElementById('year-label').textContent = y;
+  const f = (y - 2015) / 15;
+  const animated = ST.worldData.map(d => ({ ...d, score: clamp(d.score * (0.75 + 0.25 * f) + (Math.random() - 0.5) * 3, 15, 100) }));
   drawMap(animated);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // REAL-TIME MONITOR
 // ════════════════════════════════════════════════════════════════════════════
-function realtimeHTML(){return `
+function realtimeHTML() {
+  return `
   <div class="space-y-4">
     <div class="flex items-center justify-between flex-wrap gap-2">
       <div>
         <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
           ${t('realtime')} — Urban Sensor Network
+          <span id="rt-header-prov">${provenanceBadge('live', 'Live Open-Meteo Weather + Synthetic Sensor Stream')}</span>
         </h2>
         <div class="flex items-center gap-3 mt-0.5">
-          <span class="text-[9px] text-gray-600" id="rt-datasource">Initializing...</span>
-          <span id="rt-weather-badge" class="text-[9px] text-gray-600"></span>
+          <span class="text-[9px] text-gray-500" id="rt-datasource">Initializing...</span>
+          <span id="rt-weather-badge" class="text-[9px] text-gray-500"></span>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -1002,7 +1147,7 @@ function realtimeHTML(){return `
       <div class="et-card">
         <div class="flex items-center gap-1 mb-1"><i class="fas fa-smog text-yellow-400 text-xs"></i><span class="text-[9px] text-gray-400">CO₂ ppm (Atm)</span></div>
         <div class="text-lg font-black text-yellow-300" id="rt-co2ppm">—</div>
-        <div class="text-[9px] text-gray-600">📡 NOAA model</div>
+        <div class="text-[9px] text-gray-500">Calculated estimate (Mauna Loa curve)</div>
       </div>
       <div class="et-card">
         <div class="flex items-center gap-1 mb-1"><i class="fas fa-droplet text-blue-400 text-xs"></i><span class="text-[9px] text-gray-400">Humidity (Real)</span></div>
@@ -1030,57 +1175,69 @@ function realtimeHTML(){return `
         <div id="rt-traffic-air" style="height:200px"></div>
       </div>
     </div>
-  </div>`;}
+  </div>`;
+}
 
-let rtPaused=false;
-function toggleRTFeed(){
-  rtPaused=!rtPaused;
-  const btn=document.getElementById('rt-toggle');
-  btn.innerHTML=rtPaused?'<i class="fas fa-play"></i> Resume':'<i class="fas fa-pause"></i> Pause';
-  btn.className=`px-3 py-1.5 text-xs rounded-lg border transition-all ${rtPaused?'bg-gray-800 border-gray-700 text-gray-400':'bg-emerald-800/60 border-emerald-700 text-emerald-300 hover:bg-emerald-700/60'}`;
+let rtPaused = false;
+function toggleRTFeed() {
+  rtPaused = !rtPaused;
+  const btn = document.getElementById('rt-toggle');
+  btn.innerHTML = rtPaused ? '<i class="fas fa-play"></i> Resume' : '<i class="fas fa-pause"></i> Pause';
+  btn.className = `px-3 py-1.5 text-xs rounded-lg border transition-all ${rtPaused ? 'bg-gray-800 border-gray-700 text-gray-400' : 'bg-emerald-800/60 border-emerald-700 text-emerald-300 hover:bg-emerald-700/60'}`;
 }
-async function initRealtime(){
+async function initRealtime() {
   await fetchAndUpdateRT();
-  ST.realtimeInterval=setInterval(async()=>{if(!rtPaused)await fetchAndUpdateRT();},3000);
+  ST.realtimeInterval = setInterval(async () => { if (!rtPaused) await fetchAndUpdateRT(); }, 3000);
 }
-async function fetchAndUpdateRT(){
-  const r=await fetch('/realtime');
-  const d=await r.json();
-  ST.realtimeData=d.feed||[];
-  const latest=d.latest;
-  const el=document.getElementById('rt-lastupdate');
+async function fetchAndUpdateRT() {
+  const r = await fetch('/realtime');
+  const d = await r.json();
+  ST.realtimeData = d.feed || [];
+  const latest = d.latest;
+  const el = document.getElementById('rt-lastupdate');
   const srcEl = document.getElementById('rt-datasource');
-  if(el) el.textContent='Updated: '+new Date().toLocaleTimeString();
-  if(srcEl) srcEl.textContent = d.dataSource || 'Sensor Network';
+  const hdrProv = document.getElementById('rt-header-prov');
+  if (el) el.textContent = 'Updated: ' + new Date().toLocaleTimeString();
+  if (srcEl) srcEl.textContent = d.dataSource || 'Urban Sensor Network';
+  if (hdrProv && d.provenance) {
+    hdrProv.innerHTML = provenanceBadge(
+      latest?.isRealWeather ? 'live' : 'simulated',
+      d.provenance,
+      '3s stream'
+    );
+  }
   updateRTCards(latest);
   updateRTCharts();
   // Update weather badge if real data
   if (latest && latest.isRealWeather) {
     const badge = document.getElementById('rt-weather-badge');
-    if (badge) badge.innerHTML = `<span class="text-[9px] text-emerald-400"><i class="fas fa-check-circle mr-1"></i>Real weather: ${latest.weatherDesc || ''} · ${latest.city}</span>`;
+    if (badge) badge.innerHTML = `<span class="text-[9px] text-emerald-400"><i class="fas fa-check-circle mr-1"></i>Live Open-Meteo: ${latest.weatherDesc || ''} · ${latest.city}</span>`;
   }
 }
-function updateRTCards(l){
-  const el=document.getElementById('rt-cards');if(!el)return;
-  const metrics=[
-    {label:'Energy',val:l.energy,unit:'kWh',icon:'fa-bolt',color:'yellow',thresh:200},
-    {label:'Water',val:l.water,unit:'M³',icon:'fa-droplet',color:'blue',thresh:90},
-    {label:'Traffic',val:l.traffic,unit:'%',icon:'fa-car',color:'orange',thresh:75},
-    {label:'Air Quality',val:l.air,unit:'AQI',icon:'fa-wind',color:'emerald',thresh:100},
-    {label:'Noise',val:l.noise,unit:'dB',icon:'fa-volume-high',color:'purple',thresh:65},
-    {label:'Temperature',val:l.temp,unit:'°C',icon:'fa-thermometer-half',color:'red',thresh:30},
+function updateRTCards(l) {
+  const el = document.getElementById('rt-cards'); if (!el) return;
+  const metrics = [
+    { label: 'Energy', val: l.energy, unit: 'kWh', icon: 'fa-bolt', color: 'yellow', thresh: 200 },
+    { label: 'Water', val: l.water, unit: 'M³', icon: 'fa-droplet', color: 'blue', thresh: 90 },
+    { label: 'Traffic', val: l.traffic, unit: '%', icon: 'fa-car', color: 'orange', thresh: 75 },
+    { label: 'Air Quality', val: l.air, unit: 'AQI', icon: 'fa-wind', color: 'emerald', thresh: 100, isRealAQI: l.isRealAQI },
+    { label: 'Noise', val: l.noise, unit: 'dB', icon: 'fa-volume-high', color: 'purple', thresh: 65 },
+    { label: 'Temperature', val: l.temp, unit: '°C', icon: 'fa-thermometer-half', color: 'red', thresh: 30 },
   ];
-  el.innerHTML=metrics.map(m=>{
-    const isAlert=m.val>m.thresh;
-    return `<div class="et-card ${isAlert?'border-red-700/50 bg-red-950/20':''} transition-all">
+  el.innerHTML = metrics.map(m => {
+    const isAlert = m.val > m.thresh;
+    return `<div class="et-card ${isAlert ? 'border-red-700/50 bg-red-950/20' : ''} transition-all">
       <div class="flex items-center justify-between mb-1">
         <i class="fas ${m.icon} text-${m.color}-400 text-sm"></i>
-        ${isAlert?'<span class="text-[9px] text-red-400 font-bold animate-pulse">⚠ HIGH</span>':''}
+        ${isAlert ? '<span class="text-[9px] text-red-400 font-bold animate-pulse">⚠ HIGH</span>' : ''}
       </div>
       <div class="text-xl font-black text-${m.color}-300">${m.val}<span class="text-xs ml-0.5 text-gray-400">${m.unit}</span></div>
-      <div class="text-[10px] text-gray-400 mt-0.5">${m.label}</div>
+      <div class="text-[10px] text-gray-400 mt-0.5 flex justify-between items-center">
+        <span>${m.label}</span>
+        ${m.isRealAQI ? '<span title="Sentinel-5P API" class="text-[8px] text-emerald-500 bg-emerald-900/30 px-1 rounded ml-1 border border-emerald-800/50">✅ S5P API</span>' : ''}
+      </div>
       <div class="mt-1.5 h-1 bg-gray-700 rounded-full overflow-hidden">
-        <div class="h-full rounded-full transition-all" style="width:${clamp(m.val/m.thresh*80,5,100)}%;background:${isAlert?'#ef4444':'#10b981'}"></div>
+        <div class="h-full rounded-full transition-all" style="width:${clamp(m.val / m.thresh * 80, 5, 100)}%;background:${isAlert ? '#ef4444' : '#10b981'}"></div>
       </div>
     </div>`}).join('');
   // Update extra cards with real weather data
@@ -1091,75 +1248,89 @@ function updateRTCards(l){
   if (humEl) humEl.textContent = l.humidity + '%';
   if (windEl) windEl.textContent = l.wind + ' km/h';
 }
-function updateRTCharts(){
-  const d=ST.realtimeData;if(!d.length)return;
-  const ts=d.map(x=>new Date(x.ts).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit',second:'2-digit'}));
-  const pl2={paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',font:{color:'#9ca3af',size:9},margin:{l:40,r:10,t:8,b:50},xaxis:{color:'#4b5563',gridcolor:'#1f2937',tickangle:-45},yaxis:{color:'#4b5563',gridcolor:'#1f2937'}};
-  Plotly.newPlot('rt-chart',[
-    {type:'scatter',mode:'lines',name:'Energy',x:ts,y:d.map(x=>x.energy),line:{color:'#f59e0b',width:1.5}},
-    {type:'scatter',mode:'lines',name:'Water',x:ts,y:d.map(x=>x.water),line:{color:'#3b82f6',width:1.5},yaxis:'y2'},
-    {type:'scatter',mode:'lines',name:'Traffic',x:ts,y:d.map(x=>x.traffic),line:{color:'#f97316',width:1.5},yaxis:'y3'},
-  ],{...pl2,yaxis:{title:'Energy(kWh)',color:'#f59e0b',gridcolor:'#1f2937'},
-    yaxis2:{title:'Water',color:'#3b82f6',overlaying:'y',side:'right'},
-    yaxis3:{visible:false,overlaying:'y'},
-    legend:{bgcolor:'transparent',font:{color:'#9ca3af',size:8}},
-  },{responsive:true,displayModeBar:false});
+function updateRTCharts() {
+  const d = ST.realtimeData; if (!d.length) return;
+  const ts = d.map(x => new Date(x.ts).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+  const pl2 = { paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)', font: { color: '#9ca3af', size: 9 }, margin: { l: 40, r: 10, t: 8, b: 50 }, xaxis: { color: '#4b5563', gridcolor: '#1f2937', tickangle: -45 }, yaxis: { color: '#4b5563', gridcolor: '#1f2937' } };
+  Plotly.newPlot('rt-chart', [
+    { type: 'scatter', mode: 'lines', name: 'Energy', x: ts, y: d.map(x => x.energy), line: { color: '#f59e0b', width: 1.5 } },
+    { type: 'scatter', mode: 'lines', name: 'Water', x: ts, y: d.map(x => x.water), line: { color: '#3b82f6', width: 1.5 }, yaxis: 'y2' },
+    { type: 'scatter', mode: 'lines', name: 'Traffic', x: ts, y: d.map(x => x.traffic), line: { color: '#f97316', width: 1.5 }, yaxis: 'y3' },
+  ], {
+    ...pl2, yaxis: { title: 'Energy(kWh)', color: '#f59e0b', gridcolor: '#1f2937' },
+    yaxis2: { title: 'Water', color: '#3b82f6', overlaying: 'y', side: 'right' },
+    yaxis3: { visible: false, overlaying: 'y' },
+    legend: { bgcolor: 'transparent', font: { color: '#9ca3af', size: 8 } },
+  }, { responsive: true, displayModeBar: false });
 
-  Plotly.newPlot('rt-water-energy',[
-    {type:'bar',name:'Water M³',x:ts.slice(-12),y:d.slice(-12).map(x=>x.water),marker:{color:'#3b82f6',opacity:0.7}},
-    {type:'bar',name:'Energy/10',x:ts.slice(-12),y:d.slice(-12).map(x=>x.energy/10),marker:{color:'#f59e0b',opacity:0.7}},
-  ],{...pl2,barmode:'group',legend:{bgcolor:'transparent',font:{color:'#9ca3af',size:9}}},{responsive:true,displayModeBar:false});
+  Plotly.newPlot('rt-water-energy', [
+    { type: 'bar', name: 'Water M³', x: ts.slice(-12), y: d.slice(-12).map(x => x.water), marker: { color: '#3b82f6', opacity: 0.7 } },
+    { type: 'bar', name: 'Energy/10', x: ts.slice(-12), y: d.slice(-12).map(x => x.energy / 10), marker: { color: '#f59e0b', opacity: 0.7 } },
+  ], { ...pl2, barmode: 'group', legend: { bgcolor: 'transparent', font: { color: '#9ca3af', size: 9 } } }, { responsive: true, displayModeBar: false });
 
-  Plotly.newPlot('rt-traffic-air',[
-    {type:'scatter',mode:'lines+markers',name:'Traffic %',x:ts.slice(-12),y:d.slice(-12).map(x=>x.traffic),line:{color:'#f97316',width:2},marker:{size:4}},
-    {type:'scatter',mode:'lines+markers',name:'AQI',x:ts.slice(-12),y:d.slice(-12).map(x=>x.air),line:{color:'#10b981',width:2},marker:{size:4}},
-  ],{...pl2,legend:{bgcolor:'transparent',font:{color:'#9ca3af',size:9}}},{responsive:true,displayModeBar:false});
+  Plotly.newPlot('rt-traffic-air', [
+    { type: 'scatter', mode: 'lines+markers', name: 'Traffic %', x: ts.slice(-12), y: d.slice(-12).map(x => x.traffic), line: { color: '#f97316', width: 2 }, marker: { size: 4 } },
+    { type: 'scatter', mode: 'lines+markers', name: 'AQI', x: ts.slice(-12), y: d.slice(-12).map(x => x.air), line: { color: '#10b981', width: 2 }, marker: { size: 4 } },
+  ], { ...pl2, legend: { bgcolor: 'transparent', font: { color: '#9ca3af', size: 9 } } }, { responsive: true, displayModeBar: false });
 }
 
 
 // ════════════════════════════════════════════════════════════════════════════
-// SIMULATOR  (LSTM)
+// SIMULATOR  (Multi-Factor Policy Scenario Projection)
 // ════════════════════════════════════════════════════════════════════════════
-function simulatorHTML(){return `
+function simulatorHTML() {
+  return `
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
     <div class="et-card">
-      <h3 class="et-card-title mb-4"><i class="fas fa-sliders"></i> ${t('simulator')} Parameters</h3>
-      ${[{id:'s-ren',label:t('renewable'),unit:'%',min:0,max:100,val:50,col:'emerald'},
-         {id:'s-rec',label:t('recycling'),unit:'%',min:0,max:100,val:35,col:'cyan'},
-         {id:'s-wat',label:t('water'),unit:'%',min:0,max:100,val:88,col:'blue'},
-         {id:'s-co2',label:'CO₂ Emissions',unit:'t/cap',min:0,max:30,val:8,col:'red'},
-         {id:'s-nrg',label:'Energy Efficiency',unit:'%',min:0,max:100,val:50,col:'yellow'},
-         {id:'s-trn',label:t('transport'),unit:'%',min:0,max:100,val:50,col:'violet'},
-         {id:'s-pop',label:'Population Growth',unit:'%/yr',min:0,max:5,val:1.2,step:'0.1',col:'orange'},
-      ].map(s=>`
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="et-card-title mb-0"><i class="fas fa-sliders"></i> ${t('simulator')} Parameters</h3>
+        ${provenanceBadge('heuristic', 'Multi-Factor Model')}
+      </div>
+      <div class="text-[10px] text-gray-400 mb-3 flex items-center gap-1.5">
+        <i class="fas fa-lock text-cyan-400"></i> Deterministic Mode (Reproducible Projections)
+      </div>
+      ${[{ id: 's-ren', label: t('renewable'), unit: '%', min: 0, max: 100, val: 50, col: 'emerald' },
+    { id: 's-rec', label: t('recycling'), unit: '%', min: 0, max: 100, val: 35, col: 'cyan' },
+    { id: 's-wat', label: t('water'), unit: '%', min: 0, max: 100, val: 88, col: 'blue' },
+    { id: 's-co2', label: 'CO₂ Emissions', unit: 't/capita', min: 0, max: 30, val: 8, col: 'red' },
+    { id: 's-nrg', label: 'Energy Efficiency', unit: '%', min: 0, max: 100, val: 50, col: 'yellow' },
+    { id: 's-trn', label: t('transport'), unit: '%', min: 0, max: 100, val: 50, col: 'violet' },
+    { id: 's-pop', label: 'Population Growth', unit: '%/yr', min: 0, max: 5, val: 1.2, step: '0.1', col: 'orange' },
+    ].map(s => `
         <div class="mb-4">
           <div class="flex justify-between mb-1">
             <span class="text-[11px] text-gray-300">${s.label}</span>
-            <span class="text-[11px] font-bold text-${s.col}-300" id="${s.id}-v">${s.val}${s.unit}</span>
+            <span class="text-[11px] font-bold text-${s.col}-300" id="${s.id}-v">${s.val} ${s.unit}</span>
           </div>
-          <input type="range" id="${s.id}" min="${s.min}" max="${s.max}" step="${s.step||1}" value="${s.val}"
+          <input type="range" id="${s.id}" min="${s.min}" max="${s.max}" step="${s.step || 1}" value="${s.val}"
                  class="w-full accent-${s.col}-400 h-1.5"
-                 oninput="document.getElementById('${s.id}-v').textContent=this.value+'${s.unit}'">
+                 oninput="document.getElementById('${s.id}-v').textContent=this.value+' '+('${s.unit}')">
         </div>`).join('')}
       <button onclick="runSimulation()" id="sim-btn"
-              class="et-btn-primary w-full mt-2"><i class="fas fa-play"></i> ${t('runSim')}</button>
+              class="et-btn-primary w-full mt-2"><i class="fas fa-play"></i> Run Scenario Projection</button>
     </div>
     <div class="lg:col-span-2 space-y-4">
       <div class="et-card">
-        <h3 class="et-card-title"><i class="fas fa-chart-line"></i> 10-Year LSTM Forecast</h3>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="et-card-title mb-0"><i class="fas fa-chart-line"></i> 10-Year Multi-Factor Scenario Projection</h3>
+          <span class="text-[10px] text-gray-400">Horizon: 2025–2035</span>
+        </div>
         <div id="sim-main" style="height:260px">
           <div class="flex items-center justify-center h-full text-gray-500 text-sm gap-2">
-            <i class="fas fa-play-circle text-3xl text-cyan-900"></i>Run simulation to generate forecast
+            <i class="fas fa-play-circle text-3xl text-cyan-900"></i>Run scenario projection to model trajectory
           </div>
         </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div class="et-card"><h3 class="et-card-title text-red-300"><i class="fas fa-cloud"></i> CO₂</h3><div id="sim-co2" style="height:140px"></div></div>
-        <div class="et-card"><h3 class="et-card-title text-emerald-300"><i class="fas fa-solar-panel"></i> Renewable</h3><div id="sim-ren" style="height:140px"></div></div>
-        <div class="et-card"><h3 class="et-card-title text-blue-300"><i class="fas fa-droplet"></i> Water</h3><div id="sim-wat" style="height:140px"></div></div>
+        <div class="et-card"><h3 class="et-card-title text-red-300"><i class="fas fa-cloud"></i> CO₂ (t/capita)</h3><div id="sim-co2" style="height:140px"></div></div>
+        <div class="et-card"><h3 class="et-card-title text-emerald-300"><i class="fas fa-solar-panel"></i> Renewable (%)</h3><div id="sim-ren" style="height:140px"></div></div>
+        <div class="et-card"><h3 class="et-card-title text-blue-300"><i class="fas fa-droplet"></i> Water Access (%)</h3><div id="sim-wat" style="height:140px"></div></div>
       </div>
       <div id="sim-insights" class="hidden et-card border-cyan-800/50">
-        <h3 class="et-card-title mb-3"><i class="fas fa-lightbulb text-yellow-400"></i> AI Insights</h3>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="et-card-title mb-0"><i class="fas fa-lightbulb text-yellow-400"></i> Projection Analysis</h3>
+          ${provenanceBadge('heuristic', 'Policy Tradeoff Engine')}
+        </div>
         <div id="sim-insights-content" class="space-y-1.5 mb-4"></div>
         <div class="grid grid-cols-3 gap-3 mt-4">
           <div class="text-center bg-gray-800 rounded-lg p-3">
@@ -1167,7 +1338,7 @@ function simulatorHTML(){return `
             <div class="text-2xl font-black text-gray-200" id="sim-base">—</div>
           </div>
           <div class="text-center bg-cyan-900/30 border border-cyan-800 rounded-lg p-3">
-            <div class="text-xs text-cyan-400">Predicted 2035</div>
+            <div class="text-xs text-cyan-400">Projected 2035</div>
             <div class="text-3xl font-black" id="sim-final" style="color:#22d3ee">—</div>
           </div>
           <div class="text-center bg-gray-800 rounded-lg p-3">
@@ -1177,58 +1348,77 @@ function simulatorHTML(){return `
         </div>
       </div>
     </div>
-  </div>`;}
+  </div>`;
+}
 
-async function runSimulation(){
-  const btn=document.getElementById('sim-btn');
-  btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Running LSTM...';btn.disabled=true;
-  const payload={
-    renewable:+document.getElementById('s-ren').value,recycling:+document.getElementById('s-rec').value,
-    waterAccess:+document.getElementById('s-wat').value,co2:+document.getElementById('s-co2').value,
-    energyEff:+document.getElementById('s-nrg').value,transport:+document.getElementById('s-trn').value,
-    populationGrowth:+document.getElementById('s-pop').value,
-  };
-  const r=await fetch('/simulate_future',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  const d=await r.json();ST.simResult=d;
-  const pl={paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',font:{color:'#9ca3af',size:9},showlegend:false,margin:{l:40,r:10,t:8,b:35}};
-  const pla={...pl,xaxis:{color:'#4b5563',gridcolor:'#1f2937'},yaxis:{color:'#4b5563',gridcolor:'#1f2937'}};
+async function runSimulation() {
+  const btn = document.getElementById('sim-btn');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running Projection...'; btn.disabled = true;
+  try {
+    const payload = {
+      renewable: +document.getElementById('s-ren').value, recycling: +document.getElementById('s-rec').value,
+      waterAccess: +document.getElementById('s-wat').value, co2: +document.getElementById('s-co2').value,
+      energyEff: +document.getElementById('s-nrg').value, transport: +document.getElementById('s-trn').value,
+      populationGrowth: +document.getElementById('s-pop').value,
+      deterministic: true,
+      seed: 42,
+    };
+    const r = await fetch('/simulate_future', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if (!r.ok) {
+      const errData = await r.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${r.status}`);
+    }
+    const d = await r.json(); ST.simResult = d;
+    const pl = { paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)', font: { color: '#9ca3af', size: 9 }, showlegend: false, margin: { l: 40, r: 10, t: 8, b: 35 } };
+    const pla = { ...pl, xaxis: { color: '#4b5563', gridcolor: '#1f2937' }, yaxis: { color: '#4b5563', gridcolor: '#1f2937' } };
 
-  Plotly.newPlot('sim-main',[
-    {type:'scatter',mode:'lines',name:'Upper CI',x:d.years,y:d.upperBand||d.scores,line:{color:'rgba(34,211,238,0.2)',width:0},fill:'tozeroy',fillcolor:'rgba(34,211,238,0.04)',showlegend:false},
-    {type:'scatter',mode:'lines+markers',name:'Score',x:d.years,y:d.scores,line:{color:'#22d3ee',width:3},
-      marker:{color:d.scores.map(s=>scoreColor(s)),size:7},fill:'tonexty',fillcolor:'rgba(34,211,238,0.07)',
-      text:d.years.map((yr,i)=>`${yr}: ${d.scores[i]}`),hovertemplate:'%{text}<extra></extra>'},
-    {type:'scatter',mode:'lines',name:'Lower CI',x:d.years,y:d.lowerBand||d.scores,line:{color:'rgba(34,211,238,0.2)',width:0},fill:'tonexty',fillcolor:'rgba(34,211,238,0.04)',showlegend:false},
-  ],{...pla,yaxis:{...pla.yaxis,range:[0,105],title:'Score'},xaxis:{...pla.xaxis,title:'Year'},margin:{l:45,r:10,t:8,b:40},legend:{bgcolor:'transparent',font:{color:'#9ca3af',size:9}}},{responsive:true,displayModeBar:false});
+    Plotly.newPlot('sim-main', [
+      { type: 'scatter', mode: 'lines', name: 'Upper CI', x: d.years, y: d.upperBand || d.scores, line: { color: 'rgba(34,211,238,0.2)', width: 0 }, fill: 'tozeroy', fillcolor: 'rgba(34,211,238,0.04)', showlegend: false },
+      {
+        type: 'scatter', mode: 'lines+markers', name: 'Score', x: d.years, y: d.scores, line: { color: '#22d3ee', width: 3 },
+        marker: { color: d.scores.map(s => scoreColor(s)), size: 7 }, fill: 'tonexty', fillcolor: 'rgba(34,211,238,0.07)',
+        text: d.years.map((yr, i) => `${yr}: ${d.scores[i]}`), hovertemplate: '%{text}<extra></extra>'
+      },
+      { type: 'scatter', mode: 'lines', name: 'Lower CI', x: d.years, y: d.lowerBand || d.scores, line: { color: 'rgba(34,211,238,0.2)', width: 0 }, fill: 'tonexty', fillcolor: 'rgba(34,211,238,0.04)', showlegend: false },
+    ], { ...pla, yaxis: { ...pla.yaxis, range: [0, 105], title: 'Score' }, xaxis: { ...pla.xaxis, title: 'Year' }, margin: { l: 45, r: 10, t: 8, b: 40 }, legend: { bgcolor: 'transparent', font: { color: '#9ca3af', size: 9 } } }, { responsive: true, displayModeBar: false });
 
-  Plotly.newPlot('sim-co2',[{type:'scatter',mode:'lines',x:d.years,y:d.co2Trend,line:{color:'#ef4444',width:2},fill:'tozeroy',fillcolor:'rgba(239,68,68,0.07)'}],pla,{responsive:true,displayModeBar:false});
-  Plotly.newPlot('sim-ren',[{type:'scatter',mode:'lines',x:d.years,y:d.renewTrend,line:{color:'#10b981',width:2},fill:'tozeroy',fillcolor:'rgba(16,185,129,0.07)'}],pla,{responsive:true,displayModeBar:false});
-  Plotly.newPlot('sim-wat',[{type:'scatter',mode:'lines',x:d.years,y:d.waterTrend,line:{color:'#3b82f6',width:2},fill:'tozeroy',fillcolor:'rgba(59,130,246,0.07)'}],pla,{responsive:true,displayModeBar:false});
+    Plotly.newPlot('sim-co2', [{ type: 'scatter', mode: 'lines', x: d.years, y: d.co2Trend, line: { color: '#ef4444', width: 2 }, fill: 'tozeroy', fillcolor: 'rgba(239,68,68,0.07)' }], { ...pla, yaxis: { ...pla.yaxis, title: 't/cap' } }, { responsive: true, displayModeBar: false });
+    Plotly.newPlot('sim-ren', [{ type: 'scatter', mode: 'lines', x: d.years, y: d.renewTrend, line: { color: '#10b981', width: 2 }, fill: 'tozeroy', fillcolor: 'rgba(16,185,129,0.07)' }], { ...pla, yaxis: { ...pla.yaxis, title: '%' } }, { responsive: true, displayModeBar: false });
+    Plotly.newPlot('sim-wat', [{ type: 'scatter', mode: 'lines', x: d.years, y: d.waterTrend, line: { color: '#3b82f6', width: 2 }, fill: 'tozeroy', fillcolor: 'rgba(59,130,246,0.07)' }], { ...pla, yaxis: { ...pla.yaxis, title: '%' } }, { responsive: true, displayModeBar: false });
 
-  document.getElementById('sim-insights').classList.remove('hidden');
-  document.getElementById('sim-insights-content').innerHTML=d.explanation.map(e=>`<p class="text-xs text-gray-300">${e}</p>`).join('');
-  document.getElementById('sim-base').textContent=d.baseScore;
-  const fEl=document.getElementById('sim-final');fEl.textContent=d.finalScore;fEl.style.color=scoreColor(d.finalScore);
-  document.getElementById('sim-grade').textContent=scoreGrade(d.finalScore);
-  btn.innerHTML='<i class="fas fa-check"></i> Done';
-  setTimeout(()=>{btn.innerHTML=`<i class="fas fa-play"></i> ${t('runSim')}`;btn.disabled=false;},2000);
-  toast('Simulation complete!','success');
+    document.getElementById('sim-insights').classList.remove('hidden');
+    document.getElementById('sim-insights-content').innerHTML = d.explanation.map(e => `<p class="text-xs text-gray-300">${e}</p>`).join('');
+    document.getElementById('sim-base').textContent = d.baseScore;
+    const fEl = document.getElementById('sim-final'); fEl.textContent = d.finalScore; fEl.style.color = scoreColor(d.finalScore);
+    document.getElementById('sim-grade').textContent = scoreGrade(d.finalScore);
+    btn.innerHTML = '<i class="fas fa-check"></i> Done';
+    setTimeout(() => { btn.innerHTML = `<i class="fas fa-play"></i> Run Scenario Projection`; btn.disabled = false; }, 2000);
+    toast('Scenario projection complete!', 'success');
+  } catch (err) {
+    toast('Projection failed: ' + (err.message || err), 'error');
+    btn.innerHTML = `<i class="fas fa-play"></i> Run Scenario Projection`;
+    btn.disabled = false;
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // COMPARISON — Baseline vs Projected
 // ════════════════════════════════════════════════════════════════════════════
-function compareHTML(){return `
+function compareHTML() {
+  return `
   <div class="space-y-5">
-    <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-code-compare"></i> ${t('compare')} — Baseline vs Projected</h2>
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-code-compare"></i> ${t('compare')} — Baseline vs Projected</h2>
+      ${provenanceBadge('heuristic', 'Identical Assumptions')}
+    </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
       <div class="et-card border-gray-600">
         <h3 class="et-card-title text-gray-300 mb-3"><i class="fas fa-circle-dot text-gray-400"></i> ${t('baseline')} Scenario</h3>
-        ${buildScenarioSliders('b','gray')}
+        ${buildScenarioSliders('b', 'gray')}
       </div>
       <div class="et-card border-cyan-800/50">
         <h3 class="et-card-title text-cyan-300 mb-3"><i class="fas fa-circle-dot text-cyan-400"></i> ${t('projected')} Scenario</h3>
-        ${buildScenarioSliders('p','cyan')}
+        ${buildScenarioSliders('p', 'cyan')}
       </div>
     </div>
     <div class="flex justify-center">
@@ -1267,16 +1457,17 @@ function compareHTML(){return `
         </div>
       </div>
     </div>
-  </div>`;}
+  </div>`;
+}
 
-function buildScenarioSliders(pfx,col){
-  return [{id:`${pfx}-ren`,l:'Renewable %',min:0,max:100,v:pfx==='b'?40:70},
-    {id:`${pfx}-rec`,l:'Recycling %',min:0,max:100,v:pfx==='b'?30:55},
-    {id:`${pfx}-wat`,l:'Water Access %',min:0,max:100,v:pfx==='b'?85:95},
-    {id:`${pfx}-co2`,l:'CO₂ t/cap',min:0,max:25,v:pfx==='b'?8:4},
-    {id:`${pfx}-nrg`,l:'Energy Eff %',min:0,max:100,v:pfx==='b'?45:70},
-    {id:`${pfx}-trn`,l:'Transport %',min:0,max:100,v:pfx==='b'?45:65},
-  ].map(s=>`
+function buildScenarioSliders(pfx, col) {
+  return [{ id: `${pfx}-ren`, l: 'Renewable %', min: 0, max: 100, v: pfx === 'b' ? 40 : 70 },
+  { id: `${pfx}-rec`, l: 'Recycling %', min: 0, max: 100, v: pfx === 'b' ? 30 : 55 },
+  { id: `${pfx}-wat`, l: 'Water Access %', min: 0, max: 100, v: pfx === 'b' ? 85 : 95 },
+  { id: `${pfx}-co2`, l: 'CO₂ t/cap', min: 0, max: 25, v: pfx === 'b' ? 8 : 4 },
+  { id: `${pfx}-nrg`, l: 'Energy Eff %', min: 0, max: 100, v: pfx === 'b' ? 45 : 70 },
+  { id: `${pfx}-trn`, l: 'Transport %', min: 0, max: 100, v: pfx === 'b' ? 45 : 65 },
+  ].map(s => `
     <div class="mb-3">
       <div class="flex justify-between mb-0.5">
         <span class="text-[10px] text-gray-400">${s.l}</span>
@@ -1287,65 +1478,83 @@ function buildScenarioSliders(pfx,col){
     </div>`).join('');
 }
 
-async function runCompare(){
-  const btn=document.getElementById('cmp-btn');btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>...';btn.disabled=true;
-  const getVals=p=>({renewable:+document.getElementById(`${p}-ren`).value,recycling:+document.getElementById(`${p}-rec`).value,
-    waterAccess:+document.getElementById(`${p}-wat`).value,co2:+document.getElementById(`${p}-co2`).value,
-    energyEff:+document.getElementById(`${p}-nrg`).value,transport:+document.getElementById(`${p}-trn`).value});
-  const r=await fetch('/simulate/compare',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({baseline:getVals('b'),projected:getVals('p')})});
-  const d=await r.json();ST.compareResult=d;
+async function runCompare() {
+  const btn = document.getElementById('cmp-btn'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...'; btn.disabled = true;
+  try {
+    const getVals = p => ({
+      renewable: +document.getElementById(`${p}-ren`).value, recycling: +document.getElementById(`${p}-rec`).value,
+      waterAccess: +document.getElementById(`${p}-wat`).value, co2: +document.getElementById(`${p}-co2`).value,
+      energyEff: +document.getElementById(`${p}-nrg`).value, transport: +document.getElementById(`${p}-trn`).value
+    });
+    const r = await fetch('/simulate/compare', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ baseline: getVals('b'), projected: getVals('p'), seed: 42 }) });
+    if (!r.ok) {
+      const errData = await r.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${r.status}`);
+    }
+    const d = await r.json(); ST.compareResult = d;
 
-  document.getElementById('compare-results').classList.remove('hidden');
-  document.getElementById('cmp-base').textContent=d.baselineScore;
-  document.getElementById('cmp-proj').textContent=d.projectedScore;
-  const diffEl=document.getElementById('cmp-diff');
-  diffEl.textContent=(d.diff>=0?'+':'')+d.diff;
-  diffEl.style.color=d.diff>=0?'#10b981':'#ef4444';
-  document.getElementById('cmp-diff-label').textContent=d.diff>=0?'Improvement':'Decline';
+    document.getElementById('compare-results').classList.remove('hidden');
+    document.getElementById('cmp-base').textContent = d.baselineScore;
+    document.getElementById('cmp-proj').textContent = d.projectedScore;
+    const diffEl = document.getElementById('cmp-diff');
+    diffEl.textContent = (d.diff >= 0 ? '+' : '') + d.diff;
+    diffEl.style.color = d.diff >= 0 ? '#10b981' : '#ef4444';
+    document.getElementById('cmp-diff-label').textContent = d.diff >= 0 ? 'Improvement' : 'Decline';
 
-  Plotly.newPlot('cmp-chart',[
-    {type:'scatter',mode:'lines',name:t('baseline'),x:d.years,y:d.baselineTrend,line:{color:'#6b7280',width:2,dash:'dot'},fill:'tozeroy',fillcolor:'rgba(107,114,128,0.04)'},
-    {type:'scatter',mode:'lines',name:t('projected'),x:d.years,y:d.projectedTrend,line:{color:'#22d3ee',width:2.5},fill:'tozeroy',fillcolor:'rgba(34,211,238,0.06)'},
-  ],{paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',
-    margin:{l:40,r:10,t:8,b:40},font:{color:'#9ca3af',size:10},
-    xaxis:{color:'#4b5563',gridcolor:'#1f2937'},yaxis:{color:'#4b5563',gridcolor:'#1f2937',range:[0,100]},
-    legend:{bgcolor:'transparent',font:{color:'#9ca3af',size:9}},
-  },{responsive:true,displayModeBar:false});
+    Plotly.newPlot('cmp-chart', [
+      { type: 'scatter', mode: 'lines', name: t('baseline'), x: d.years, y: d.baselineTrend, line: { color: '#6b7280', width: 2, dash: 'dot' }, fill: 'tozeroy', fillcolor: 'rgba(107,114,128,0.04)' },
+      { type: 'scatter', mode: 'lines', name: t('projected'), x: d.years, y: d.projectedTrend, line: { color: '#22d3ee', width: 2.5 }, fill: 'tozeroy', fillcolor: 'rgba(34,211,238,0.06)' },
+    ], {
+      paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)',
+      margin: { l: 40, r: 10, t: 8, b: 40 }, font: { color: '#9ca3af', size: 10 },
+      xaxis: { color: '#4b5563', gridcolor: '#1f2937' }, yaxis: { color: '#4b5563', gridcolor: '#1f2937', range: [0, 100] },
+      legend: { bgcolor: 'transparent', font: { color: '#9ca3af', size: 9 } },
+    }, { responsive: true, displayModeBar: false });
 
-  document.getElementById('cmp-improvements').innerHTML=d.improvements.map(i=>`<p class="text-xs text-emerald-300 flex items-start gap-1"><i class="fas fa-arrow-up mt-0.5 text-emerald-400"></i>${i}</p>`).join('')||'<p class="text-xs text-gray-500">No significant changes</p>';
-  document.getElementById('cmp-gains').innerHTML=`
-    <div class="space-y-2">
-      <div class="flex justify-between"><span class="text-xs text-gray-400">CO₂ Savings</span><span class="text-xs font-bold text-emerald-400">${d.co2Savings>0?'−'+d.co2Savings:d.co2Savings} t/cap</span></div>
-      <div class="flex justify-between"><span class="text-xs text-gray-400">Water Gain</span><span class="text-xs font-bold text-blue-400">+${d.waterGain}%</span></div>
-      <div class="flex justify-between"><span class="text-xs text-gray-400">Score Delta</span><span class="text-xs font-bold" style="color:${d.diff>=0?'#10b981':'#ef4444'}">${d.diff>=0?'+':''}${d.diff} pts</span></div>
-    </div>`;
+    document.getElementById('cmp-improvements').innerHTML = d.improvements.map(i => `<p class="text-xs text-emerald-300 flex items-start gap-1"><i class="fas fa-arrow-up mt-0.5 text-emerald-400"></i>${i}</p>`).join('') || '<p class="text-xs text-gray-500">No significant changes</p>';
+    document.getElementById('cmp-gains').innerHTML = `
+      <div class="space-y-2">
+        <div class="flex justify-between"><span class="text-xs text-gray-400">CO₂ Savings</span><span class="text-xs font-bold text-emerald-400">${d.co2Savings > 0 ? '−' + d.co2Savings : d.co2Savings} t/cap</span></div>
+        <div class="flex justify-between"><span class="text-xs text-gray-400">Water Gain</span><span class="text-xs font-bold text-blue-400">+${d.waterGain}%</span></div>
+        <div class="flex justify-between"><span class="text-xs text-gray-400">Score Delta</span><span class="text-xs font-bold" style="color:${d.diff >= 0 ? '#10b981' : '#ef4444'}">${d.diff >= 0 ? '+' : ''}${d.diff} pts</span></div>
+      </div>`;
 
-  btn.innerHTML='<i class="fas fa-code-compare"></i> Run Comparison';btn.disabled=false;
+    toast('Comparison complete!', 'success');
+  } catch (err) {
+    toast('Comparison failed: ' + (err.message || err), 'error');
+  } finally {
+    btn.innerHTML = '<i class="fas fa-code-compare"></i> Run Comparison';
+    btn.disabled = false;
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // SHAP EXPLAINABILITY
 // ════════════════════════════════════════════════════════════════════════════
-function shapHTML(){return `
+function shapHTML() {
+  return `
   <div class="space-y-5">
-    <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-magnifying-glass-chart"></i> ${t('shap')} — Model Explainability</h2>
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-magnifying-glass-chart"></i> Feature Attribution — Contribution Breakdown</h2>
+      ${provenanceBadge('heuristic', 'Linear Attribution')}
+    </div>
     <div class="et-card border-violet-900/50 bg-violet-950/10">
       <div class="flex items-start gap-3">
         <i class="fas fa-circle-info text-violet-400 mt-0.5"></i>
-        <p class="text-xs text-gray-300">SHAP (SHapley Additive exPlanations) decomposes each sustainability prediction into per-feature contributions. Positive values push the score higher; negative values push it lower. Uses LSTM+SHAP hybrid model with 92.4% confidence.</p>
+        <p class="text-xs text-gray-300">Additive Feature Contribution decomposes each sustainability prediction into per-feature margins against the reference baseline (61 pts). Positive values push the score higher; negative values push it lower. Uses transparent additive attribution formulas.</p>
       </div>
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
       <div class="et-card">
         <h3 class="et-card-title mb-4">Input Parameters</h3>
-        ${[{id:'sh-ren',l:'Renewable Energy',unit:'%',min:0,max:100,v:50,col:'emerald'},
-           {id:'sh-wat',l:'Water Access',unit:'%',min:0,max:100,v:88,col:'blue'},
-           {id:'sh-co2',l:'CO₂ Emissions',unit:'t/cap',min:0,max:30,v:8,col:'red'},
-           {id:'sh-rec',l:'Recycling Rate',unit:'%',min:0,max:100,v:35,col:'cyan'},
-           {id:'sh-nrg',l:'Energy (kWh)',unit:'kWh',min:50,max:500,v:180,col:'yellow'},
-           {id:'sh-trf',l:'Traffic Density',unit:'%',min:0,max:100,v:65,col:'orange'},
-           {id:'sh-h2o',l:'Water Usage',unit:'M³',min:0,max:200,v:80,col:'violet'},
-        ].map(s=>`
+        ${[{ id: 'sh-ren', l: 'Renewable Energy', unit: '%', min: 0, max: 100, v: 50, col: 'emerald' },
+    { id: 'sh-wat', l: 'Water Access', unit: '%', min: 0, max: 100, v: 88, col: 'blue' },
+    { id: 'sh-co2', l: 'CO₂ Emissions', unit: 't/cap', min: 0, max: 30, v: 8, col: 'red' },
+    { id: 'sh-rec', l: 'Recycling Rate', unit: '%', min: 0, max: 100, v: 35, col: 'cyan' },
+    { id: 'sh-nrg', l: 'Energy (kWh)', unit: 'kWh', min: 50, max: 500, v: 180, col: 'yellow' },
+    { id: 'sh-trf', l: 'Traffic Density', unit: '%', min: 0, max: 100, v: 65, col: 'orange' },
+    { id: 'sh-h2o', l: 'Water Usage', unit: 'M³', min: 0, max: 200, v: 80, col: 'violet' },
+    ].map(s => `
           <div class="mb-3">
             <div class="flex justify-between mb-0.5">
               <span class="text-[10px] text-gray-400">${s.l}</span>
@@ -1379,170 +1588,205 @@ function shapHTML(){return `
         </div>
       </div>
     </div>
-  </div>`;}
+  </div>`;
+}
 
-async function runSHAP(){
-  const btn=document.getElementById('shap-btn');btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>...';btn.disabled=true;
-  const payload={energy:+document.getElementById('sh-nrg').value,water:+document.getElementById('sh-h2o').value,
-    traffic:+document.getElementById('sh-trf').value,renewable:+document.getElementById('sh-ren').value,
-    recycling:+document.getElementById('sh-rec').value,co2:+document.getElementById('sh-co2').value,
-    waterAccess:+document.getElementById('sh-wat').value};
-  const r=await fetch('/shap/explain',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  const d=await r.json();ST.shapData=d;
+async function runSHAP() {
+  const btn = document.getElementById('shap-btn'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...'; btn.disabled = true;
+  try {
+    const payload = {
+      energy: +document.getElementById('sh-nrg').value, water: +document.getElementById('sh-h2o').value,
+      traffic: +document.getElementById('sh-trf').value, renewable: +document.getElementById('sh-ren').value,
+      recycling: +document.getElementById('sh-rec').value, co2: +document.getElementById('sh-co2').value,
+      waterAccess: +document.getElementById('sh-wat').value
+    };
+    const r = await fetch('/shap/explain', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if (!r.ok) {
+      const errData = await r.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${r.status}`);
+    }
+    const d = await r.json(); ST.shapData = d;
 
-  const features=d.features;
-  const colors=features.map(f=>f.contribution>=0?'#10b981':'#ef4444');
-  Plotly.newPlot('shap-waterfall',[{
-    type:'waterfall',orientation:'h',
-    measure:['absolute',...features.map(()=>'relative'),'total'],
-    x:[d.baseValue,...features.map(f=>f.contribution),0],
-    y:['Base Value',...features.map(f=>f.feature),'Predicted'],
-    connector:{line:{color:'#374151',width:1}},
-    decreasing:{marker:{color:'#ef4444',opacity:0.8}},
-    increasing:{marker:{color:'#10b981',opacity:0.8}},
-    totals:{marker:{color:'#22d3ee',opacity:0.9}},
-    text:[d.baseValue,...features.map(f=>f.contribution>=0?'+'+f.contribution:f.contribution),d.predictedValue],
-    textposition:'outside',
-  }],{paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',
-    margin:{l:150,r:50,t:8,b:30},font:{color:'#9ca3af',size:10},
-    xaxis:{color:'#4b5563',gridcolor:'#1f2937',range:[40,100]},yaxis:{color:'#9ca3af'},
-  },{responsive:true,displayModeBar:false});
+    const features = d.features;
+    const colors = features.map(f => f.contribution >= 0 ? '#10b981' : '#ef4444');
+    Plotly.newPlot('shap-waterfall', [{
+      type: 'waterfall', orientation: 'h',
+      measure: ['absolute', ...features.map(() => 'relative'), 'total'],
+      x: [d.baseValue, ...features.map(f => f.contribution), 0],
+      y: ['Base Value', ...features.map(f => f.feature), 'Predicted'],
+      connector: { line: { color: '#374151', width: 1 } },
+      decreasing: { marker: { color: '#ef4444', opacity: 0.8 } },
+      increasing: { marker: { color: '#10b981', opacity: 0.8 } },
+      totals: { marker: { color: '#22d3ee', opacity: 0.9 } },
+      text: [d.baseValue, ...features.map(f => f.contribution >= 0 ? '+' + f.contribution : f.contribution), d.predictedValue],
+      textposition: 'outside',
+    }], {
+      paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)',
+      margin: { l: 150, r: 50, t: 8, b: 30 }, font: { color: '#9ca3af', size: 10 },
+      xaxis: { color: '#4b5563', gridcolor: '#1f2937', range: [40, 100] }, yaxis: { color: '#9ca3af' },
+    }, { responsive: true, displayModeBar: false });
 
-  const absContribs=features.map(f=>Math.abs(f.contribution));
-  Plotly.newPlot('shap-pie',[{type:'pie',labels:features.map(f=>f.feature),values:absContribs,
-    marker:{colors:features.map(f=>f.color)},hole:0.45,textinfo:'label+percent',
-    textfont:{color:'#e5e7eb',size:9},
-  }],{paper_bgcolor:'transparent',margin:{l:5,r:5,t:5,b:5},showlegend:false},{responsive:true,displayModeBar:false});
+    const absContribs = features.map(f => Math.abs(f.contribution));
+    Plotly.newPlot('shap-pie', [{
+      type: 'pie', labels: features.map(f => f.feature), values: absContribs,
+      marker: { colors: features.map(f => f.color) }, hole: 0.45, textinfo: 'label+percent',
+      textfont: { color: '#e5e7eb', size: 9 },
+    }], { paper_bgcolor: 'transparent', margin: { l: 5, r: 5, t: 5, b: 5 }, showlegend: false }, { responsive: true, displayModeBar: false });
 
-  document.getElementById('shap-summary').innerHTML=`
-    <h3 class="et-card-title mb-3">Prediction Summary</h3>
-    <div class="space-y-2">
-      <div class="flex justify-between"><span class="text-xs text-gray-400">Base Value</span><span class="text-xs font-bold text-gray-200">${d.baseValue}</span></div>
-      <div class="flex justify-between"><span class="text-xs text-gray-400">Predicted Score</span><span class="text-xs font-bold" style="color:${scoreColor(d.predictedValue)}">${d.predictedValue}/100</span></div>
-      <div class="flex justify-between"><span class="text-xs text-gray-400">Grade</span><span class="text-xs font-bold text-cyan-300">${scoreGrade(d.predictedValue)}</span></div>
-      <div class="flex justify-between"><span class="text-xs text-gray-400">Model</span><span class="text-xs text-violet-300">${d.modelType}</span></div>
-      <div class="flex justify-between"><span class="text-xs text-gray-400">Confidence</span><span class="text-xs text-emerald-300">${d.confidence}%</span></div>
-    </div>
-    <div class="mt-3 space-y-1.5">
-      ${features.sort((a,b)=>Math.abs(b.contribution)-Math.abs(a.contribution)).slice(0,3).map(f=>`
-        <div class="flex items-center gap-2">
-          <div class="w-2 h-2 rounded-full" style="background:${f.color}"></div>
-          <span class="text-[10px] text-gray-300 flex-1">${f.feature}</span>
-          <span class="text-[10px] font-bold" style="color:${f.contribution>=0?'#10b981':'#ef4444'}">${f.contribution>=0?'+':''}${f.contribution}</span>
-        </div>`).join('')}
-    </div>`;
-  btn.innerHTML='<i class="fas fa-magnifying-glass-chart"></i> Explain Prediction';btn.disabled=false;
-  toast('SHAP analysis complete!','success');
+    document.getElementById('shap-summary').innerHTML = `
+      <h3 class="et-card-title mb-3">Prediction Summary</h3>
+      <div class="space-y-2">
+        <div class="flex justify-between"><span class="text-xs text-gray-400">Base Value</span><span class="text-xs font-bold text-gray-200">${d.baseValue}</span></div>
+        <div class="flex justify-between"><span class="text-xs text-gray-400">Predicted Score</span><span class="text-xs font-bold" style="color:${scoreColor(d.predictedValue)}">${d.predictedValue}/100</span></div>
+        <div class="flex justify-between"><span class="text-xs text-gray-400">Grade</span><span class="text-xs font-bold text-cyan-300">${scoreGrade(d.predictedValue)}</span></div>
+        <div class="flex justify-between"><span class="text-xs text-gray-400">Model</span><span class="text-xs text-violet-300">${d.modelType}</span></div>
+        <div class="flex justify-between"><span class="text-xs text-gray-400">Method</span><span class="text-xs text-emerald-300">${d.methodology || 'Linear Attribution'}</span></div>
+      </div>
+      <div class="mt-3 space-y-1.5">
+        ${features.sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution)).slice(0, 3).map(f => `
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full" style="background:${f.color}"></div>
+            <span class="text-[10px] text-gray-300 flex-1">${f.feature}</span>
+            <span class="text-[10px] font-bold" style="color:${f.contribution >= 0 ? '#10b981' : '#ef4444'}">${f.contribution >= 0 ? '+' : ''}${f.contribution}</span>
+          </div>`).join('')}
+      </div>`;
+    toast('SHAP analysis complete!', 'success');
+  } catch (err) {
+    toast('Attribution analysis failed: ' + (err.message || err), 'error');
+  } finally {
+    btn.innerHTML = '<i class="fas fa-magnifying-glass-chart"></i> Explain Prediction';
+    btn.disabled = false;
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// RL OPTIMIZER
+// POLICY TARGET OPTIMIZER
 // ════════════════════════════════════════════════════════════════════════════
-function rlHTML(){return `
+function rlHTML() {
+  return `
   <div class="space-y-5">
-    <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-brain"></i> ${t('rlOptimizer')}</h2>
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-sliders-h"></i> Policy Target Optimizer</h2>
+      ${provenanceBadge('heuristic', 'Gradient-Decay Search')}
+    </div>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
       <div class="et-card">
-        <h3 class="et-card-title mb-4">Agent Config</h3>
+        <h3 class="et-card-title mb-4">Optimizer Config</h3>
         <div class="mb-3">
-          <label class="text-xs text-gray-400">Algorithm</label>
+          <label class="text-xs text-gray-400">Search Strategy</label>
           <div class="grid grid-cols-2 gap-2 mt-1">
-            <button onclick="selAlgo('dqn')" id="rl-dqn" class="py-2 text-xs rounded-lg font-bold bg-violet-700 text-white transition-all">Deep Q-Network</button>
-            <button onclick="selAlgo('ppo')" id="rl-ppo" class="py-2 text-xs rounded-lg font-bold bg-gray-700 text-gray-300 transition-all">PPO</button>
+            <button onclick="selAlgo('decay')" id="rl-dqn" class="py-2 text-xs rounded-lg font-bold bg-violet-700 text-white transition-all">Gradient Decay</button>
+            <button onclick="selAlgo('stochastic')" id="rl-ppo" class="py-2 text-xs rounded-lg font-bold bg-gray-700 text-gray-300 transition-all">Stochastic Search</button>
           </div>
         </div>
         <div class="mb-3">
-          <div class="flex justify-between mb-1"><label class="text-xs text-gray-400">Episodes</label><span class="text-xs text-violet-300" id="rl-ep-v">25</span></div>
+          <div class="flex justify-between mb-1"><label class="text-xs text-gray-400">Search Iterations</label><span class="text-xs text-violet-300" id="rl-ep-v">25</span></div>
           <input type="range" id="rl-ep" min="10" max="50" value="25" class="w-full accent-violet-400 h-1.5" oninput="document.getElementById('rl-ep-v').textContent=this.value">
         </div>
         <div class="mb-3">
-          <div class="flex justify-between mb-1"><label class="text-xs text-gray-400">Learning Rate</label><span class="text-xs text-violet-300">0.001</span></div>
+          <div class="flex justify-between mb-1"><label class="text-xs text-gray-400">Target Convergence Rate</label><span class="text-xs text-violet-300">0.001</span></div>
           <input type="range" min="1" max="10" value="1" class="w-full accent-violet-400 h-1.5">
         </div>
         <div class="mb-4">
-          <div class="flex justify-between mb-1"><label class="text-xs text-gray-400">Discount γ</label><span class="text-xs text-violet-300">0.99</span></div>
+          <div class="flex justify-between mb-1"><label class="text-xs text-gray-400">Discount Factor γ</label><span class="text-xs text-violet-300">0.99</span></div>
           <input type="range" min="90" max="99" value="99" class="w-full accent-violet-400 h-1.5">
         </div>
-        <button onclick="runRL()" id="rl-btn" class="et-btn-violet w-full"><i class="fas fa-robot"></i> ${t('trainAgent')}</button>
+        <button onclick="runRL()" id="rl-btn" class="et-btn-violet w-full"><i class="fas fa-sliders-h"></i> Optimize Policy</button>
       </div>
       <div class="lg:col-span-2 space-y-4">
         <div class="et-card">
-          <h3 class="et-card-title text-violet-300">📈 Training Progress</h3>
+          <h3 class="et-card-title text-violet-300">📈 Convergence Progress</h3>
           <div id="rl-chart" style="height:260px">
             <div class="flex items-center justify-center h-full text-gray-500 text-sm gap-2">
-              <i class="fas fa-robot text-3xl text-violet-900"></i>Click "${t('trainAgent')}"
+              <i class="fas fa-sliders-h text-3xl text-violet-900"></i>Click "Optimize Policy" to run search
             </div>
           </div>
         </div>
         <div id="rl-optimal" class="hidden et-card border-violet-800/50">
-          <h3 class="et-card-title text-violet-300 mb-3">🎯 Optimal Policy Found</h3>
+          <h3 class="et-card-title text-violet-300 mb-3">🎯 Optimal Policy Targets</h3>
           <div class="grid grid-cols-2 md:grid-cols-3 gap-2" id="rl-policy-grid"></div>
           <div class="mt-4 text-center bg-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-400">Max Achievable Score</div>
+            <div class="text-xs text-gray-400">Estimated Achievable Score</div>
             <div class="text-5xl font-black text-violet-300 mt-1" id="rl-score">—</div>
-            <div class="text-xs text-gray-500 mt-1">After <span id="rl-eps">—</span> training episodes</div>
+            <div class="text-xs text-gray-500 mt-1">After <span id="rl-eps">—</span> optimization iterations</div>
           </div>
         </div>
       </div>
     </div>
-  </div>`;}
-
-let _rlAlgo='dqn';
-function selAlgo(a){
-  _rlAlgo=a;
-  document.getElementById('rl-dqn').className=`py-2 text-xs rounded-lg font-bold transition-all ${a==='dqn'?'bg-violet-700 text-white':'bg-gray-700 text-gray-300'}`;
-  document.getElementById('rl-ppo').className=`py-2 text-xs rounded-lg font-bold transition-all ${a==='ppo'?'bg-violet-700 text-white':'bg-gray-700 text-gray-300'}`;
+  </div>`;
 }
 
-async function runRL(){
-  const btn=document.getElementById('rl-btn');btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Training...';btn.disabled=true;
-  const ep=+document.getElementById('rl-ep').value;
-  const r=await fetch('/rl_optimize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({episodes:ep,algo:_rlAlgo})});
-  const d=await r.json();ST.rlResult=d;
+let _rlAlgo = 'decay';
+function selAlgo(a) {
+  _rlAlgo = a;
+  document.getElementById('rl-dqn').className = `py-2 text-xs rounded-lg font-bold transition-all ${a === 'decay' ? 'bg-violet-700 text-white' : 'bg-gray-700 text-gray-300'}`;
+  document.getElementById('rl-ppo').className = `py-2 text-xs rounded-lg font-bold transition-all ${a === 'stochastic' ? 'bg-violet-700 text-white' : 'bg-gray-700 text-gray-300'}`;
+}
 
-  Plotly.newPlot('rl-chart',[
-    {type:'scatter',mode:'lines',name:'Score',x:d.trainingData.map(x=>x.episode),y:d.trainingData.map(x=>x.score),line:{color:'#a78bfa',width:2.5},fill:'tozeroy',fillcolor:'rgba(167,139,250,0.07)'},
-    {type:'scatter',mode:'lines',name:'Reward',x:d.trainingData.map(x=>x.episode),y:d.trainingData.map(x=>x.reward),line:{color:'#8b5cf6',width:1.5,dash:'dot'},yaxis:'y2'},
-    {type:'scatter',mode:'lines',name:'Loss',x:d.trainingData.map(x=>x.episode),y:d.trainingData.map(x=>x.loss*50),line:{color:'#ef4444',width:1},yaxis:'y3'},
-  ],{paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',
-    margin:{l:40,r:50,t:8,b:40},font:{color:'#9ca3af',size:10},
-    xaxis:{title:'Episode',color:'#4b5563',gridcolor:'#1f2937'},
-    yaxis:{title:'Score',color:'#a78bfa',gridcolor:'#1f2937'},
-    yaxis2:{title:'Reward',color:'#8b5cf6',overlaying:'y',side:'right'},
-    yaxis3:{visible:false,overlaying:'y'},
-    legend:{bgcolor:'transparent',font:{color:'#9ca3af',size:9}},
-  },{responsive:true,displayModeBar:false});
+async function runRL() {
+  const btn = document.getElementById('rl-btn'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Optimizing...'; btn.disabled = true;
+  try {
+    const ep = +document.getElementById('rl-ep').value;
+    const r = await fetch('/rl_optimize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ episodes: ep, algo: _rlAlgo }) });
+    if (!r.ok) {
+      const errData = await r.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${r.status}`);
+    }
+    const d = await r.json(); ST.rlResult = d;
 
-  const op=d.optimalPolicy;
+  Plotly.newPlot('rl-chart', [
+    { type: 'scatter', mode: 'lines', name: 'Score', x: d.trainingData.map(x => x.episode), y: d.trainingData.map(x => x.score), line: { color: '#a78bfa', width: 2.5 }, fill: 'tozeroy', fillcolor: 'rgba(167,139,250,0.07)' },
+    { type: 'scatter', mode: 'lines', name: 'Objective Delta', x: d.trainingData.map(x => x.episode), y: d.trainingData.map(x => x.reward), line: { color: '#8b5cf6', width: 1.5, dash: 'dot' }, yaxis: 'y2' },
+    { type: 'scatter', mode: 'lines', name: 'Variance', x: d.trainingData.map(x => x.episode), y: d.trainingData.map(x => x.loss * 50), line: { color: '#ef4444', width: 1 }, yaxis: 'y3' },
+  ], {
+    paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)',
+    margin: { l: 40, r: 50, t: 8, b: 40 }, font: { color: '#9ca3af', size: 10 },
+    xaxis: { title: 'Iteration', color: '#4b5563', gridcolor: '#1f2937' },
+    yaxis: { title: 'Score', color: '#a78bfa', gridcolor: '#1f2937' },
+    yaxis2: { title: 'Delta', color: '#8b5cf6', overlaying: 'y', side: 'right' },
+    yaxis3: { visible: false, overlaying: 'y' },
+    legend: { bgcolor: 'transparent', font: { color: '#9ca3af', size: 9 } },
+  }, { responsive: true, displayModeBar: false });
+
+  const op = d.optimalPolicy;
   document.getElementById('rl-optimal').classList.remove('hidden');
-  document.getElementById('rl-policy-grid').innerHTML=[
-    {l:'Renewable',v:op.renewable+'%',i:'fa-solar-panel',c:'emerald'},
-    {l:'Recycling',v:op.recycling+'%',i:'fa-recycle',c:'cyan'},
-    {l:'Water Access',v:op.waterAccess+'%',i:'fa-droplet',c:'blue'},
-    {l:'CO₂ Reduction',v:op.co2Reduction+'%',i:'fa-cloud-arrow-down',c:'red'},
-    {l:'Energy Eff',v:op.energyEff+'%',i:'fa-bolt',c:'yellow'},
-    {l:'Transport',v:op.transport+'%',i:'fa-bus',c:'violet'},
-  ].map(p=>`<div class="bg-gray-800 rounded-lg p-3 text-center">
+  document.getElementById('rl-policy-grid').innerHTML = [
+    { l: 'Renewable', v: op.renewable + '%', i: 'fa-solar-panel', c: 'emerald' },
+    { l: 'Recycling', v: op.recycling + '%', i: 'fa-recycle', c: 'cyan' },
+    { l: 'Water Access', v: op.waterAccess + '%', i: 'fa-droplet', c: 'blue' },
+    { l: 'CO₂ Reduction', v: op.co2Reduction + '%', i: 'fa-cloud-arrow-down', c: 'red' },
+    { l: 'Energy Eff', v: op.energyEff + '%', i: 'fa-bolt', c: 'yellow' },
+    { l: 'Transport', v: op.transport + '%', i: 'fa-bus', c: 'violet' },
+  ].map(p => `<div class="bg-gray-800 rounded-lg p-3 text-center">
     <i class="fas ${p.i} text-${p.c}-400 text-lg mb-1"></i>
     <div class="text-lg font-black text-${p.c}-300">${p.v}</div>
     <div class="text-[9px] text-gray-400">${p.l}</div>
   </div>`).join('');
-  document.getElementById('rl-score').textContent=op.finalScore;
-  document.getElementById('rl-eps').textContent=ep;
-  btn.innerHTML=`<i class="fas fa-robot"></i> ${t('trainAgent')}`;btn.disabled=false;
-  toast('RL Training complete!','success');
+  document.getElementById('rl-score').textContent = op.finalScore;
+  document.getElementById('rl-eps').textContent = ep;
+    toast('Policy optimization complete!', 'success');
+  } catch (err) {
+    toast('Optimization failed: ' + (err.message || err), 'error');
+  } finally {
+    btn.innerHTML = `<i class="fas fa-sliders-h"></i> Optimize Policy`;
+    btn.disabled = false;
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // ANOMALY DETECTION
 // ════════════════════════════════════════════════════════════════════════════
-function anomalyHTML(){return `
+function anomalyHTML() {
+  return `
   <div class="space-y-4">
-    <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-triangle-exclamation text-yellow-400"></i> ${t('anomaly')} Detection</h2>
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-triangle-exclamation text-yellow-400"></i> ${t('anomaly')} Detection</h2>
+      ${provenanceBadge('simulated', 'Demonstration Events')}
+    </div>
     <div id="anomaly-alerts" class="space-y-2"></div>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div class="et-card lg:col-span-2">
-        <h3 class="et-card-title text-yellow-300">CO₂ Anomaly Timeline (Isolation Forest)</h3>
+        <h3 class="et-card-title text-yellow-300">CO₂ Anomaly Timeline (Synthetic Demonstration)</h3>
         <div id="an-co2" style="height:280px"></div>
       </div>
       <div class="et-card">
@@ -1555,50 +1799,56 @@ function anomalyHTML(){return `
       <div class="et-card"><h3 class="et-card-title text-emerald-300">Energy Consumption</h3><div id="an-energy" style="height:160px"></div></div>
       <div class="et-card"><h3 class="et-card-title text-orange-300">Traffic Density</h3><div id="an-traffic" style="height:160px"></div></div>
     </div>
-  </div>`;}
+  </div>`;
+}
 
-async function loadAnomaly(){
-  const r=await fetch('/anomaly_data');ST.anomalyData=await r.json();
-  const data=ST.anomalyData;
-  const anom=data.filter(d=>d.isAnomaly);
-  document.getElementById('anomaly-alerts').innerHTML=anom.map(a=>`
+async function loadAnomaly() {
+  const r = await fetch('/anomaly_data'); ST.anomalyData = await r.json();
+  const data = ST.anomalyData;
+  const anom = data.filter(d => d.isAnomaly);
+  document.getElementById('anomaly-alerts').innerHTML = anom.map(a => `
     <div class="flex items-start gap-3 bg-yellow-900/15 border border-yellow-700/40 rounded-xl p-3">
       <i class="fas fa-triangle-exclamation text-yellow-400 mt-0.5 flex-none"></i>
       <div class="flex-1">
         <div class="flex items-center gap-2">
           <span class="text-sm font-bold text-yellow-300">⚠ Environmental Anomaly Detected — ${a.time}</span>
-          <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${a.severity==='CRITICAL'?'bg-red-900 text-red-300':'bg-yellow-900 text-yellow-300'}">${a.severity}</span>
+          <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${a.severity === 'CRITICAL' ? 'bg-red-900 text-red-300' : 'bg-yellow-900 text-yellow-300'}">${a.severity}</span>
         </div>
         <p class="text-xs text-gray-400 mt-0.5">Possible cause: <span class="text-yellow-200">${a.cause}</span> · CO₂: ${a.co2}t · Water: ${a.water}M³ · Energy: ${a.energy}kWh</p>
       </div>
     </div>`).join('');
 
-  const pl={paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',font:{color:'#9ca3af',size:9},showlegend:false,margin:{l:40,r:10,t:8,b:55},xaxis:{color:'#4b5563',gridcolor:'#1f2937',tickangle:-45,tickfont:{size:8}},yaxis:{color:'#4b5563',gridcolor:'#1f2937'}};
-  Plotly.newPlot('an-co2',[
-    {type:'scatter',mode:'lines',x:data.map(d=>d.time),y:data.map(d=>d.co2),line:{color:'#6b7280',width:1.5},name:'CO₂'},
-    {type:'scatter',mode:'markers',x:anom.map(d=>d.time),y:anom.map(d=>d.co2),
-      marker:{color:'#ef4444',size:14,symbol:'circle',line:{color:'#fca5a5',width:2}},name:'Anomaly',
-      text:anom.map(d=>`⚠ ${d.cause}`),hovertemplate:'%{text}<br>CO₂: %{y}<extra></extra>'},
-  ],{...pl,yaxis:{...pl.yaxis,title:'CO₂ t/cap'},showlegend:true,legend:{bgcolor:'transparent',font:{color:'#9ca3af',size:9}},margin:{...pl.margin,l:50}},{responsive:true,displayModeBar:false});
+  const pl = { paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)', font: { color: '#9ca3af', size: 9 }, showlegend: false, margin: { l: 40, r: 10, t: 8, b: 55 }, xaxis: { color: '#4b5563', gridcolor: '#1f2937', tickangle: -45, tickfont: { size: 8 } }, yaxis: { color: '#4b5563', gridcolor: '#1f2937' } };
+  Plotly.newPlot('an-co2', [
+    { type: 'scatter', mode: 'lines', x: data.map(d => d.time), y: data.map(d => d.co2), line: { color: '#6b7280', width: 1.5 }, name: 'CO₂' },
+    {
+      type: 'scatter', mode: 'markers', x: anom.map(d => d.time), y: anom.map(d => d.co2),
+      marker: { color: '#ef4444', size: 14, symbol: 'circle', line: { color: '#fca5a5', width: 2 } }, name: 'Anomaly',
+      text: anom.map(d => `⚠ ${d.cause}`), hovertemplate: '%{text}<br>CO₂: %{y}<extra></extra>'
+    },
+  ], { ...pl, yaxis: { ...pl.yaxis, title: 'CO₂ t/cap' }, showlegend: true, legend: { bgcolor: 'transparent', font: { color: '#9ca3af', size: 9 } }, margin: { ...pl.margin, l: 50 } }, { responsive: true, displayModeBar: false });
 
-  document.getElementById('an-stats').innerHTML=`
+  document.getElementById('an-stats').innerHTML = `
     <div class="bg-gray-800 rounded-lg p-3"><div class="text-xs text-gray-400">Anomalies Found</div><div class="text-2xl font-black text-yellow-400">${anom.length}</div></div>
-    <div class="bg-gray-800 rounded-lg p-3"><div class="text-xs text-gray-400">Peak CO₂</div><div class="text-2xl font-black text-red-400">${Math.max(...data.map(d=>d.co2)).toFixed(2)}t</div></div>
-    <div class="bg-gray-800 rounded-lg p-3"><div class="text-xs text-gray-400">Avg Normal CO₂</div><div class="text-2xl font-black text-emerald-400">${(data.filter(d=>!d.isAnomaly).reduce((s,d)=>s+d.co2,0)/data.filter(d=>!d.isAnomaly).length).toFixed(2)}t</div></div>
-    <div class="bg-gray-800 rounded-lg p-3"><div class="text-xs text-gray-400">Algorithm</div><div class="text-sm font-bold text-cyan-300">Isolation Forest</div><div class="text-[10px] text-gray-500">+ Autoencoder</div></div>`;
+    <div class="bg-gray-800 rounded-lg p-3"><div class="text-xs text-gray-400">Peak CO₂</div><div class="text-2xl font-black text-red-400">${Math.max(...data.map(d => d.co2)).toFixed(2)}t</div></div>
+    <div class="bg-gray-800 rounded-lg p-3"><div class="text-xs text-gray-400">Avg Normal CO₂</div><div class="text-2xl font-black text-emerald-400">${(data.filter(d => !d.isAnomaly).reduce((s, d) => s + d.co2, 0) / data.filter(d => !d.isAnomaly).length).toFixed(2)}t</div></div>
+    <div class="bg-gray-800 rounded-lg p-3"><div class="text-xs text-gray-400">Detection Method</div><div class="text-sm font-bold text-cyan-300">Rule-Based Thresholds</div><div class="text-[10px] text-gray-500">Synthetic Demonstration</div></div>`;
 
-  const mkSmall=(id,y,col,key)=>Plotly.newPlot(id,[{type:'bar',x:data.map(d=>d.time),y:data.map(d=>d[key]),
-    marker:{color:data.map(d=>d.isAnomaly?'#ef4444':col),opacity:0.7}}],
-    {...pl,margin:{...pl.margin,l:35}},{responsive:true,displayModeBar:false});
-  mkSmall('an-water',null,'#3b82f6','water');
-  mkSmall('an-energy',null,'#10b981','energy');
-  mkSmall('an-traffic',null,'#f97316','traffic');
+  const mkSmall = (id, y, col, key) => Plotly.newPlot(id, [{
+    type: 'bar', x: data.map(d => d.time), y: data.map(d => d[key]),
+    marker: { color: data.map(d => d.isAnomaly ? '#ef4444' : col), opacity: 0.7 }
+  }],
+    { ...pl, margin: { ...pl.margin, l: 35 } }, { responsive: true, displayModeBar: false });
+  mkSmall('an-water', null, '#3b82f6', 'water');
+  mkSmall('an-energy', null, '#10b981', 'energy');
+  mkSmall('an-traffic', null, '#f97316', 'traffic');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // 3D GLOBE
 // ════════════════════════════════════════════════════════════════════════════
-function globe3dHTML(){return `
+function globe3dHTML() {
+  return `
   <div class="space-y-4">
     <div class="flex flex-wrap items-center gap-3">
       <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-globe"></i> 3D Earth — Emission Hotspots</h2>
@@ -1631,89 +1881,207 @@ function globe3dHTML(){return `
         </div>
       </div>
     </div>
-  </div>`;}
-
-let gScene,gCam,gRenderer,gGlobe,gMarkers=[],gRings=[];
-async function initGlobe3D(){
-  if(!ST.worldData.length){const r=await fetch('/world_data');ST.worldData=await r.json();}
-  buildHotspotList();buildGlobe();
+  </div>`;
 }
-function buildHotspotList(){
-  const top=[...ST.worldData].sort((a,b)=>b.co2-a.co2).slice(0,5);
-  document.getElementById('hotspot-list').innerHTML=top.map(c=>`
+
+let gScene, gCam, gRenderer, gGlobeGroup, gGlobe, gMarkers = [], gRings = [];
+let gIsDragging = false, gPrevPointer = { x: 0, y: 0 };
+
+async function initGlobe3D() {
+  if (!ST.worldData.length) { const r = await fetch('/world_data'); ST.worldData = await r.json(); }
+  buildHotspotList(); buildGlobe();
+}
+function buildHotspotList() {
+  const top = [...ST.worldData].sort((a, b) => b.co2 - a.co2).slice(0, 5);
+  document.getElementById('hotspot-list').innerHTML = top.map(c => `
     <div class="flex items-center gap-2">
       <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
       <span class="flex-1 text-[10px] text-gray-300">${c.name}</span>
       <span class="text-[10px] text-red-400 font-bold">${c.co2}t</span>
     </div>`).join('');
 }
-function buildGlobe(){
-  const canvas=document.getElementById('globe-canvas');if(!canvas)return;
-  const W=canvas.parentElement.clientWidth,H=canvas.parentElement.clientHeight;
-  gScene=new THREE.Scene();
-  gCam=new THREE.PerspectiveCamera(45,W/H,0.1,1000);gCam.position.z=2.6;
-  gRenderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
-  gRenderer.setSize(W,H);gRenderer.setPixelRatio(window.devicePixelRatio||1);
+function buildGlobe() {
+  const canvas = document.getElementById('globe-canvas'); if (!canvas) return;
 
-  // Stars
-  const sg=new THREE.BufferGeometry(),sp=[];
-  for(let i=0;i<5000;i++){const r=80+Math.random()*300,t=Math.random()*Math.PI*2,p=Math.acos(Math.random()*2-1);
-    sp.push(r*Math.sin(p)*Math.cos(t),r*Math.sin(p)*Math.sin(t),r*Math.cos(p));}
-  sg.setAttribute('position',new THREE.Float32BufferAttribute(sp,3));
-  gScene.add(new THREE.Points(sg,new THREE.PointsMaterial({color:0xffffff,size:0.25,transparent:true,opacity:0.5})));
+  // Cleanup any prior animation frames and renderer instances
+  if (ST.globeAnimFrame) {
+    cancelAnimationFrame(ST.globeAnimFrame);
+    ST.globeAnimFrame = null;
+  }
+  if (gRenderer) {
+    try { gRenderer.dispose(); } catch (e) {}
+    gRenderer = null;
+  }
+
+  const W = canvas.parentElement.clientWidth || 600;
+  const H = canvas.parentElement.clientHeight || 520;
+  gScene = new THREE.Scene();
+  gCam = new THREE.PerspectiveCamera(45, W / H, 0.1, 1000);
+  gCam.position.z = 2.6;
+  gRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  gRenderer.setSize(W, H);
+  gRenderer.setPixelRatio(window.devicePixelRatio || 1);
+
+  // Dedicated Three.js Group that rotates earth, atmosphere, markers, and rings together
+  gGlobeGroup = new THREE.Group();
+  gScene.add(gGlobeGroup);
+
+  // Stars background (added to static scene)
+  const sg = new THREE.BufferGeometry(), sp = [];
+  for (let i = 0; i < 5000; i++) {
+    const r = 80 + Math.random() * 300, t = Math.random() * Math.PI * 2, p = Math.acos(Math.random() * 2 - 1);
+    sp.push(r * Math.sin(p) * Math.cos(t), r * Math.sin(p) * Math.sin(t), r * Math.cos(p));
+  }
+  sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
+  gScene.add(new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xffffff, size: 0.25, transparent: true, opacity: 0.5 })));
 
   // Lights
-  gScene.add(new THREE.AmbientLight(0x223344,1.5));
-  const sun=new THREE.DirectionalLight(0x99ccff,2.8);sun.position.set(5,3,5);gScene.add(sun);
+  gScene.add(new THREE.AmbientLight(0x223344, 1.5));
+  const sun = new THREE.DirectionalLight(0x99ccff, 2.8);
+  sun.position.set(5, 3, 5);
+  gScene.add(sun);
 
-  // Globe
-  gGlobe=new THREE.Mesh(new THREE.SphereGeometry(1,64,64),new THREE.MeshPhongMaterial({color:0x0a1628,emissive:0x001020,specular:0x4488aa,shininess:25}));
-  gScene.add(gGlobe);
-  gScene.add(new THREE.Mesh(new THREE.SphereGeometry(1.04,32,32),new THREE.MeshBasicMaterial({color:0x003366,transparent:true,opacity:0.06,wireframe:false,side:THREE.FrontSide})));
-  gScene.add(new THREE.Mesh(new THREE.SphereGeometry(1.001,24,24),new THREE.MeshBasicMaterial({color:0x1e3a5f,transparent:true,opacity:0.25,wireframe:true})));
+  // Globe sphere & atmospheres added directly to gGlobeGroup
+  gGlobe = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 64, 64),
+    new THREE.MeshPhongMaterial({ color: 0x0a1628, emissive: 0x001020, specular: 0x4488aa, shininess: 25 })
+  );
+  gGlobeGroup.add(gGlobe);
 
+  const atmoGlow = new THREE.Mesh(
+    new THREE.SphereGeometry(1.04, 32, 32),
+    new THREE.MeshBasicMaterial({ color: 0x003366, transparent: true, opacity: 0.06, wireframe: false, side: THREE.FrontSide })
+  );
+  gGlobeGroup.add(atmoGlow);
+
+  const atmoWire = new THREE.Mesh(
+    new THREE.SphereGeometry(1.001, 24, 24),
+    new THREE.MeshBasicMaterial({ color: 0x1e3a5f, transparent: true, opacity: 0.25, wireframe: true })
+  );
+  gGlobeGroup.add(atmoWire);
+
+  // Country markers anchored to gGlobeGroup
   placeMarkers('score');
-  ST.globeRotating=true;
-  function animate(){
-    ST.globeAnimFrame=requestAnimationFrame(animate);
-    if(ST.globeRotating){gGlobe.rotation.y+=0.003;gMarkers.forEach(m=>m.rotation.y+=0.003);gRings.forEach(r=>r.rotation.y+=0.003);}
-    gRenderer.render(gScene,gCam);
+
+  // Interactive drag rotation
+  canvas.onpointerdown = (e) => {
+    gIsDragging = true;
+    gPrevPointer = { x: e.clientX, y: e.clientY };
+    canvas.setPointerCapture?.(e.pointerId);
+  };
+  canvas.onpointermove = (e) => {
+    if (!gIsDragging) return;
+    const dx = e.clientX - gPrevPointer.x;
+    const dy = e.clientY - gPrevPointer.y;
+    gPrevPointer = { x: e.clientX, y: e.clientY };
+    gGlobeGroup.rotation.y += dx * 0.005;
+    gGlobeGroup.rotation.x = Math.max(-1.2, Math.min(1.2, gGlobeGroup.rotation.x + dy * 0.005));
+  };
+  canvas.onpointerup = (e) => {
+    gIsDragging = false;
+    canvas.releasePointerCapture?.(e.pointerId);
+  };
+  canvas.onpointercancel = () => { gIsDragging = false; };
+
+  // Raycaster click interaction for country inspect
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+  canvas.onclick = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, gCam);
+    const hits = raycaster.intersectObjects(gMarkers);
+    if (hits.length > 0 && hits[0].object.userData) {
+      showGlobeCountryInfo(hits[0].object.userData);
+    }
+  };
+
+  ST.globeRotating = true;
+  function animate() {
+    ST.globeAnimFrame = requestAnimationFrame(animate);
+    if (ST.globeRotating && !gIsDragging) {
+      gGlobeGroup.rotation.y += 0.003;
+    }
+    gRenderer.render(gScene, gCam);
   }
   animate();
 }
-function placeMarkers(metric){
-  [...gMarkers,...gRings].forEach(m=>gScene.remove(m));gMarkers=[];gRings=[];
-  ST.worldData.forEach(c=>{
-    const coords=CC[c.code];if(!coords)return;
-    const lat=coords.lat*Math.PI/180,lon=coords.lon*Math.PI/180,r2=1.02;
-    const x=r2*Math.cos(lat)*Math.cos(lon),y=r2*Math.sin(lat),z=r2*Math.cos(lat)*Math.sin(lon);
-    let col,sz;
-    if(metric==='co2'){const n=clamp(c.co2/20,0,1);col=new THREE.Color(n,1-n*0.8,0);sz=0.012+n*0.04;}
-    else if(metric==='renewable'){const n=c.renewable/100;col=new THREE.Color(0,n*0.8,1-n*0.4);sz=0.012+n*0.025;}
-    else if(metric==='traffic'){const n=c.traffic/100;col=new THREE.Color(n,0.4,1-n);sz=0.012+n*0.02;}
-    else{col=new THREE.Color(...hexToRgb(scoreColor(c.score)));sz=0.012+(c.score/100)*0.025;}
-    const m=new THREE.Mesh(new THREE.SphereGeometry(sz,12,12),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.9}));
-    m.position.set(x,y,z);m.userData=c;gScene.add(m);gMarkers.push(m);
-    const rg=new THREE.Mesh(new THREE.RingGeometry(sz*1.5,sz*2.8,16),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.25,side:THREE.DoubleSide}));
-    rg.position.set(x,y,z);rg.lookAt(0,0,0);gScene.add(rg);gRings.push(rg);
+
+function showGlobeCountryInfo(c) {
+  const info = document.getElementById('globe-info');
+  if (!info) return;
+  const col = scoreColor(c.score);
+  info.innerHTML = `
+    <div class="space-y-2 p-1">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-bold text-white flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:${col}"></span>${c.name}</span>
+        <span class="text-[10px] mono text-gray-400 font-bold px-1.5 py-0.5 rounded bg-gray-800">${c.code}</span>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div class="bg-gray-800/60 p-2 rounded-lg">
+          <div class="text-[9px] text-gray-500 uppercase">Sustainability</div>
+          <div class="text-sm font-black" style="color:${col}">${c.score} <span class="text-[9px] text-gray-400">/ 100</span></div>
+        </div>
+        <div class="bg-gray-800/60 p-2 rounded-lg">
+          <div class="text-[9px] text-gray-500 uppercase">CO₂ / Capita</div>
+          <div class="text-sm font-black text-red-300">${c.co2} <span class="text-[9px] text-gray-400">tons</span></div>
+        </div>
+        <div class="bg-gray-800/60 p-2 rounded-lg">
+          <div class="text-[9px] text-gray-500 uppercase">Renewables</div>
+          <div class="text-sm font-black text-cyan-300">${c.renewable}%</div>
+        </div>
+        <div class="bg-gray-800/60 p-2 rounded-lg">
+          <div class="text-[9px] text-gray-500 uppercase">Water Access</div>
+          <div class="text-sm font-black text-blue-300">${c.waterAccess}%</div>
+        </div>
+      </div>
+      <div class="text-[9px] text-gray-400">Energy: <strong class="text-gray-200">${c.energy} kWh</strong> · Recycling: <strong class="text-gray-200">${c.recycling}%</strong></div>
+    </div>`;
+}
+
+function placeMarkers(metric) {
+  if (!gGlobeGroup) return;
+  [...gMarkers, ...gRings].forEach(m => gGlobeGroup.remove(m));
+  gMarkers = [];
+  gRings = [];
+  ST.worldData.forEach(c => {
+    const coords = CC[c.code]; if (!coords) return;
+    const lat = coords.lat * Math.PI / 180, lon = coords.lon * Math.PI / 180, r2 = 1.02;
+    const x = r2 * Math.cos(lat) * Math.cos(lon), y = r2 * Math.sin(lat), z = r2 * Math.cos(lat) * Math.sin(lon);
+    let col, sz;
+    if (metric === 'co2') { const n = clamp(c.co2 / 20, 0, 1); col = new THREE.Color(n, 1 - n * 0.8, 0); sz = 0.012 + n * 0.04; }
+    else if (metric === 'renewable') { const n = c.renewable / 100; col = new THREE.Color(0, n * 0.8, 1 - n * 0.4); sz = 0.012 + n * 0.025; }
+    else if (metric === 'traffic') { const n = c.traffic / 100; col = new THREE.Color(n, 0.4, 1 - n); sz = 0.012 + n * 0.02; }
+    else { col = new THREE.Color(...hexToRgb(scoreColor(c.score))); sz = 0.012 + (c.score / 100) * 0.025; }
+    const m = new THREE.Mesh(new THREE.SphereGeometry(sz, 12, 12), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.9 }));
+    m.position.set(x, y, z);
+    m.userData = c;
+    gGlobeGroup.add(m);
+    gMarkers.push(m);
+    const rg = new THREE.Mesh(new THREE.RingGeometry(sz * 1.5, sz * 2.8, 16), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.25, side: THREE.DoubleSide }));
+    rg.position.set(x, y, z);
+    rg.lookAt(0, 0, 0);
+    gGlobeGroup.add(rg);
+    gRings.push(rg);
   });
 }
-function updateGlobeMetric(){placeMarkers(document.getElementById('gm-select').value);}
-function toggleGlobeRot(){
-  ST.globeRotating=!ST.globeRotating;
-  const btn=document.getElementById('globe-rot-btn');
-  btn.innerHTML=ST.globeRotating?'<i class="fas fa-pause"></i> Pause':'<i class="fas fa-play"></i> Resume';
+function updateGlobeMetric() { placeMarkers(document.getElementById('gm-select').value); }
+function toggleGlobeRot() {
+  ST.globeRotating = !ST.globeRotating;
+  const btn = document.getElementById('globe-rot-btn');
+  if (btn) btn.innerHTML = ST.globeRotating ? '<i class="fas fa-pause"></i> Pause' : '<i class="fas fa-play"></i> Resume';
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // SDG TRACKER
 // ════════════════════════════════════════════════════════════════════════════
-function sdgHTML(){return `<div class="space-y-5"><h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-bullseye"></i> UN ${t('sdgTracker')}</h2><div id="sdg-content"><div class="flex justify-center py-12"><div class="animate-spin w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full"></div></div></div></div>`;}
+function sdgHTML() { return `<div class="space-y-5"><h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-bullseye"></i> UN ${t('sdgTracker')}</h2><div id="sdg-content"><div class="flex justify-center py-12"><div class="animate-spin w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full"></div></div></div></div>`; }
 
-async function loadSDG(){
-  const r=await fetch('/sdg_data');ST.sdgData=await r.json();
-  const {sdgs,aiScore}=ST.sdgData;
-  document.getElementById('sdg-content').innerHTML=`
+async function loadSDG() {
+  const r = await fetch('/sdg_data'); ST.sdgData = await r.json();
+  const { sdgs, aiScore } = ST.sdgData;
+  document.getElementById('sdg-content').innerHTML = `
     <div class="et-card bg-gradient-to-r from-cyan-900/20 to-emerald-900/20 border-cyan-800/40 mb-5">
       <div class="flex justify-between items-center">
         <div><div class="text-xs text-cyan-400 font-bold mb-1">OVERALL AI SUSTAINABILITY SCORE</div>
@@ -1727,7 +2095,7 @@ async function loadSDG(){
       </div>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
-      ${sdgs.map(s=>`
+      ${sdgs.map(s => `
         <div class="et-card hover:border-gray-600 transition-all">
           <div class="flex items-center gap-2 mb-3">
             <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xl" style="background:${s.color}22;border:1px solid ${s.color}44">${s.icon}</div>
@@ -1741,48 +2109,51 @@ async function loadSDG(){
     </div>
     <div class="et-card"><h3 class="et-card-title mb-3">SDG Radar Chart</h3><div id="sdg-radar" style="height:340px"></div></div>`;
 
-  sdgs.forEach(s=>Plotly.newPlot(`sdg-spark-${s.id}`,[{type:'scatter',mode:'lines',x:[2020,2021,2022,2023,2024,2025],y:s.trend,line:{color:s.color,width:2},fill:'tozeroy',fillcolor:s.color+'22'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',margin:{l:0,r:0,t:0,b:0},xaxis:{visible:false},yaxis:{visible:false},showlegend:false},{responsive:true,displayModeBar:false,staticPlot:true}));
+  sdgs.forEach(s => Plotly.newPlot(`sdg-spark-${s.id}`, [{ type: 'scatter', mode: 'lines', x: [2020, 2021, 2022, 2023, 2024, 2025], y: s.trend, line: { color: s.color, width: 2 }, fill: 'tozeroy', fillcolor: s.color + '22' }], { paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', margin: { l: 0, r: 0, t: 0, b: 0 }, xaxis: { visible: false }, yaxis: { visible: false }, showlegend: false }, { responsive: true, displayModeBar: false, staticPlot: true }));
 
-  Plotly.newPlot('sdg-radar',[
-    {type:'scatterpolar',fill:'toself',r:sdgs.map(s=>s.progress),theta:sdgs.map(s=>`SDG ${s.id}`),fillcolor:'rgba(34,211,238,0.08)',line:{color:'#22d3ee',width:2},name:'Current'},
-    {type:'scatterpolar',fill:'toself',r:sdgs.map(()=>100),theta:sdgs.map(s=>`SDG ${s.id}`),fillcolor:'rgba(255,255,255,0.02)',line:{color:'#374151',width:1,dash:'dash'},name:'Target'},
-  ],{polar:{bgcolor:'transparent',radialaxis:{visible:true,range:[0,100],gridcolor:'#1f2937',color:'#6b7280'},angularaxis:{color:'#9ca3af'}},
-    paper_bgcolor:'transparent',font:{color:'#d1d5db',size:11},legend:{bgcolor:'transparent',font:{color:'#9ca3af',size:9}},margin:{l:60,r:60,t:20,b:20},
-  },{responsive:true,displayModeBar:false});
+  Plotly.newPlot('sdg-radar', [
+    { type: 'scatterpolar', fill: 'toself', r: sdgs.map(s => s.progress), theta: sdgs.map(s => `SDG ${s.id}`), fillcolor: 'rgba(34,211,238,0.08)', line: { color: '#22d3ee', width: 2 }, name: 'Current' },
+    { type: 'scatterpolar', fill: 'toself', r: sdgs.map(() => 100), theta: sdgs.map(s => `SDG ${s.id}`), fillcolor: 'rgba(255,255,255,0.02)', line: { color: '#374151', width: 1, dash: 'dash' }, name: 'Target' },
+  ], {
+    polar: { bgcolor: 'transparent', radialaxis: { visible: true, range: [0, 100], gridcolor: '#1f2937', color: '#6b7280' }, angularaxis: { color: '#9ca3af' } },
+    paper_bgcolor: 'transparent', font: { color: '#d1d5db', size: 11 }, legend: { bgcolor: 'transparent', font: { color: '#9ca3af', size: 9 } }, margin: { l: 60, r: 60, t: 20, b: 20 },
+  }, { responsive: true, displayModeBar: false });
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // HISTORICAL TRENDS
 // ════════════════════════════════════════════════════════════════════════════
-function historyHTML(){return `
+function historyHTML() {
+  return `
   <div class="space-y-5">
     <div class="flex flex-wrap items-center gap-3">
       <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-clock-rotate-left"></i> ${t('history')}</h2>
       <div class="flex items-center gap-2">
         <select id="hist-country" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-cyan-500" onchange="loadHistory()">
-          ${[{c:'USA',n:'United States'},{c:'DEU',n:'Germany'},{c:'NOR',n:'Norway'},{c:'IND',n:'India'},
-             {c:'CHN',n:'China'},{c:'BRA',n:'Brazil'},{c:'JPN',n:'Japan'},{c:'GBR',n:'United Kingdom'},
-             {c:'AUS',n:'Australia'},{c:'CHE',n:'Switzerland'},{c:'SWE',n:'Sweden'},{c:'SAU',n:'Saudi Arabia'}]
-            .map(x=>`<option value="${x.c}">${x.n}</option>`).join('')}
+          ${[{ c: 'USA', n: 'United States' }, { c: 'DEU', n: 'Germany' }, { c: 'NOR', n: 'Norway' }, { c: 'IND', n: 'India' },
+    { c: 'CHN', n: 'China' }, { c: 'BRA', n: 'Brazil' }, { c: 'JPN', n: 'Japan' }, { c: 'GBR', n: 'United Kingdom' },
+    { c: 'AUS', n: 'Australia' }, { c: 'CHE', n: 'Switzerland' }, { c: 'SWE', n: 'Sweden' }, { c: 'SAU', n: 'Saudi Arabia' }]
+      .map(x => `<option value="${x.c}">${x.n}</option>`).join('')}
         </select>
       </div>
     </div>
     <div id="hist-content"><div class="flex justify-center py-12"><div class="animate-spin w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full"></div></div></div>
-  </div>`;}
+  </div>`;
+}
 
-async function loadHistory(){
-  const code=document.getElementById('hist-country')?.value||'USA';
-  const r=await fetch(`/historical/${code}`);
-  ST.historyData=await r.json();
-  const d=ST.historyData;
-  const pl={paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',font:{color:'#9ca3af',size:10},margin:{l:45,r:15,t:8,b:40}};
-  const px={color:'#4b5563',gridcolor:'#1f2937'};
+async function loadHistory() {
+  const code = document.getElementById('hist-country')?.value || 'USA';
+  const r = await fetch(`/historical/${code}`);
+  ST.historyData = await r.json();
+  const d = ST.historyData;
+  const pl = { paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)', font: { color: '#9ca3af', size: 10 }, margin: { l: 45, r: 15, t: 8, b: 40 } };
+  const px = { color: '#4b5563', gridcolor: '#1f2937' };
 
-  document.getElementById('hist-content').innerHTML=`
+  document.getElementById('hist-content').innerHTML = `
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-      ${[{l:'Current Score',v:d.country.score,u:'',c:'cyan'},{l:'CO₂/capita',v:d.country.co2,u:'t',c:'red'},
-         {l:'Renewable',v:d.country.renewable,u:'%',c:'emerald'},{l:'Recycling',v:d.country.recycling,u:'%',c:'violet'}]
-        .map(k=>`<div class="et-card text-center"><div class="text-xs text-gray-400 mb-1">${k.l}</div><div class="text-2xl font-black text-${k.c}-300">${k.v}${k.u}</div></div>`).join('')}
+      ${[{ l: 'Current Score', v: d.country.score, u: '', c: 'cyan' }, { l: 'CO₂/capita', v: d.country.co2, u: 't', c: 'red' },
+    { l: 'Renewable', v: d.country.renewable, u: '%', c: 'emerald' }, { l: 'Recycling', v: d.country.recycling, u: '%', c: 'violet' }]
+      .map(k => `<div class="et-card text-center"><div class="text-xs text-gray-400 mb-1">${k.l}</div><div class="text-2xl font-black text-${k.c}-300">${k.v}${k.u}</div></div>`).join('')}
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="et-card"><h3 class="et-card-title">Sustainability Score History</h3><div id="h-score" style="height:200px"></div></div>
@@ -1791,34 +2162,36 @@ async function loadHistory(){
       <div class="et-card"><h3 class="et-card-title text-blue-300">Water Access & Recycling</h3><div id="h-wr" style="height:200px"></div></div>
     </div>`;
 
-  const mk=(id,traces)=>Plotly.newPlot(id,traces,{...pl,xaxis:{...px,title:'Year'},yaxis:{...px}},{responsive:true,displayModeBar:false});
-  mk('h-score',[{type:'scatter',mode:'lines+markers',x:d.years,y:d.scores,line:{color:'#22d3ee',width:2.5},marker:{size:5},fill:'tozeroy',fillcolor:'rgba(34,211,238,0.06)'}]);
-  mk('h-co2',[{type:'scatter',mode:'lines+markers',x:d.years,y:d.co2,line:{color:'#ef4444',width:2.5},marker:{size:5},fill:'tozeroy',fillcolor:'rgba(239,68,68,0.06)'}]);
-  mk('h-ren',[{type:'bar',x:d.years,y:d.renewable,marker:{color:'#10b981',opacity:0.8}}]);
-  mk('h-wr',[
-    {type:'scatter',mode:'lines+markers',name:'Water %',x:d.years,y:d.water,line:{color:'#3b82f6',width:2}},
-    {type:'scatter',mode:'lines+markers',name:'Recycling %',x:d.years,y:d.recycling,line:{color:'#8b5cf6',width:2}},
+  const mk = (id, traces) => Plotly.newPlot(id, traces, { ...pl, xaxis: { ...px, title: 'Year' }, yaxis: { ...px } }, { responsive: true, displayModeBar: false });
+  mk('h-score', [{ type: 'scatter', mode: 'lines+markers', x: d.years, y: d.scores, line: { color: '#22d3ee', width: 2.5 }, marker: { size: 5 }, fill: 'tozeroy', fillcolor: 'rgba(34,211,238,0.06)' }]);
+  mk('h-co2', [{ type: 'scatter', mode: 'lines+markers', x: d.years, y: d.co2, line: { color: '#ef4444', width: 2.5 }, marker: { size: 5 }, fill: 'tozeroy', fillcolor: 'rgba(239,68,68,0.06)' }]);
+  mk('h-ren', [{ type: 'bar', x: d.years, y: d.renewable, marker: { color: '#10b981', opacity: 0.8 } }]);
+  mk('h-wr', [
+    { type: 'scatter', mode: 'lines+markers', name: 'Water %', x: d.years, y: d.water, line: { color: '#3b82f6', width: 2 } },
+    { type: 'scatter', mode: 'lines+markers', name: 'Recycling %', x: d.years, y: d.recycling, line: { color: '#8b5cf6', width: 2 } },
   ]);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // ENTERPRISE ANALYTICS
 // ════════════════════════════════════════════════════════════════════════════
-function analyticsHTML(){return `
+function analyticsHTML() {
+  return `
   <div class="space-y-5">
     <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-chart-bar"></i> ${t('analytics')} — Enterprise Intelligence</h2>
     <div id="analytics-content"><div class="flex justify-center py-12"><div class="animate-spin w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full"></div></div></div>
-  </div>`;}
+  </div>`;
+}
 
-async function loadAnalytics(){
-  const r=await fetch('/analytics/enterprise',{headers:authHeaders()});
-  ST.enterpriseData=await r.json();
-  const d=ST.enterpriseData;
-  document.getElementById('analytics-content').innerHTML=`
+async function loadAnalytics() {
+  const r = await fetch('/analytics/enterprise', { headers: authHeaders() });
+  ST.enterpriseData = await r.json();
+  const d = ST.enterpriseData;
+  document.getElementById('analytics-content').innerHTML = `
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-      ${[{l:'Total Countries',v:d.kpis.totalCountries,c:'cyan'},{l:'Improving',v:d.kpis.improvingCount,c:'emerald'},
-         {l:'Critical',v:d.kpis.criticalCount,c:'red'},{l:'YoY Change',v:'+'+d.kpis.yearOverYear,c:'violet'}]
-        .map(k=>`<div class="et-card text-center"><div class="text-xs text-gray-400 mb-1">${k.l}</div><div class="text-3xl font-black text-${k.c}-300">${k.v}</div></div>`).join('')}
+      ${[{ l: 'Total Countries', v: d.kpis.totalCountries, c: 'cyan' }, { l: 'Improving', v: d.kpis.improvingCount, c: 'emerald' },
+    { l: 'Critical', v: d.kpis.criticalCount, c: 'red' }, { l: 'YoY Change', v: '+' + d.kpis.yearOverYear, c: 'violet' }]
+      .map(k => `<div class="et-card text-center"><div class="text-xs text-gray-400 mb-1">${k.l}</div><div class="text-3xl font-black text-${k.c}-300">${k.v}</div></div>`).join('')}
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
       <div class="et-card">
@@ -1848,37 +2221,42 @@ async function loadAnalytics(){
       <h3 class="et-card-title mb-3">Regional Breakdown Table</h3>
       <div class="overflow-x-auto">
         <table class="w-full">
-          <thead><tr>${['Region','Countries','Avg Score','CO₂','Renewable','Trend'].map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-          <tbody>${d.regions.map(reg=>`<tr>
+          <thead><tr>${['Region', 'Countries', 'Avg Score', 'CO₂', 'Renewable', 'Trend'].map(h => `<th>${h}</th>`).join('')}</tr></thead>
+          <tbody>${d.regions.map(reg => `<tr>
             <td class="font-bold text-gray-200">${reg.name}</td>
             <td>${reg.countries}</td>
             <td><span class="font-bold" style="color:${scoreColor(reg.avgScore)}">${reg.avgScore}</span></td>
             <td class="text-red-300">${reg.co2}t</td>
             <td class="text-emerald-300">${reg.renewable}%</td>
-            <td class="${reg.trend>0?'text-emerald-300':'text-red-300'}">${reg.trend>0?'+':''}${reg.trend}%</td>
+            <td class="${reg.trend > 0 ? 'text-emerald-300' : 'text-red-300'}">${reg.trend > 0 ? '+' : ''}${reg.trend}%</td>
           </tr>`).join('')}</tbody>
         </table>
       </div>
     </div>`;
 
-  const pl={paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',font:{color:'#9ca3af',size:10},margin:{l:45,r:15,t:8,b:40},xaxis:{color:'#4b5563',gridcolor:'#1f2937'},yaxis:{color:'#4b5563',gridcolor:'#1f2937'}};
-  Plotly.newPlot('ea-regional',[
-    {type:'bar',name:'Avg Score',x:d.regions.map(r=>r.name),y:d.regions.map(r=>r.avgScore),marker:{color:d.regions.map(r=>scoreColor(r.avgScore)),opacity:0.85}},
-  ],{...pl},{responsive:true,displayModeBar:false});
-  Plotly.newPlot('ea-monthly',[
-    {type:'scatter',mode:'lines+markers',name:'Score',x:d.monthly.map(m=>m.month),y:d.monthly.map(m=>m.score),line:{color:'#22d3ee',width:2.5},marker:{size:5}},
-    {type:'scatter',mode:'lines',name:'CO₂×10',x:d.monthly.map(m=>m.month),y:d.monthly.map(m=>m.co2*10),line:{color:'#ef4444',width:1.5,dash:'dot'},yaxis:'y2'},
-  ],{...pl,yaxis2:{overlaying:'y',side:'right',color:'#ef4444'},legend:{bgcolor:'transparent',font:{color:'#9ca3af',size:9}}},{responsive:true,displayModeBar:false});
-  Plotly.newPlot('ea-scatter',[{type:'scatter',mode:'markers+text',x:d.regions.map(r=>r.renewable),y:d.regions.map(r=>r.co2),text:d.regions.map(r=>r.name),textposition:'top center',
-    marker:{size:d.regions.map(r=>8+r.avgScore/10),color:d.regions.map(r=>scoreColor(r.avgScore)),opacity:0.85}}],
-    {paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',font:{color:'#9ca3af',size:9},margin:{l:40,r:10,t:5,b:40},
-    xaxis:{title:'Renewable %',color:'#4b5563',gridcolor:'#1f2937'},yaxis:{title:'CO₂',color:'#4b5563',gridcolor:'#1f2937'}},{responsive:true,displayModeBar:false});
+  const pl = { paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)', font: { color: '#9ca3af', size: 10 }, margin: { l: 45, r: 15, t: 8, b: 40 }, xaxis: { color: '#4b5563', gridcolor: '#1f2937' }, yaxis: { color: '#4b5563', gridcolor: '#1f2937' } };
+  Plotly.newPlot('ea-regional', [
+    { type: 'bar', name: 'Avg Score', x: d.regions.map(r => r.name), y: d.regions.map(r => r.avgScore), marker: { color: d.regions.map(r => scoreColor(r.avgScore)), opacity: 0.85 } },
+  ], { ...pl }, { responsive: true, displayModeBar: false });
+  Plotly.newPlot('ea-monthly', [
+    { type: 'scatter', mode: 'lines+markers', name: 'Score', x: d.monthly.map(m => m.month), y: d.monthly.map(m => m.score), line: { color: '#22d3ee', width: 2.5 }, marker: { size: 5 } },
+    { type: 'scatter', mode: 'lines', name: 'CO₂×10', x: d.monthly.map(m => m.month), y: d.monthly.map(m => m.co2 * 10), line: { color: '#ef4444', width: 1.5, dash: 'dot' }, yaxis: 'y2' },
+  ], { ...pl, yaxis2: { overlaying: 'y', side: 'right', color: '#ef4444' }, legend: { bgcolor: 'transparent', font: { color: '#9ca3af', size: 9 } } }, { responsive: true, displayModeBar: false });
+  Plotly.newPlot('ea-scatter', [{
+    type: 'scatter', mode: 'markers+text', x: d.regions.map(r => r.renewable), y: d.regions.map(r => r.co2), text: d.regions.map(r => r.name), textposition: 'top center',
+    marker: { size: d.regions.map(r => 8 + r.avgScore / 10), color: d.regions.map(r => scoreColor(r.avgScore)), opacity: 0.85 }
+  }],
+    {
+      paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)', font: { color: '#9ca3af', size: 9 }, margin: { l: 40, r: 10, t: 5, b: 40 },
+      xaxis: { title: 'Renewable %', color: '#4b5563', gridcolor: '#1f2937' }, yaxis: { title: 'CO₂', color: '#4b5563', gridcolor: '#1f2937' }
+    }, { responsive: true, displayModeBar: false });
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // AI CHATBOT
 // ════════════════════════════════════════════════════════════════════════════
-function aiHTML(){return `
+function aiHTML() {
+  return `
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
     <div class="lg:col-span-2 flex flex-col et-card" style="height:600px">
       <div class="flex items-center gap-3 pb-3 mb-3 border-b border-gray-800">
@@ -1889,8 +2267,8 @@ function aiHTML(){return `
         </div>
         <div class="ml-auto">
           <select id="ai-lang" class="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[10px] text-gray-200">
-            ${[{v:'en',l:'EN'},{v:'es',l:'ES'},{v:'fr',l:'FR'},{v:'de',l:'DE'},{v:'zh',l:'ZH'},{v:'ar',l:'AR'},{v:'hi',l:'HI'},{v:'pt',l:'PT'}]
-              .map(l=>`<option value="${l.v}" ${ST.lang===l.v?'selected':''}>${l.l}</option>`).join('')}
+            ${[{ v: 'en', l: 'EN' }, { v: 'es', l: 'ES' }, { v: 'fr', l: 'FR' }, { v: 'de', l: 'DE' }, { v: 'zh', l: 'ZH' }, { v: 'ar', l: 'AR' }, { v: 'hi', l: 'HI' }, { v: 'pt', l: 'PT' }]
+      .map(l => `<option value="${l.v}" ${ST.lang === l.v ? 'selected' : ''}>${l.l}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -1915,8 +2293,8 @@ function aiHTML(){return `
       <div class="et-card">
         <h3 class="et-card-title mb-3">💡 Try Asking</h3>
         <div id="suggested-qs" class="space-y-1.5">
-          ${['Which country has the highest sustainability score?','How can CO2 emissions be reduced?','Compare India and USA sustainability','Explain SHAP analysis','Best renewable energy policies','What is climate action SDG 13?','Countries with critical water access','How does LSTM forecasting work?']
-            .map(q=>`<button onclick="askSugg('${q.replace(/'/g,"\\'")}',this)" class="w-full text-left text-[10px] text-gray-300 hover:text-cyan-300 bg-gray-800 hover:bg-gray-700 rounded-lg px-2.5 py-1.5 transition-all">${q}</button>`).join('')}
+          ${['Which country has the highest sustainability score?', 'How can CO2 emissions be reduced?', 'Compare India and USA sustainability', 'Explain SHAP analysis', 'Best renewable energy policies', 'What is climate action SDG 13?', 'Countries with critical water access', 'How does LSTM forecasting work?']
+      .map(q => `<button onclick="askSugg('${q.replace(/'/g, "\\'")}',this)" class="w-full text-left text-[10px] text-gray-300 hover:text-cyan-300 bg-gray-800 hover:bg-gray-700 rounded-lg px-2.5 py-1.5 transition-all">${q}</button>`).join('')}
         </div>
       </div>
       <div class="et-card">
@@ -1930,54 +2308,164 @@ function aiHTML(){return `
         </div>
       </div>
     </div>
-  </div>`;}
-
-async function sendChat(){
-  const input=document.getElementById('chat-input');
-  const q=input.value.trim();if(!q)return;
-  input.value='';appendChatMsg('user',q);
-  const lang=document.getElementById('ai-lang')?.value||ST.lang;
-  const tid='t'+Date.now();
-  document.getElementById('chat-msgs').insertAdjacentHTML('beforeend',`
-    <div id="${tid}" class="flex gap-2">
-      <div class="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 flex-none flex items-center justify-center"><i class="fas fa-robot text-[9px] text-gray-950"></i></div>
-      <div class="bg-gray-800 rounded-xl px-3 py-2"><div class="flex gap-1">
-        <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay:0ms"></span>
-        <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay:150ms"></span>
-        <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay:300ms"></span>
-      </div></div>
-    </div>`);
-  scrollChat();
-  const r=await fetch('/ai_query',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,lang})});
-  const d=await r.json();
-  document.getElementById(tid)?.remove();
-  appendChatMsg('bot',d.response,d.suggestions);
+  </div>`;
 }
-function appendChatMsg(role,text,sugg){
-  const msgs=document.getElementById('chat-msgs');
-  const fmt=text.replace(/\*\*(.*?)\*\*/g,'<strong class="text-cyan-200">$1</strong>').replace(/\n/g,'<br>');
-  if(role==='user'){
-    msgs.insertAdjacentHTML('beforeend',`<div class="flex gap-2 justify-end"><div class="bg-cyan-800/50 rounded-xl px-3 py-2 max-w-sm"><p class="text-xs text-cyan-100">${text}</p></div><div class="w-6 h-6 rounded-full bg-gray-700 flex-none flex items-center justify-center"><i class="fas fa-user text-[9px] text-gray-300"></i></div></div>`);
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  if (!input) return;
+  const q = input.value.trim();
+  if (!q) return;
+
+  // Prevent duplicate submissions
+  if (ST.chatInProgress) return;
+  ST.chatInProgress = true;
+
+  const sendBtn = document.querySelector('button[onclick="sendChat()"]');
+  input.disabled = true;
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.classList.add('opacity-50');
+  }
+
+  input.value = '';
+  appendChatMsg('user', q);
+  const lang = document.getElementById('ai-lang')?.value || ST.lang || 'en';
+  const tid = 't' + Date.now();
+
+  const msgs = document.getElementById('chat-msgs');
+  if (msgs) {
+    msgs.insertAdjacentHTML('beforeend', `
+      <div id="${tid}" class="flex gap-2">
+        <div class="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 flex-none flex items-center justify-center"><i class="fas fa-robot text-[9px] text-gray-950"></i></div>
+        <div class="bg-gray-800 rounded-xl px-3 py-2"><div class="flex gap-1">
+          <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay:0ms"></span>
+          <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay:150ms"></span>
+          <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay:300ms"></span>
+        </div></div>
+      </div>`);
+    scrollChat();
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    if (!ST.chatHistory) ST.chatHistory = [];
+    const r = await fetch('/ai_query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q, lang, history: ST.chatHistory }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    let d = null;
+    try {
+      d = await r.json();
+    } catch {
+      d = null;
+    }
+
+    document.getElementById(tid)?.remove();
+
+    if (!r.ok || !d) {
+      let errorText = '⚠️ **AI Service Error:** Could not complete your request.';
+      if (r.status === 429) {
+        errorText = '⚠️ **Rate Limit Exceeded:** The AI service is currently handling high request volume. Please wait a moment before asking again.';
+      } else if (r.status === 401 || r.status === 403) {
+        errorText = '⚠️ **Authentication Error:** Gemini AI API access was refused. Please check server key configuration.';
+      } else if (r.status >= 500) {
+        errorText = '⚠️ **Service Unavailable:** Upstream AI provider is temporarily unavailable. Please try again shortly.';
+      } else if (d && typeof d.response === 'string') {
+        errorText = d.response;
+      } else if (d && typeof d.error === 'string') {
+        errorText = `⚠️ ${d.error}`;
+      }
+      appendChatMsg('bot', errorText, ['Retry question', 'Check live dashboard']);
+      return;
+    }
+
+    const botResponse = (typeof d.response === 'string' && d.response.trim())
+      ? d.response
+      : (typeof d.message === 'string' && d.message.trim())
+        ? d.message
+        : '⚠️ Received an incomplete response from AI service. Please try asking again.';
+
+    const suggestions = Array.isArray(d.suggestions) ? d.suggestions.filter(s => typeof s === 'string') : [];
+    appendChatMsg('bot', botResponse, suggestions);
+
+    // Maintain conversation history context
+    ST.chatHistory.push({ role: 'user', content: q });
+    ST.chatHistory.push({ role: 'assistant', content: botResponse });
+    if (ST.chatHistory.length > 12) {
+      ST.chatHistory = ST.chatHistory.slice(-12);
+    }
+
+  } catch (err) {
+    clearTimeout(timeoutId);
+    document.getElementById(tid)?.remove();
+
+    let userErr = '⚠️ **Network Error:** Could not reach the EcoTwin AI service. Please check your connection and try again.';
+    if (err && err.name === 'AbortError') {
+      userErr = '⚠️ **Request Timeout:** The AI response took too long. Please try again with a shorter question.';
+    }
+    appendChatMsg('bot', userErr, ['Retry question', 'Check live dashboard']);
+
+  } finally {
+    // Restore chat input and loading state in EVERY path
+    ST.chatInProgress = false;
+    if (input) {
+      input.disabled = false;
+      input.focus();
+    }
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.classList.remove('opacity-50');
+    }
+  }
+}
+
+function appendChatMsg(role, text, sugg) {
+  const msgs = document.getElementById('chat-msgs');
+  if (!msgs) return;
+  const safeText = (typeof text === 'string') ? text : (text != null ? String(text) : '');
+  const fmt = safeText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-cyan-200">$1</strong>').replace(/\n/g, '<br>');
+  if (role === 'user') {
+    msgs.insertAdjacentHTML('beforeend', `<div class="flex gap-2 justify-end"><div class="bg-cyan-800/50 rounded-xl px-3 py-2 max-w-sm"><p class="text-xs text-cyan-100">${fmt}</p></div><div class="w-6 h-6 rounded-full bg-gray-700 flex-none flex items-center justify-center"><i class="fas fa-user text-[9px] text-gray-300"></i></div></div>`);
   } else {
-    msgs.insertAdjacentHTML('beforeend',`
+    msgs.insertAdjacentHTML('beforeend', `
       <div class="flex gap-2">
         <div class="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 flex-none flex items-center justify-center"><i class="fas fa-robot text-[9px] text-gray-950"></i></div>
         <div class="bg-gray-800 rounded-xl px-3 py-2 max-w-lg"><p class="text-xs text-gray-200 leading-relaxed">${fmt}</p></div>
       </div>`);
-    if(sugg?.length){
-      const el=document.getElementById('suggested-qs');if(el)
-        el.innerHTML=sugg.map(q=>`<button onclick="askSugg('${q.replace(/'/g,"\\'")}',this)" class="w-full text-left text-[10px] text-cyan-300 bg-cyan-900/20 border border-cyan-800/30 hover:bg-cyan-900/30 rounded-lg px-2.5 py-1.5 transition-all">${q}</button>`).join('')+el.innerHTML;
+    if (sugg?.length) {
+      const el = document.getElementById('suggested-qs');
+      if (el) {
+        el.innerHTML = sugg.slice(0, 4).map(q => {
+          const escaped = String(q).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+          const safeParam = String(q).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          return `<button onclick="askSugg('${safeParam}')" class="w-full text-left text-[10px] text-cyan-300 bg-cyan-900/20 border border-cyan-800/30 hover:bg-cyan-900/30 rounded-lg px-2.5 py-1.5 transition-all">${escaped}</button>`;
+        }).join('');
+      }
     }
   }
   scrollChat();
 }
-function scrollChat(){const el=document.getElementById('chat-msgs');if(el)el.scrollTop=el.scrollHeight;}
-function askSugg(q){document.getElementById('chat-input').value=q;sendChat();}
+function scrollChat() { const el = document.getElementById('chat-msgs'); if (el) el.scrollTop = el.scrollHeight; }
+function askSugg(q) {
+  const inp = document.getElementById('chat-input');
+  if (inp) {
+    inp.value = q;
+    sendChat();
+  }
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // ADMIN PANEL
 // ════════════════════════════════════════════════════════════════════════════
-function adminHTML(){return `
+function adminHTML() {
+  return `
   <div class="space-y-5">
     <div class="flex items-center justify-between">
       <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-shield-halved text-red-400"></i> ${t('admin')} Panel</h2>
@@ -2002,82 +2490,99 @@ function adminHTML(){return `
     <div class="et-card border-cyan-900/40">
       <h3 class="et-card-title mb-3">System Architecture</h3>
       <div class="flex flex-wrap items-center gap-2 text-xs">
-        ${['User Browser','→','Cloudflare Edge','→','Hono API','→','AI/ML Engine','→','Response'].map((n,i)=>
-          n==='→'?`<span class="text-gray-600">${n}</span>`:
-          `<span class="px-2 py-1 rounded-lg ${i===0?'bg-blue-900/40 text-blue-300':i===2?'bg-orange-900/40 text-orange-300':i===4?'bg-cyan-900/40 text-cyan-300':i===6?'bg-violet-900/40 text-violet-300':'bg-emerald-900/40 text-emerald-300'} font-bold">${n}</span>`).join('')}
+        ${['User Browser', '→', 'Cloudflare Edge', '→', 'Hono API', '→', 'AI/ML Engine', '→', 'Response'].map((n, i) =>
+    n === '→' ? `<span class="text-gray-600">${n}</span>` :
+      `<span class="px-2 py-1 rounded-lg ${i === 0 ? 'bg-blue-900/40 text-blue-300' : i === 2 ? 'bg-orange-900/40 text-orange-300' : i === 4 ? 'bg-cyan-900/40 text-cyan-300' : i === 6 ? 'bg-violet-900/40 text-violet-300' : 'bg-emerald-900/40 text-emerald-300'} font-bold">${n}</span>`).join('')}
       </div>
       <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px] text-gray-400">
         <div class="bg-gray-800 rounded p-2"><div class="font-bold text-cyan-300 mb-0.5">Frontend</div>Hono SSR + Tailwind + Plotly + Three.js</div>
         <div class="bg-gray-800 rounded p-2"><div class="font-bold text-orange-300 mb-0.5">Backend</div>Cloudflare Workers (Edge)</div>
-        <div class="bg-gray-800 rounded p-2"><div class="font-bold text-violet-300 mb-0.5">AI/ML</div>LSTM Forecast + SHAP + RL (DQN/PPO)</div>
+        <div class="bg-gray-800 rounded p-2"><div class="font-bold text-violet-300 mb-0.5">Analytics & AI</div>Scenario Projections, Heuristic Optimizer, Gemini AI</div>
         <div class="bg-gray-800 rounded p-2"><div class="font-bold text-emerald-300 mb-0.5">Auth</div>Session tokens + OTP email verification</div>
       </div>
     </div>
-  </div>`;}
+  </div>`;
+}
 
-async function loadAdmin(){
-  const [usersR,statsR,simR]=await Promise.all([
-    fetch('/admin/users',{headers:authHeaders()}),
-    fetch('/admin/stats',{headers:authHeaders()}),
+async function loadAdmin() {
+  const [usersR, statsR, simR] = await Promise.all([
+    fetch('/admin/users', { headers: authHeaders() }),
+    fetch('/admin/stats', { headers: authHeaders() }),
     fetch('/simulate/history'),
   ]);
-  const users=await usersR.json(),stats=await statsR.json(),sims=await simR.json();
+  if (!usersR.ok || !statsR.ok) {
+    const statsGrid = document.getElementById('admin-stats-grid');
+    if (statsGrid) {
+      statsGrid.innerHTML = `
+        <div class="col-span-full bg-red-950/40 border border-red-800/60 rounded-xl p-6 text-center">
+          <i class="fas fa-lock text-red-400 text-3xl mb-3"></i>
+          <h3 class="text-base font-bold text-red-200 mb-1">Admin Access Restricted</h3>
+          <p class="text-xs text-gray-400 max-w-md mx-auto mb-4">You must be authenticated with an administrator account to view audit metrics and user management.</p>
+          <button onclick="showLoginModal()" class="et-btn-cyan text-xs px-4 py-2"><i class="fas fa-sign-in-alt"></i> Login as Admin</button>
+        </div>`;
+    }
+    const tableEl = document.getElementById('admin-users-table');
+    if (tableEl) tableEl.innerHTML = `<div class="p-6 text-center text-xs text-gray-500">Authentication required to inspect system identities.</div>`;
+    return;
+  }
+  const users = await usersR.json(), stats = await statsR.json(), sims = await simR.json();
 
-  document.getElementById('admin-stats-grid').innerHTML=[
-    {l:'Total Users',v:stats.totalUsers,c:'cyan',i:'fa-users'},
-    {l:'Active Sessions',v:stats.activeSessions,c:'emerald',i:'fa-circle-check'},
-    {l:'API Calls',v:stats.apiCalls,c:'violet',i:'fa-code'},
-    {l:'Uptime',v:stats.uptime,c:'yellow',i:'fa-server'},
-  ].map(k=>`<div class="et-card text-center"><i class="fas ${k.i} text-${k.c}-400 mb-1 text-lg"></i><div class="text-2xl font-black text-${k.c}-300">${k.v}</div><div class="text-[10px] text-gray-400">${k.l}</div></div>`).join('');
+  document.getElementById('admin-stats-grid').innerHTML = [
+    { l: 'Total Users', v: stats.totalUsers, c: 'cyan', i: 'fa-users' },
+    { l: 'Active Sessions', v: stats.activeSessions, c: 'emerald', i: 'fa-circle-check' },
+    { l: 'API Calls', v: stats.apiCalls, c: 'violet', i: 'fa-code' },
+    { l: 'Uptime', v: stats.uptime, c: 'yellow', i: 'fa-server' },
+  ].map(k => `<div class="et-card text-center"><i class="fas ${k.i} text-${k.c}-400 mb-1 text-lg"></i><div class="text-2xl font-black text-${k.c}-300">${k.v}</div><div class="text-[10px] text-gray-400">${k.l}</div></div>`).join('');
 
-  if(Array.isArray(users)){
-    document.getElementById('admin-users-table').innerHTML=`
+  if (Array.isArray(users)) {
+    document.getElementById('admin-users-table').innerHTML = `
       <table class="w-full">
-        <thead><tr>${['Name','Email','Role','Org','Verified','Logins','Last Login'].map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-        <tbody>${users.map(u=>`<tr>
+        <thead><tr>${['Name', 'Email', 'Role', 'Org', 'Verified', 'Logins', 'Last Login'].map(h => `<th>${h}</th>`).join('')}</tr></thead>
+        <tbody>${users.map(u => `<tr>
           <td class="font-medium text-white">${u.name}</td>
           <td class="text-gray-400">${u.email}</td>
-          <td><span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${u.role==='admin'?'bg-red-900/60 text-red-300':u.role==='analyst'?'bg-cyan-900/60 text-cyan-300':'bg-gray-700 text-gray-400'}">${u.role}</span></td>
-          <td class="text-gray-400">${u.org||'—'}</td>
-          <td>${u.verified?'<span class="text-emerald-400">✓</span>':'<span class="text-red-400">✗</span>'}</td>
+          <td><span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${u.role === 'admin' ? 'bg-red-900/60 text-red-300' : u.role === 'analyst' ? 'bg-cyan-900/60 text-cyan-300' : 'bg-gray-700 text-gray-400'}">${u.role}</span></td>
+          <td class="text-gray-400">${u.org || '—'}</td>
+          <td>${u.verified ? '<span class="text-emerald-400">✓</span>' : '<span class="text-red-400">✗</span>'}</td>
           <td class="text-gray-300">${u.loginCount}</td>
-          <td class="text-gray-500 text-[10px]">${u.lastLogin?new Date(u.lastLogin).toLocaleString():'-'}</td>
+          <td class="text-gray-500 text-[10px]">${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '-'}</td>
         </tr>`).join('')}</tbody>
       </table>`;
   }
 
-  document.getElementById('admin-sim-history').innerHTML=sims.length
-    ? sims.slice(0,8).map(s=>`<div class="flex items-center gap-3 py-1.5 border-b border-gray-800"><span class="text-gray-500 w-32">${new Date(s.ts).toLocaleString()}</span><span class="text-cyan-400 font-mono text-[10px]">${s.id}</span><span class="text-emerald-300 ml-auto">Score: ${Array.isArray(s.result?.scores)?s.result.scores[s.result.scores.length-1]:'—'}</span></div>`).join('')
+  document.getElementById('admin-sim-history').innerHTML = sims.length
+    ? sims.slice(0, 8).map(s => `<div class="flex items-center gap-3 py-1.5 border-b border-gray-800"><span class="text-gray-500 w-32">${new Date(s.ts).toLocaleString()}</span><span class="text-cyan-400 font-mono text-[10px]">${s.id}</span><span class="text-emerald-300 ml-auto">Score: ${Array.isArray(s.result?.scores) ? s.result.scores[s.result.scores.length - 1] : '—'}</span></div>`).join('')
     : '<p class="text-gray-600">No simulations yet</p>';
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // GLOBAL BINDINGS & BOOT
 // ════════════════════════════════════════════════════════════════════════════
-window.switchTab=switchTab;window.changeLang=changeLang;
-window.showLoginModal=showLoginModal;window.showRegisterModal=showRegisterModal;
-window.doLogin=doLogin;window.doRegister=doRegister;window.doLogout=doLogout;
-window.doVerifyOtp=doVerifyOtp;window.closeModal=closeModal;
-window.togglePassVis=togglePassVis;window.showProfileModal=showProfileModal;window.saveProfile=saveProfile;
-window.filterMap=filterMap;window.animateYear=animateYear;
-window.toggleRTFeed=toggleRTFeed;
-window.runSimulation=runSimulation;window.runCompare=runCompare;
-window.runSHAP=runSHAP;window.runRL=runRL;window.selAlgo=selAlgo;
-window.updateGlobeMetric=updateGlobeMetric;window.toggleGlobeRot=toggleGlobeRot;
-window.sendChat=sendChat;window.askSugg=askSugg;
-window.loadHistory=loadHistory;window.loadAdmin=loadAdmin;
-window.runRiskAssessment=runRiskAssessment;
-window.loadCarbon=loadCarbon;window.runCarbonScenario=runCarbonScenario;
-window.loadCities=loadCities;window.benchmarkCity=benchmarkCity;
-window.togglePolicy=togglePolicy;window.runPolicySim=runPolicySim;
-window.loadNews=loadNews;window.filterNews=filterNews;
-window.exportData=exportData;
-window.runPeerCompare=runPeerCompare;
+window.switchTab = switchTab; window.changeLang = changeLang;
+window.showLoginModal = showLoginModal; window.showRegisterModal = showRegisterModal;
+window.doLogin = doLogin; window.doRegister = doRegister; window.doLogout = doLogout;
+window.doVerifyOtp = doVerifyOtp; window.closeModal = closeModal;
+window.togglePassVis = togglePassVis; window.showProfileModal = showProfileModal; window.saveProfile = saveProfile;
+window.filterMap = filterMap; window.animateYear = animateYear;
+window.toggleRTFeed = toggleRTFeed;
+window.runSimulation = runSimulation; window.runCompare = runCompare;
+window.runSHAP = runSHAP; window.runRL = runRL; window.selAlgo = selAlgo;
+window.updateGlobeMetric = updateGlobeMetric; window.toggleGlobeRot = toggleGlobeRot;
+window.sendChat = sendChat; window.askSugg = askSugg;
+window.loadHistory = loadHistory; window.loadAdmin = loadAdmin;
+window.runRiskAssessment = runRiskAssessment;
+window.loadCarbon = loadCarbon; window.runCarbonScenario = runCarbonScenario;
+window.loadCities = loadCities; window.benchmarkCity = benchmarkCity;
+window.togglePolicy = togglePolicy; window.runPolicySim = runPolicySim;
+window.loadNews = loadNews; window.filterNews = filterNews;
+window.exportData = exportData;
+window.runPeerCompare = runPeerCompare;
 
 // ════════════════════════════════════════════════════════════════════════════
 // CLIMATE RISK ASSESSMENT
 // ════════════════════════════════════════════════════════════════════════════
-function riskHTML(){return `
+function riskHTML() {
+  return `
   <div class="space-y-5">
     <div class="flex flex-wrap items-center gap-3">
       <div>
@@ -2089,15 +2594,15 @@ function riskHTML(){return `
       <div class="et-card">
         <h3 class="et-card-title mb-4"><i class="fas fa-sliders text-red-400"></i> Risk Parameters</h3>
         ${[
-          {id:'cr-ren',  l:'Renewable Energy %',   unit:'%',  min:0, max:100, val:50, col:'emerald'},
-          {id:'cr-co2',  l:'CO₂ Emissions',         unit:'t',  min:0, max:25,  val:8,  col:'red'},
-          {id:'cr-wat',  l:'Water Access',           unit:'%',  min:0, max:100, val:88, col:'blue'},
-          {id:'cr-rec',  l:'Recycling Rate',         unit:'%',  min:0, max:100, val:35, col:'cyan'},
-          {id:'cr-nrg',  l:'Energy Efficiency',      unit:'%',  min:0, max:100, val:50, col:'yellow'},
-          {id:'cr-cst',  l:'Coastal Exposure',       unit:'%',  min:0, max:100, val:40, col:'orange'},
-          {id:'cr-heat', l:'Heat Index',             unit:'%',  min:0, max:100, val:50, col:'red'},
-          {id:'cr-flood',l:'Flood Risk',             unit:'%',  min:0, max:100, val:35, col:'blue'},
-        ].map(s=>`
+      { id: 'cr-ren', l: 'Renewable Energy %', unit: '%', min: 0, max: 100, val: 50, col: 'emerald' },
+      { id: 'cr-co2', l: 'CO₂ Emissions', unit: 't', min: 0, max: 25, val: 8, col: 'red' },
+      { id: 'cr-wat', l: 'Water Access', unit: '%', min: 0, max: 100, val: 88, col: 'blue' },
+      { id: 'cr-rec', l: 'Recycling Rate', unit: '%', min: 0, max: 100, val: 35, col: 'cyan' },
+      { id: 'cr-nrg', l: 'Energy Efficiency', unit: '%', min: 0, max: 100, val: 50, col: 'yellow' },
+      { id: 'cr-cst', l: 'Coastal Exposure', unit: '%', min: 0, max: 100, val: 40, col: 'orange' },
+      { id: 'cr-heat', l: 'Heat Index', unit: '%', min: 0, max: 100, val: 50, col: 'red' },
+      { id: 'cr-flood', l: 'Flood Risk', unit: '%', min: 0, max: 100, val: 35, col: 'blue' },
+    ].map(s => `
           <div class="mb-3">
             <div class="flex justify-between mb-0.5">
               <span class="text-[10px] text-gray-400">${s.l}</span>
@@ -2113,7 +2618,7 @@ function riskHTML(){return `
       </div>
       <div class="lg:col-span-2 space-y-4">
         <div class="grid grid-cols-3 gap-3" id="risk-kpis">
-          ${['Physical Risk','Transition Risk','Overall Risk'].map(l=>`
+          ${['Physical Risk', 'Transition Risk', 'Overall Risk'].map(l => `
             <div class="et-card text-center">
               <div class="text-[10px] text-gray-400 mb-1">${l}</div>
               <div class="text-3xl font-black text-gray-600">—</div>
@@ -2137,75 +2642,82 @@ function riskHTML(){return `
         </div>
       </div>
     </div>
-  </div>`;}
+  </div>`;
+}
 
-async function runRiskAssessment(){
-  const btn=document.getElementById('risk-btn');
-  btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Analyzing...';btn.disabled=true;
-  const payload={
-    renewable:+document.getElementById('cr-ren').value,
-    co2:+document.getElementById('cr-co2').value,
-    waterAccess:+document.getElementById('cr-wat').value,
-    recycling:+document.getElementById('cr-rec').value,
-    energyEff:+document.getElementById('cr-nrg').value,
-    coastalExposure:+document.getElementById('cr-cst').value,
-    heatIndex:+document.getElementById('cr-heat').value,
-    floodRisk:+document.getElementById('cr-flood').value,
+async function runRiskAssessment() {
+  const btn = document.getElementById('risk-btn');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...'; btn.disabled = true;
+  const payload = {
+    renewable: +document.getElementById('cr-ren').value,
+    co2: +document.getElementById('cr-co2').value,
+    waterAccess: +document.getElementById('cr-wat').value,
+    recycling: +document.getElementById('cr-rec').value,
+    energyEff: +document.getElementById('cr-nrg').value,
+    coastalExposure: +document.getElementById('cr-cst').value,
+    heatIndex: +document.getElementById('cr-heat').value,
+    floodRisk: +document.getElementById('cr-flood').value,
   };
-  const r=await fetch('/climate_risk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  const d=await r.json();
+  const r = await fetch('/climate_risk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  const d = await r.json();
 
   // KPIs
-  document.getElementById('risk-kpis').innerHTML=[
-    {l:'Physical Risk',  v:d.physicalRisk,   c:d.physicalRisk>65?'red':d.physicalRisk>40?'yellow':'emerald'},
-    {l:'Transition Risk',v:d.transitionRisk, c:d.transitionRisk>65?'red':d.transitionRisk>40?'yellow':'emerald'},
-    {l:'Overall Risk',   v:d.overallRisk,    c:d.overallRisk>65?'red':d.overallRisk>40?'yellow':'emerald'},
-  ].map(k=>`<div class="et-card text-center">
+  document.getElementById('risk-kpis').innerHTML = [
+    { l: 'Physical Risk', v: d.physicalRisk, c: d.physicalRisk > 65 ? 'red' : d.physicalRisk > 40 ? 'yellow' : 'emerald' },
+    { l: 'Transition Risk', v: d.transitionRisk, c: d.transitionRisk > 65 ? 'red' : d.transitionRisk > 40 ? 'yellow' : 'emerald' },
+    { l: 'Overall Risk', v: d.overallRisk, c: d.overallRisk > 65 ? 'red' : d.overallRisk > 40 ? 'yellow' : 'emerald' },
+  ].map(k => `<div class="et-card text-center">
     <div class="text-[10px] text-gray-400 mb-1">${k.l}</div>
     <div class="text-3xl font-black text-${k.c}-300">${k.v}%</div>
     <div class="risk-gauge mt-2"><div class="risk-needle" style="left:${k.v}%"></div></div>
   </div>`).join('');
 
   // Categories
-  document.getElementById('risk-categories').innerHTML=d.riskCategories.map(rc=>`
+  document.getElementById('risk-categories').innerHTML = d.riskCategories.map(rc => `
     <div class="flex items-start gap-3">
       <span class="text-lg">${rc.icon}</span>
       <div class="flex-1">
         <div class="flex items-center gap-2 mb-0.5">
           <span class="text-xs font-bold text-gray-200">${rc.name}</span>
           <span class="text-[9px] px-1.5 py-0.5 rounded font-bold risk-${rc.level.toLowerCase()}">${rc.level}</span>
-          <span class="ml-auto text-xs font-black ${rc.level==='HIGH'?'text-red-300':rc.level==='MEDIUM'?'text-yellow-300':'text-emerald-300'}">${rc.score}%</span>
+          <span class="ml-auto text-xs font-black ${rc.level === 'HIGH' ? 'text-red-300' : rc.level === 'MEDIUM' ? 'text-yellow-300' : 'text-emerald-300'}">${rc.score}%</span>
         </div>
         <div class="metric-bar"><div class="metric-bar-fill progress-animate"
-          style="width:${rc.score}%;background:${rc.level==='HIGH'?'#ef4444':rc.level==='MEDIUM'?'#f59e0b':'#10b981'}"></div></div>
+          style="width:${rc.score}%;background:${rc.level === 'HIGH' ? '#ef4444' : rc.level === 'MEDIUM' ? '#f59e0b' : '#10b981'}"></div></div>
         <p class="text-[9px] text-gray-500 mt-0.5">${rc.desc}</p>
       </div>
     </div>`).join('');
 
   // Radar
-  const cats=d.riskCategories;
-  Plotly.newPlot('risk-radar',[
-    {type:'scatterpolar',fill:'toself',r:cats.map(c=>c.score),theta:cats.map(c=>c.name),
-     fillcolor:'rgba(239,68,68,0.1)',line:{color:'#ef4444',width:2},name:'Current Risk'},
-    {type:'scatterpolar',fill:'toself',r:cats.map(()=>40),theta:cats.map(c=>c.name),
-     fillcolor:'rgba(16,185,129,0.05)',line:{color:'#10b981',width:1,dash:'dash'},name:'Safe Threshold'},
-  ],{polar:{bgcolor:'transparent',radialaxis:{visible:true,range:[0,100],gridcolor:'#1f2937',color:'#6b7280'},angularaxis:{color:'#9ca3af'}},
-    paper_bgcolor:'transparent',font:{color:'#d1d5db',size:9},
-    legend:{bgcolor:'transparent',font:{color:'#9ca3af',size:8}},margin:{l:35,r:35,t:10,b:10}},
-  {responsive:true,displayModeBar:false});
+  const cats = d.riskCategories;
+  Plotly.newPlot('risk-radar', [
+    {
+      type: 'scatterpolar', fill: 'toself', r: cats.map(c => c.score), theta: cats.map(c => c.name),
+      fillcolor: 'rgba(239,68,68,0.1)', line: { color: '#ef4444', width: 2 }, name: 'Current Risk'
+    },
+    {
+      type: 'scatterpolar', fill: 'toself', r: cats.map(() => 40), theta: cats.map(c => c.name),
+      fillcolor: 'rgba(16,185,129,0.05)', line: { color: '#10b981', width: 1, dash: 'dash' }, name: 'Safe Threshold'
+    },
+  ], {
+    polar: { bgcolor: 'transparent', radialaxis: { visible: true, range: [0, 100], gridcolor: '#1f2937', color: '#6b7280' }, angularaxis: { color: '#9ca3af' } },
+    paper_bgcolor: 'transparent', font: { color: '#d1d5db', size: 9 },
+    legend: { bgcolor: 'transparent', font: { color: '#9ca3af', size: 8 } }, margin: { l: 35, r: 35, t: 10, b: 10 }
+  },
+    { responsive: true, displayModeBar: false });
 
   // Recommendations
-  document.getElementById('risk-recs').innerHTML=d.recommendations.map((r,i)=>`
+  document.getElementById('risk-recs').innerHTML = d.recommendations.map((r, i) => `
     <div class="flex gap-2 p-2 bg-gray-800/50 rounded-lg">
-      <span class="text-cyan-400 font-black flex-none">${i+1}.</span>
+      <span class="text-cyan-400 font-black flex-none">${i + 1}.</span>
       <span class="text-gray-300">${r}</span>
     </div>`).join('');
 
   // Extra stats
   const existing = document.getElementById('risk-kpis');
   const extra = document.createElement('div');
-  extra.className='grid grid-cols-2 gap-3 mt-3';
-  extra.innerHTML=`
+  extra.className = 'grid grid-cols-2 gap-3 mt-3';
+  extra.innerHTML = `
     <div class="et-card text-center">
       <div class="text-[10px] text-gray-400">Adaptation Score</div>
       <div class="text-2xl font-black text-cyan-300">${d.adaptationScore}<span class="text-sm text-gray-400">/100</span></div>
@@ -2216,14 +2728,15 @@ async function runRiskAssessment(){
     </div>`;
   existing.parentNode.insertBefore(extra, existing.nextSibling);
 
-  btn.innerHTML='<i class="fas fa-fire"></i> Assess Climate Risk';btn.disabled=false;
-  toast('Climate risk assessment complete!','warn');
+  btn.innerHTML = '<i class="fas fa-fire"></i> Assess Climate Risk'; btn.disabled = false;
+  toast('Climate risk assessment complete!', 'warn');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // CARBON BUDGET TRACKER
 // ════════════════════════════════════════════════════════════════════════════
-function carbonHTML(){return `
+function carbonHTML() {
+  return `
   <div class="space-y-5">
     <div>
       <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-fire text-orange-400"></i> Global Carbon Budget Tracker</h2>
@@ -2232,13 +2745,14 @@ function carbonHTML(){return `
     <div id="carbon-content">
       <div class="flex justify-center py-12"><div class="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full"></div></div>
     </div>
-  </div>`;}
+  </div>`;
+}
 
-async function loadCarbon(){
-  const r=await fetch('/carbon_budget');const d=await r.json();
-  const pl={paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',font:{color:'#9ca3af',size:10},margin:{l:45,r:15,t:10,b:40},xaxis:{color:'#4b5563',gridcolor:'#1f2937'},yaxis:{color:'#4b5563',gridcolor:'#1f2937',title:'Gt CO₂ Remaining'}};
+async function loadCarbon() {
+  const r = await fetch('/carbon_budget'); const d = await r.json();
+  const pl = { paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)', font: { color: '#9ca3af', size: 10 }, margin: { l: 45, r: 15, t: 10, b: 40 }, xaxis: { color: '#4b5563', gridcolor: '#1f2937' }, yaxis: { color: '#4b5563', gridcolor: '#1f2937', title: 'Gt CO₂ Remaining' } };
 
-  document.getElementById('carbon-content').innerHTML=`
+  document.getElementById('carbon-content').innerHTML = `
     <!-- Budget KPIs -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
       <div class="et-card text-center">
@@ -2302,54 +2816,58 @@ async function loadCarbon(){
       <h3 class="et-card-title mb-3"><i class="fas fa-table text-orange-400"></i> Country Carbon Budget Status</h3>
       <div class="overflow-x-auto">
         <table class="w-full">
-          <thead><tr>${['Country','Annual CO₂','Budget Share','Status'].map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-          <tbody>${d.countryBudgets.map(cb=>`<tr>
+          <thead><tr>${['Country', 'Annual CO₂', 'Budget Share', 'Status'].map(h => `<th>${h}</th>`).join('')}</tr></thead>
+          <tbody>${d.countryBudgets.map(cb => `<tr>
             <td class="font-medium text-white">${cb.name}</td>
             <td class="text-red-300">${cb.annualCO2}t</td>
             <td class="text-yellow-300">${cb.budgetShare}%</td>
-            <td><span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${cb.status==='Over Budget'?'bg-red-900/60 text-red-300':cb.status==='Near Limit'?'bg-yellow-900/60 text-yellow-300':'bg-emerald-900/60 text-emerald-300'}">${cb.status}</span></td>
+            <td><span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${cb.status === 'Over Budget' ? 'bg-red-900/60 text-red-300' : cb.status === 'Near Limit' ? 'bg-yellow-900/60 text-yellow-300' : 'bg-emerald-900/60 text-emerald-300'}">${cb.status}</span></td>
           </tr>`).join('')}</tbody>
         </table>
       </div>
     </div>`;
 
-  Plotly.newPlot('carbon-chart',[
-    {type:'scatter',mode:'lines',name:'1.5°C Budget',x:d.years,y:d.baseline_1_5,line:{color:'#ef4444',width:2.5},fill:'tozeroy',fillcolor:'rgba(239,68,68,0.06)'},
-    {type:'scatter',mode:'lines',name:'2.0°C Budget',x:d.years,y:d.budget_2_0,line:{color:'#f59e0b',width:2},fill:'tozeroy',fillcolor:'rgba(245,158,11,0.04)'},
-    {type:'scatter',mode:'lines',name:'Net-Zero Path',x:d.years,y:d.net_zero_path,line:{color:'#10b981',width:2,dash:'dot'},fill:'tozeroy',fillcolor:'rgba(16,185,129,0.04)'},
-  ],{...pl,legend:{bgcolor:'transparent',font:{color:'#9ca3af',size:9}}},{responsive:true,displayModeBar:false});
+  Plotly.newPlot('carbon-chart', [
+    { type: 'scatter', mode: 'lines', name: '1.5°C Budget', x: d.years, y: d.baseline_1_5, line: { color: '#ef4444', width: 2.5 }, fill: 'tozeroy', fillcolor: 'rgba(239,68,68,0.06)' },
+    { type: 'scatter', mode: 'lines', name: '2.0°C Budget', x: d.years, y: d.budget_2_0, line: { color: '#f59e0b', width: 2 }, fill: 'tozeroy', fillcolor: 'rgba(245,158,11,0.04)' },
+    { type: 'scatter', mode: 'lines', name: 'Net-Zero Path', x: d.years, y: d.net_zero_path, line: { color: '#10b981', width: 2, dash: 'dot' }, fill: 'tozeroy', fillcolor: 'rgba(16,185,129,0.04)' },
+  ], { ...pl, legend: { bgcolor: 'transparent', font: { color: '#9ca3af', size: 9 } } }, { responsive: true, displayModeBar: false });
 
-  Plotly.newPlot('carbon-sectors',[{
-    type:'pie',labels:d.sectors.map(s=>s.name),values:d.sectors.map(s=>s.share),
-    marker:{colors:d.sectors.map(s=>s.color)},hole:0.45,
-    text:d.sectors.map(s=>`${s.name}<br>${s.reduction_potential}% potential`),
-    textinfo:'label+percent',textfont:{color:'#e5e7eb',size:9},
-    hovertemplate:'<b>%{label}</b><br>Share: %{percent}<br>Reduction Potential: %{text}<extra></extra>',
-  }],{paper_bgcolor:'transparent',margin:{l:5,r:5,t:5,b:5},showlegend:false},{responsive:true,displayModeBar:false});
+  Plotly.newPlot('carbon-sectors', [{
+    type: 'pie', labels: d.sectors.map(s => s.name), values: d.sectors.map(s => s.share),
+    marker: { colors: d.sectors.map(s => s.color) }, hole: 0.45,
+    text: d.sectors.map(s => `${s.name}<br>${s.reduction_potential}% potential`),
+    textinfo: 'label+percent', textfont: { color: '#e5e7eb', size: 9 },
+    hovertemplate: '<b>%{label}</b><br>Share: %{percent}<br>Reduction Potential: %{text}<extra></extra>',
+  }], { paper_bgcolor: 'transparent', margin: { l: 5, r: 5, t: 5, b: 5 }, showlegend: false }, { responsive: true, displayModeBar: false });
 }
 
-async function runCarbonScenario(){
-  const rate=+document.getElementById('cb-rate').value;
-  const year=+document.getElementById('cb-year').value;
-  const r=await fetch('/carbon_budget/scenario',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reductionRate:rate,startYear:year})});
-  const d=await r.json();
+async function runCarbonScenario() {
+  const rate = +document.getElementById('cb-rate').value;
+  const year = +document.getElementById('cb-year').value;
+  const r = await fetch('/carbon_budget/scenario', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reductionRate: rate, startYear: year }) });
+  const d = await r.json();
   const depLabel = d.depletionYear ? `Budget depletes: ${d.depletionYear}` : `Budget survives to 2054`;
-  Plotly.newPlot('cb-scenario-result',[
-    {type:'scatter',mode:'lines+markers',name:'Remaining Budget',x:d.years,y:d.trajectory,
-     line:{color:d.depletionYear?'#ef4444':'#10b981',width:2},
-     fill:'tozeroy',fillcolor:d.depletionYear?'rgba(239,68,68,0.07)':'rgba(16,185,129,0.07)'},
-  ],{paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',
-    font:{color:'#9ca3af',size:9},margin:{l:40,r:10,t:10,b:35},
-    xaxis:{color:'#4b5563',gridcolor:'#1f2937'},yaxis:{color:'#4b5563',gridcolor:'#1f2937',title:'Gt CO₂'},
-    title:{text:depLabel,font:{color:d.depletionYear?'#fca5a5':'#6ee7b7',size:10}},
-  },{responsive:true,displayModeBar:false});
-  toast(depLabel,'info');
+  Plotly.newPlot('cb-scenario-result', [
+    {
+      type: 'scatter', mode: 'lines+markers', name: 'Remaining Budget', x: d.years, y: d.trajectory,
+      line: { color: d.depletionYear ? '#ef4444' : '#10b981', width: 2 },
+      fill: 'tozeroy', fillcolor: d.depletionYear ? 'rgba(239,68,68,0.07)' : 'rgba(16,185,129,0.07)'
+    },
+  ], {
+    paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)',
+    font: { color: '#9ca3af', size: 9 }, margin: { l: 40, r: 10, t: 10, b: 35 },
+    xaxis: { color: '#4b5563', gridcolor: '#1f2937' }, yaxis: { color: '#4b5563', gridcolor: '#1f2937', title: 'Gt CO₂' },
+    title: { text: depLabel, font: { color: d.depletionYear ? '#fca5a5' : '#6ee7b7', size: 10 } },
+  }, { responsive: true, displayModeBar: false });
+  toast(depLabel, 'info');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // CITY BENCHMARKING
 // ════════════════════════════════════════════════════════════════════════════
-function citiesHTML(){return `
+function citiesHTML() {
+  return `
   <div class="space-y-5">
     <div class="flex flex-wrap items-center gap-3">
       <div>
@@ -2369,27 +2887,28 @@ function citiesHTML(){return `
       </div>
     </div>
     <div id="cities-content"><div class="flex justify-center py-12"><div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div></div></div>
-  </div>`;}
+  </div>`;
+}
 
-async function loadCities(){
-  const r=await fetch('/cities');const cities=await r.json();
-  const sel=document.getElementById('city-select');
-  sel.innerHTML=cities.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+async function loadCities() {
+  const r = await fetch('/cities'); const cities = await r.json();
+  const sel = document.getElementById('city-select');
+  sel.innerHTML = cities.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
   await renderCitiesContent(cities);
 }
 
-async function benchmarkCity(){
-  const cityId=document.getElementById('city-select')?.value||'CPH';
-  const metric=document.getElementById('city-metric')?.value||'score';
-  const r=await fetch('/city_benchmark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cityId,metric})});
-  const d=await r.json();
+async function benchmarkCity() {
+  const cityId = document.getElementById('city-select')?.value || 'CPH';
+  const metric = document.getElementById('city-metric')?.value || 'score';
+  const r = await fetch('/city_benchmark', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cityId, metric }) });
+  const d = await r.json();
   renderCityBenchmark(d, metric);
 }
 
-async function renderCitiesContent(cities){
-  const sorted=[...cities].sort((a,b)=>b.score-a.score);
+async function renderCitiesContent(cities) {
+  const sorted = [...cities].sort((a, b) => b.score - a.score);
 
-  document.getElementById('cities-content').innerHTML=`
+  document.getElementById('cities-content').innerHTML = `
     <!-- Rankings -->
     <div class="et-card mb-4">
       <h3 class="et-card-title mb-3"><i class="fas fa-trophy text-yellow-400"></i> City Sustainability Rankings</h3>
@@ -2410,18 +2929,18 @@ async function renderCitiesContent(cities){
     </div>
     <!-- City Cards Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
-      ${sorted.map((c,i)=>`
+      ${sorted.map((c, i) => `
         <div class="et-card cursor-pointer hover:border-blue-700/50 transition-all" onclick="document.getElementById('city-select').value='${c.id}';benchmarkCity()">
           <div class="flex items-center gap-2 mb-3">
-            <div class="rank-badge rank-${i<3?i+1:'other'}">${i+1}</div>
+            <div class="rank-badge rank-${i < 3 ? i + 1 : 'other'}">${i + 1}</div>
             <div><div class="text-xs font-bold text-white">${c.name}</div>
               <div class="text-[9px] text-gray-500">${c.country}</div></div>
           </div>
           <div class="text-2xl font-black mb-2" style="color:${scoreColor(c.score)}">${c.score}</div>
           <div class="space-y-1.5">
-            ${[{l:'CO₂',v:c.co2+'t',c:'red'},{l:'Green',v:c.greenSpace+'%',c:'emerald'},{l:'EV',v:c.ev+'%',c:'blue'},{l:'Waste',v:c.waste+'%',c:'cyan'}].map(m=>
-              `<div class="flex justify-between text-[9px]"><span class="text-gray-500">${m.l}</span><span class="font-bold text-${m.c}-300">${m.v}</span></div>`
-            ).join('')}
+            ${[{ l: 'CO₂', v: c.co2 + 't', c: 'red' }, { l: 'Green', v: c.greenSpace + '%', c: 'emerald' }, { l: 'EV', v: c.ev + '%', c: 'blue' }, { l: 'Waste', v: c.waste + '%', c: 'cyan' }].map(m =>
+    `<div class="flex justify-between text-[9px]"><span class="text-gray-500">${m.l}</span><span class="font-bold text-${m.c}-300">${m.v}</span></div>`
+  ).join('')}
           </div>
           ${c.weather ? `
           <div class="mt-2 pt-1.5 border-t border-gray-800 text-[8px] text-gray-500 flex items-center gap-1">
@@ -2431,63 +2950,71 @@ async function renderCitiesContent(cities){
         </div>`).join('')}
     </div>`;
 
-  const pl={paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',font:{color:'#9ca3af',size:10},margin:{l:70,r:20,t:8,b:30}};
-  Plotly.newPlot('city-bar',[{
-    type:'bar',orientation:'h',
-    x:sorted.map(c=>c.score),y:sorted.map(c=>c.name),
-    marker:{color:sorted.map(c=>scoreColor(c.score)),opacity:0.85},
-    text:sorted.map(c=>c.score),textposition:'outside',
-  }],{...pl,xaxis:{color:'#4b5563',gridcolor:'#1f2937',range:[0,105]},yaxis:{color:'#9ca3af'}},{responsive:true,displayModeBar:false});
+  const pl = { paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)', font: { color: '#9ca3af', size: 10 }, margin: { l: 70, r: 20, t: 8, b: 30 } };
+  Plotly.newPlot('city-bar', [{
+    type: 'bar', orientation: 'h',
+    x: sorted.map(c => c.score), y: sorted.map(c => c.name),
+    marker: { color: sorted.map(c => scoreColor(c.score)), opacity: 0.85 },
+    text: sorted.map(c => c.score), textposition: 'outside',
+  }], { ...pl, xaxis: { color: '#4b5563', gridcolor: '#1f2937', range: [0, 105] }, yaxis: { color: '#9ca3af' } }, { responsive: true, displayModeBar: false });
 
-  Plotly.newPlot('city-scatter',[{
-    type:'scatter',mode:'markers+text',
-    x:cities.map(c=>c.greenSpace),y:cities.map(c=>c.co2),
-    text:cities.map(c=>c.name),textposition:'top center',textfont:{size:8},
-    marker:{size:cities.map(c=>8+c.score/12),color:cities.map(c=>c.score),
-      colorscale:[[0,'#ef4444'],[0.5,'#f59e0b'],[1,'#10b981']],showscale:true,
-      colorbar:{title:'Score',titlefont:{color:'#6b7280'},tickfont:{color:'#6b7280'},thickness:10,len:0.8}},
-    hovertemplate:'<b>%{text}</b><br>Green: %{x}%<br>CO₂: %{y}t<extra></extra>',
-  }],{paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',
-    margin:{l:45,r:30,t:8,b:40},font:{color:'#9ca3af',size:9},
-    xaxis:{title:'Green Space %',color:'#4b5563',gridcolor:'#1f2937'},
-    yaxis:{title:'CO₂ t/cap',color:'#4b5563',gridcolor:'#1f2937'},
-  },{responsive:true,displayModeBar:false});
+  Plotly.newPlot('city-scatter', [{
+    type: 'scatter', mode: 'markers+text',
+    x: cities.map(c => c.greenSpace), y: cities.map(c => c.co2),
+    text: cities.map(c => c.name), textposition: 'top center', textfont: { size: 8 },
+    marker: {
+      size: cities.map(c => 8 + c.score / 12), color: cities.map(c => c.score),
+      colorscale: [[0, '#ef4444'], [0.5, '#f59e0b'], [1, '#10b981']], showscale: true,
+      colorbar: { title: 'Score', titlefont: { color: '#6b7280' }, tickfont: { color: '#6b7280' }, thickness: 10, len: 0.8 }
+    },
+    hovertemplate: '<b>%{text}</b><br>Green: %{x}%<br>CO₂: %{y}t<extra></extra>',
+  }], {
+    paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)',
+    margin: { l: 45, r: 30, t: 8, b: 40 }, font: { color: '#9ca3af', size: 9 },
+    xaxis: { title: 'Green Space %', color: '#4b5563', gridcolor: '#1f2937' },
+    yaxis: { title: 'CO₂ t/cap', color: '#4b5563', gridcolor: '#1f2937' },
+  }, { responsive: true, displayModeBar: false });
 }
 
-function renderCityBenchmark(d, metric){
-  const {city,rank,total,spiderMetrics,peerCities} = d;
-  const el=document.getElementById('city-radar');
-  if(!el)return;
-  const metrics=['Energy Eff','Water Eff','Traffic','CO₂ Perf','Green Space','EV','Solar','Waste'];
-  const vals=[spiderMetrics.energy,spiderMetrics.water,100-city.traffic,spiderMetrics.co2,spiderMetrics.greenSpace,spiderMetrics.ev,spiderMetrics.solar,spiderMetrics.waste];
-  Plotly.newPlot('city-radar',[
-    {type:'scatterpolar',fill:'toself',r:vals,theta:metrics,
-     fillcolor:'rgba(59,130,246,0.12)',line:{color:'#3b82f6',width:2},name:city.name},
-  ],{polar:{bgcolor:'transparent',radialaxis:{visible:true,range:[0,100],gridcolor:'#1f2937',color:'#6b7280'},angularaxis:{color:'#9ca3af'}},
-    paper_bgcolor:'transparent',font:{color:'#d1d5db',size:9},
-    title:{text:`${city.name} — Rank #${rank}/${total}`,font:{color:'#22d3ee',size:11}},
-    legend:{bgcolor:'transparent'},margin:{l:35,r:35,t:30,b:10}},
-  {responsive:true,displayModeBar:false});
-  toast(`${city.name}: Rank #${rank}/${total} globally`,'info');
+function renderCityBenchmark(d, metric) {
+  const { city, rank, total, spiderMetrics, peerCities } = d;
+  const el = document.getElementById('city-radar');
+  if (!el) return;
+  const metrics = ['Energy Eff', 'Water Eff', 'Traffic', 'CO₂ Perf', 'Green Space', 'EV', 'Solar', 'Waste'];
+  const vals = [spiderMetrics.energy, spiderMetrics.water, 100 - city.traffic, spiderMetrics.co2, spiderMetrics.greenSpace, spiderMetrics.ev, spiderMetrics.solar, spiderMetrics.waste];
+  Plotly.newPlot('city-radar', [
+    {
+      type: 'scatterpolar', fill: 'toself', r: vals, theta: metrics,
+      fillcolor: 'rgba(59,130,246,0.12)', line: { color: '#3b82f6', width: 2 }, name: city.name
+    },
+  ], {
+    polar: { bgcolor: 'transparent', radialaxis: { visible: true, range: [0, 100], gridcolor: '#1f2937', color: '#6b7280' }, angularaxis: { color: '#9ca3af' } },
+    paper_bgcolor: 'transparent', font: { color: '#d1d5db', size: 9 },
+    title: { text: `${city.name} — Rank #${rank}/${total}`, font: { color: '#22d3ee', size: 11 } },
+    legend: { bgcolor: 'transparent' }, margin: { l: 35, r: 35, t: 30, b: 10 }
+  },
+    { responsive: true, displayModeBar: false });
+  toast(`${city.name}: Rank #${rank}/${total} globally`, 'info');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // POLICY SIMULATOR
 // ════════════════════════════════════════════════════════════════════════════
 const POLICIES = [
-  {id:'carbon_tax',      label:'Carbon Tax', icon:'💰', desc:'$50-100/t carbon pricing mechanism',       color:'yellow'},
-  {id:'renewable_mandate',label:'Renewable Mandate',icon:'☀️',desc:'60% clean electricity by 2030',     color:'emerald'},
-  {id:'green_transport', label:'Green Transport',icon:'🚌',desc:'EV buses & rail expansion',               color:'blue'},
-  {id:'water_efficiency',label:'Water Efficiency',icon:'💧',desc:'Smart water management systems',        color:'cyan'},
-  {id:'circular_economy',label:'Circular Economy',icon:'♻️',desc:'Extended producer responsibility',     color:'violet'},
-  {id:'green_buildings', label:'Green Buildings',icon:'🏗️',desc:'Net-zero building codes by 2030',        color:'orange'},
-  {id:'forest_protection',label:'Forest Protection',icon:'🌲',desc:'REDD+ carbon sink programs',          color:'emerald'},
-  {id:'smart_grid',      label:'Smart Grid',icon:'⚡',desc:'AI-optimized energy distribution',            color:'cyan'},
+  { id: 'carbon_tax', label: 'Carbon Tax', icon: '💰', desc: '$50-100/t carbon pricing mechanism', color: 'yellow' },
+  { id: 'renewable_mandate', label: 'Renewable Mandate', icon: '☀️', desc: '60% clean electricity by 2030', color: 'emerald' },
+  { id: 'green_transport', label: 'Green Transport', icon: '🚌', desc: 'EV buses & rail expansion', color: 'blue' },
+  { id: 'water_efficiency', label: 'Water Efficiency', icon: '💧', desc: 'Smart water management systems', color: 'cyan' },
+  { id: 'circular_economy', label: 'Circular Economy', icon: '♻️', desc: 'Extended producer responsibility', color: 'violet' },
+  { id: 'green_buildings', label: 'Green Buildings', icon: '🏗️', desc: 'Net-zero building codes by 2030', color: 'orange' },
+  { id: 'forest_protection', label: 'Forest Protection', icon: '🌲', desc: 'REDD+ carbon sink programs', color: 'emerald' },
+  { id: 'smart_grid', label: 'Smart Grid', icon: '⚡', desc: 'AI-optimized energy distribution', color: 'cyan' },
 ];
 
 let selectedPolicies = new Set();
 
-function policyHTML(){return `
+function policyHTML() {
+  return `
   <div class="space-y-5">
     <div>
       <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-scale-balanced text-violet-400"></i> Policy Simulator</h2>
@@ -2498,13 +3025,13 @@ function policyHTML(){return `
         <div class="et-card">
           <h3 class="et-card-title mb-3"><i class="fas fa-building-flag text-violet-400"></i> Select Country</h3>
           <select id="pol-country" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-violet-500">
-            ${['USA','DEU','NOR','CHN','IND','BRA','GBR','FRA','JPN','AUS','SWE','SAU','NGA','KEN'].map(c=>`<option value="${c}">${c}</option>`).join('')}
+            ${['USA', 'DEU', 'NOR', 'CHN', 'IND', 'BRA', 'GBR', 'FRA', 'JPN', 'AUS', 'SWE', 'SAU', 'NGA', 'KEN'].map(c => `<option value="${c}">${c}</option>`).join('')}
           </select>
         </div>
         <div class="et-card">
           <h3 class="et-card-title mb-3"><i class="fas fa-check-square text-violet-400"></i> Select Policies</h3>
           <div class="space-y-2" id="policy-cards">
-            ${POLICIES.map(p=>`
+            ${POLICIES.map(p => `
               <div class="policy-card" id="pc-${p.id}" onclick="togglePolicy('${p.id}')">
                 <div class="flex items-center gap-2">
                   <span class="text-base">${p.icon}</span>
@@ -2530,35 +3057,38 @@ function policyHTML(){return `
         </div>
       </div>
     </div>
-  </div>`;}
+  </div>`;
+}
 
-function togglePolicy(id){
-  const card=document.getElementById('pc-'+id);
-  const check=document.getElementById('pc-check-'+id);
-  if(selectedPolicies.has(id)){
+function togglePolicy(id) {
+  const card = document.getElementById('pc-' + id);
+  const check = document.getElementById('pc-check-' + id);
+  if (selectedPolicies.has(id)) {
     selectedPolicies.delete(id);
     card.classList.remove('selected');
-    check.innerHTML='';
+    check.innerHTML = '';
   } else {
     selectedPolicies.add(id);
     card.classList.add('selected');
-    check.innerHTML='<i class="fas fa-check text-[8px] text-violet-300"></i>';
+    check.innerHTML = '<i class="fas fa-check text-[8px] text-violet-300"></i>';
   }
 }
 
-async function runPolicySim(){
-  if(selectedPolicies.size===0){toast('Select at least one policy','warn');return;}
-  const btn=document.getElementById('pol-btn');
-  btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Simulating...';btn.disabled=true;
-  const country=document.getElementById('pol-country').value;
-  const r=await fetch('/policy_sim',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({policies:[...selectedPolicies],country})});
-  const d=await r.json();
+async function runPolicySim() {
+  if (selectedPolicies.size === 0) { toast('Select at least one policy', 'warn'); return; }
+  const btn = document.getElementById('pol-btn');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Simulating...'; btn.disabled = true;
+  const country = document.getElementById('pol-country').value;
+  const r = await fetch('/policy_sim', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ policies: [...selectedPolicies], country })
+  });
+  const d = await r.json();
 
-  const delta=d.delta;
-  const pl={paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',font:{color:'#9ca3af',size:10},margin:{l:45,r:15,t:10,b:40}};
+  const delta = d.delta;
+  const pl = { paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)', font: { color: '#9ca3af', size: 10 }, margin: { l: 45, r: 15, t: 10, b: 40 } };
 
-  document.getElementById('pol-results').innerHTML=`
+  document.getElementById('pol-results').innerHTML = `
     <!-- Score comparison -->
     <div class="grid grid-cols-3 gap-3">
       <div class="et-card text-center">
@@ -2585,11 +3115,11 @@ async function runPolicySim(){
     <!-- Stats -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       ${[
-        {l:'Total Investment', v:'$'+d.totalCost+'B', c:'yellow', i:'fa-dollar-sign'},
-        {l:'Jobs Created',     v:(d.totalJobs/1000).toFixed(0)+'K', c:'emerald', i:'fa-users'},
-        {l:'CO₂ Change',       v:delta.co2+'t',        c:delta.co2<0?'emerald':'red', i:'fa-cloud'},
-        {l:'Renewable Gain',   v:'+'+delta.renewable+'%', c:'cyan', i:'fa-solar-panel'},
-      ].map(k=>`<div class="et-card text-center">
+      { l: 'Total Investment', v: '$' + d.totalCost + 'B', c: 'yellow', i: 'fa-dollar-sign' },
+      { l: 'Jobs Created', v: (d.totalJobs / 1000).toFixed(0) + 'K', c: 'emerald', i: 'fa-users' },
+      { l: 'CO₂ Change', v: delta.co2 + 't', c: delta.co2 < 0 ? 'emerald' : 'red', i: 'fa-cloud' },
+      { l: 'Renewable Gain', v: '+' + delta.renewable + '%', c: 'cyan', i: 'fa-solar-panel' },
+    ].map(k => `<div class="et-card text-center">
         <i class="fas ${k.i} text-${k.c}-400 mb-1"></i>
         <div class="text-xl font-black text-${k.c}-300">${k.v}</div>
         <div class="text-[9px] text-gray-400">${k.l}</div>
@@ -2599,24 +3129,27 @@ async function runPolicySim(){
     <div class="et-card">
       <h3 class="et-card-title mb-2">Applied Policies</h3>
       <div class="flex flex-wrap gap-2">
-        ${d.applied.map(id=>{const p=POLICIES.find(x=>x.id===id);return p?`<span class="px-2 py-1 bg-violet-900/40 border border-violet-700/50 rounded-lg text-[10px] text-violet-300">${p.icon} ${p.label}</span>`:''}).join('')}
+        ${d.applied.map(id => { const p = POLICIES.find(x => x.id === id); return p ? `<span class="px-2 py-1 bg-violet-900/40 border border-violet-700/50 rounded-lg text-[10px] text-violet-300">${p.icon} ${p.label}</span>` : '' }).join('')}
       </div>
     </div>`;
 
-  Plotly.newPlot('pol-chart',[
-    {type:'scatter',mode:'lines',name:'Baseline',x:d.years,y:d.years.map(()=>d.baseCountry.score),line:{color:'#6b7280',width:1.5,dash:'dot'}},
-    {type:'scatter',mode:'lines+markers',name:'With Policies',x:d.years,y:d.trajectory,line:{color:'#a78bfa',width:2.5},marker:{size:5},fill:'tozeroy',fillcolor:'rgba(167,139,250,0.06)'},
-  ],{...pl,xaxis:{color:'#4b5563',gridcolor:'#1f2937'},yaxis:{color:'#4b5563',gridcolor:'#1f2937',range:[0,100]},
-    legend:{bgcolor:'transparent',font:{color:'#9ca3af',size:9}}},{responsive:true,displayModeBar:false});
+  Plotly.newPlot('pol-chart', [
+    { type: 'scatter', mode: 'lines', name: 'Baseline', x: d.years, y: d.years.map(() => d.baseCountry.score), line: { color: '#6b7280', width: 1.5, dash: 'dot' } },
+    { type: 'scatter', mode: 'lines+markers', name: 'With Policies', x: d.years, y: d.trajectory, line: { color: '#a78bfa', width: 2.5 }, marker: { size: 5 }, fill: 'tozeroy', fillcolor: 'rgba(167,139,250,0.06)' },
+  ], {
+    ...pl, xaxis: { color: '#4b5563', gridcolor: '#1f2937' }, yaxis: { color: '#4b5563', gridcolor: '#1f2937', range: [0, 100] },
+    legend: { bgcolor: 'transparent', font: { color: '#9ca3af', size: 9 } }
+  }, { responsive: true, displayModeBar: false });
 
-  btn.innerHTML='<i class="fas fa-play"></i> Run Policy Simulation';btn.disabled=false;
-  toast(`Policy impact: +${delta.score} score, $${d.totalCost}B investment, ROI: ${d.roi}x`,'success');
+  btn.innerHTML = '<i class="fas fa-play"></i> Run Policy Simulation'; btn.disabled = false;
+  toast(`Policy impact: +${delta.score} score, $${d.totalCost}B investment, ROI: ${d.roi}x`, 'success');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // LIVE MARKETS TAB — Carbon credits, energy prices, real-time charts
 // ════════════════════════════════════════════════════════════════════════════
-function marketHTML(){return `
+function marketHTML() {
+  return `
   <div class="space-y-5">
     <div class="flex items-center justify-between flex-wrap gap-2">
       <div>
@@ -2695,35 +3228,36 @@ function marketHTML(){return `
         <div id="mkt-spread-chart" style="height:200px"></div>
       </div>
     </div>
-  </div>`;}
+  </div>`;
+}
 
 let marketChartField = 'cc';
 let marketInterval = null;
 
 function setMarketChart(field) {
   marketChartField = field;
-  ['cc','ri','fi','co2'].forEach(f => {
-    const btn = document.getElementById('mkt-btn-'+f);
-    if (btn) btn.className = `px-2 py-0.5 text-[9px] rounded ${f===field ? 'bg-emerald-800 text-emerald-300 border border-emerald-700' : 'bg-gray-800 text-gray-400 border border-gray-700'}`;
+  ['cc', 'ri', 'fi', 'co2'].forEach(f => {
+    const btn = document.getElementById('mkt-btn-' + f);
+    if (btn) btn.className = `px-2 py-0.5 text-[9px] rounded ${f === field ? 'bg-emerald-800 text-emerald-300 border border-emerald-700' : 'bg-gray-800 text-gray-400 border border-gray-700'}`;
   });
   if (ST.marketData) renderMarketChart(ST.marketData);
 }
 
 function renderMarketChart(d) {
   const h = d.history || [];
-  const ts = h.map(x => new Date(x.ts).toLocaleTimeString('en', {hour:'2-digit', minute:'2-digit'}));
-  const fieldMap = { cc:{key:'cc',color:'#10b981',label:'Carbon €/t'}, ri:{key:'ri',color:'#22d3ee',label:'Renew. Idx'}, fi:{key:'fi',color:'#ef4444',label:'Fossil Idx'}, co2:{key:'co2',color:'#f59e0b',label:'CO₂ ppm'} };
+  const ts = h.map(x => new Date(x.ts).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }));
+  const fieldMap = { cc: { key: 'cc', color: '#10b981', label: 'Carbon €/t' }, ri: { key: 'ri', color: '#22d3ee', label: 'Renew. Idx' }, fi: { key: 'fi', color: '#ef4444', label: 'Fossil Idx' }, co2: { key: 'co2', color: '#f59e0b', label: 'CO₂ ppm' } };
   const f = fieldMap[marketChartField];
-  Plotly.newPlot('mkt-chart',[{
-    type:'scatter', mode:'lines', name:f.label,
-    x:ts, y:h.map(x=>x[f.key]),
-    line:{color:f.color, width:2}, fill:'tozeroy', fillcolor: f.color+'11',
-  }],{
-    paper_bgcolor:'transparent', plot_bgcolor:'rgba(17,24,39,0.4)',
-    font:{color:'#9ca3af',size:10}, margin:{l:55,r:10,t:8,b:40},
-    xaxis:{color:'#4b5563',gridcolor:'#1f2937',tickangle:-45},
-    yaxis:{color:'#4b5563',gridcolor:'#1f2937',title:f.label},
-  },{responsive:true,displayModeBar:false});
+  Plotly.newPlot('mkt-chart', [{
+    type: 'scatter', mode: 'lines', name: f.label,
+    x: ts, y: h.map(x => x[f.key]),
+    line: { color: f.color, width: 2 }, fill: 'tozeroy', fillcolor: f.color + '11',
+  }], {
+    paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)',
+    font: { color: '#9ca3af', size: 10 }, margin: { l: 55, r: 10, t: 8, b: 40 },
+    xaxis: { color: '#4b5563', gridcolor: '#1f2937', tickangle: -45 },
+    yaxis: { color: '#4b5563', gridcolor: '#1f2937', title: f.label },
+  }, { responsive: true, displayModeBar: false });
 }
 
 async function loadMarket() {
@@ -2731,7 +3265,7 @@ async function loadMarket() {
   marketInterval = setInterval(fetchAndUpdateMarket, 5000);
   // Clear when tab changes
   const origSwitch = window.switchTab;
-  window._mktCleanup = () => { if(marketInterval){clearInterval(marketInterval);marketInterval=null;} };
+  window._mktCleanup = () => { if (marketInterval) { clearInterval(marketInterval); marketInterval = null; } };
 }
 
 async function fetchAndUpdateMarket() {
@@ -2742,70 +3276,73 @@ async function fetchAndUpdateMarket() {
     const c = d.current;
     const timeEl = document.getElementById('market-update-time');
     if (timeEl) timeEl.textContent = 'Updated: ' + new Date().toLocaleTimeString();
-    
+
     // Update primary cards
-    const formatChange = (v) => `<span class="${v>=0?'text-emerald-400':'text-red-400'}">${v>=0?'▲':'▼'} ${Math.abs(v)}%</span>`;
-    const setCard = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+    const formatChange = (v) => `<span class="${v >= 0 ? 'text-emerald-400' : 'text-red-400'}">${v >= 0 ? '▲' : '▼'} ${Math.abs(v)}%</span>`;
+    const setCard = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
     setCard('mkt-cc-price', '€' + c.carbonCreditEUR);
     setCard('mkt-ri-price', c.renewableIndex);
     setCard('mkt-fi-price', c.fossilIndex);
     setCard('mkt-co2-price', c.globalCO2ppm);
     const ccChgEl = document.getElementById('mkt-cc-change-el');
     if (ccChgEl) ccChgEl.innerHTML = formatChange(c.carbonCreditChange) + '<span class="text-[10px] text-gray-500 ml-1">vs 1h ago</span>';
-    
+
     // Energy prices
     const epEl = document.getElementById('mkt-energy-prices');
     if (epEl) {
       const ep = d.energyPrices;
       epEl.innerHTML = [
-        {name:'Solar',val:ep.solar,icon:'fa-sun',color:'yellow'},
-        {name:'Wind',val:ep.wind,icon:'fa-wind',color:'blue'},
-        {name:'Natural Gas',val:ep.gas,icon:'fa-fire',color:'orange'},
-        {name:'Coal',val:ep.coal,icon:'fa-smog',color:'gray'},
-        {name:'Nuclear',val:ep.nuclear,icon:'fa-atom',color:'violet'},
-      ].map(e=>`
+        { name: 'Solar', val: ep.solar, icon: 'fa-sun', color: 'yellow' },
+        { name: 'Wind', val: ep.wind, icon: 'fa-wind', color: 'blue' },
+        { name: 'Natural Gas', val: ep.gas, icon: 'fa-fire', color: 'orange' },
+        { name: 'Coal', val: ep.coal, icon: 'fa-smog', color: 'gray' },
+        { name: 'Nuclear', val: ep.nuclear, icon: 'fa-atom', color: 'violet' },
+      ].map(e => `
         <div class="bg-gray-900 rounded-lg p-3 text-center border border-gray-800">
           <i class="fas ${e.icon} text-${e.color}-400 text-sm mb-1"></i>
           <div class="text-sm font-black text-${e.color}-300">$${e.val}</div>
           <div class="text-[9px] text-gray-400">${e.name}/MWh</div>
         </div>`).join('');
     }
-    
+
     // Market signals
     const sigEl = document.getElementById('mkt-signals');
     if (sigEl) {
       const signals = [
-        c.carbonCreditEUR > 70 ? {msg:`Carbon at €${c.carbonCreditEUR}/t — strong decarbonization incentive`,color:'emerald',icon:'fa-arrow-up'} : {msg:`Carbon at €${c.carbonCreditEUR}/t — below optimal incentive threshold`,color:'yellow',icon:'fa-arrow-down'},
-        c.renewableIndex > 140 ? {msg:`Renewable index ${c.renewableIndex} — above baseline, clean energy scaling`,color:'emerald',icon:'fa-solar-panel'} : {msg:`Renewable index ${c.renewableIndex} — near baseline`,color:'gray',icon:'fa-minus'},
-        c.fossilIndex < 100 ? {msg:`Fossil index ${c.fossilIndex} — declining, coal/gas phase-out accelerating`,color:'emerald',icon:'fa-leaf'} : {msg:`Fossil index ${c.fossilIndex} — elevated, fossil dependency persists`,color:'red',icon:'fa-triangle-exclamation'},
-        c.globalCO2ppm > 422 ? {msg:`CO₂ at ${c.globalCO2ppm} ppm — above 2024 baseline of 421.08`,color:'red',icon:'fa-smog'} : {msg:`CO₂ at ${c.globalCO2ppm} ppm`,color:'yellow',icon:'fa-smog'},
+        c.carbonCreditEUR > 70 ? { msg: `Carbon at €${c.carbonCreditEUR}/t — strong decarbonization incentive`, color: 'emerald', icon: 'fa-arrow-up' } : { msg: `Carbon at €${c.carbonCreditEUR}/t — below optimal incentive threshold`, color: 'yellow', icon: 'fa-arrow-down' },
+        c.renewableIndex > 140 ? { msg: `Renewable index ${c.renewableIndex} — above baseline, clean energy scaling`, color: 'emerald', icon: 'fa-solar-panel' } : { msg: `Renewable index ${c.renewableIndex} — near baseline`, color: 'gray', icon: 'fa-minus' },
+        c.fossilIndex < 100 ? { msg: `Fossil index ${c.fossilIndex} — declining, coal/gas phase-out accelerating`, color: 'emerald', icon: 'fa-leaf' } : { msg: `Fossil index ${c.fossilIndex} — elevated, fossil dependency persists`, color: 'red', icon: 'fa-triangle-exclamation' },
+        c.globalCO2ppm > 422 ? { msg: `CO₂ at ${c.globalCO2ppm} ppm — above 2024 baseline of 421.08`, color: 'red', icon: 'fa-smog' } : { msg: `CO₂ at ${c.globalCO2ppm} ppm`, color: 'yellow', icon: 'fa-smog' },
       ];
-      sigEl.innerHTML = signals.map(s=>`
+      sigEl.innerHTML = signals.map(s => `
         <div class="flex items-start gap-2 p-2 bg-gray-900/50 rounded-lg">
           <i class="fas ${s.icon} text-${s.color}-400 text-xs mt-0.5"></i>
           <span class="text-[10px] text-gray-300">${s.msg}</span>
         </div>`).join('');
     }
-    
+
     // Render charts
     renderMarketChart(d);
-    
+
     // Spread chart
     const h = d.history.slice(-30);
-    const ts = h.map(x => new Date(x.ts).toLocaleTimeString('en', {hour:'2-digit', minute:'2-digit'}));
-    Plotly.newPlot('mkt-spread-chart',[
-      {type:'scatter',mode:'lines',name:'Carbon €',x:ts,y:h.map(x=>x.cc),line:{color:'#10b981',width:1.5}},
-      {type:'scatter',mode:'lines',name:'Renew. Idx',x:ts,y:h.map(x=>x.ri),line:{color:'#22d3ee',width:1.5}},
-    ],{paper_bgcolor:'transparent',plot_bgcolor:'rgba(17,24,39,0.4)',font:{color:'#9ca3af',size:9},margin:{l:40,r:10,t:8,b:35},
-      xaxis:{color:'#4b5563',gridcolor:'#1f2937',tickangle:-45},yaxis:{color:'#4b5563',gridcolor:'#1f2937'},
-      legend:{bgcolor:'transparent',font:{color:'#9ca3af',size:8}}},{responsive:true,displayModeBar:false});
-  } catch(e) { console.error('Market load error:', e); }
+    const ts = h.map(x => new Date(x.ts).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }));
+    Plotly.newPlot('mkt-spread-chart', [
+      { type: 'scatter', mode: 'lines', name: 'Carbon €', x: ts, y: h.map(x => x.cc), line: { color: '#10b981', width: 1.5 } },
+      { type: 'scatter', mode: 'lines', name: 'Renew. Idx', x: ts, y: h.map(x => x.ri), line: { color: '#22d3ee', width: 1.5 } },
+    ], {
+      paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(17,24,39,0.4)', font: { color: '#9ca3af', size: 9 }, margin: { l: 40, r: 10, t: 8, b: 35 },
+      xaxis: { color: '#4b5563', gridcolor: '#1f2937', tickangle: -45 }, yaxis: { color: '#4b5563', gridcolor: '#1f2937' },
+      legend: { bgcolor: 'transparent', font: { color: '#9ca3af', size: 8 } }
+    }, { responsive: true, displayModeBar: false });
+  } catch (e) { console.error('Market load error:', e); }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // SUSTAINABILITY NEWS FEED
 // ════════════════════════════════════════════════════════════════════════════
-function newsHTML(){return `
+function newsHTML() {
+  return `
   <div class="space-y-5">
     <div class="flex flex-wrap items-center gap-3">
       <div>
@@ -2814,9 +3351,9 @@ function newsHTML(){return `
       </div>
       <div class="ml-auto flex gap-2 flex-wrap">
         <button onclick="filterNews('all')" id="nf-all" class="news-filter px-2.5 py-1 text-[10px] rounded-lg font-bold bg-cyan-700 text-white transition-all">All</button>
-        ${['Policy','Climate','Energy','Transport','Oceans','Forests','Water','Technology','Achievement','Economics'].map(c=>
-          `<button onclick="filterNews('${c}')" id="nf-${c}" class="news-filter px-2.5 py-1 text-[10px] rounded-lg font-bold bg-gray-800 text-gray-400 hover:bg-gray-700 transition-all">${c}</button>`
-        ).join('')}
+        ${['Policy', 'Climate', 'Energy', 'Transport', 'Oceans', 'Forests', 'Water', 'Technology', 'Achievement', 'Economics'].map(c =>
+    `<button onclick="filterNews('${c}')" id="nf-${c}" class="news-filter px-2.5 py-1 text-[10px] rounded-lg font-bold bg-gray-800 text-gray-400 hover:bg-gray-700 transition-all">${c}</button>`
+  ).join('')}
       </div>
     </div>
     <div class="flex gap-2 items-center">
@@ -2826,31 +3363,32 @@ function newsHTML(){return `
     <div id="news-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       <div class="flex justify-center py-12 col-span-3"><div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div></div>
     </div>
-  </div>`;}
+  </div>`;
+}
 
-let _allNews=[];
-async function loadNews(){
-  const r=await fetch('/news_feed');_allNews=await r.json();
+let _allNews = [];
+async function loadNews() {
+  const r = await fetch('/news_feed'); _allNews = await r.json();
   renderNews(_allNews);
 }
 
-function filterNews(category, sentiment=null){
-  document.querySelectorAll('.news-filter').forEach(b=>{b.className=b.className.replace('bg-cyan-700 text-white','bg-gray-800 text-gray-400');});
-  const btn=document.getElementById('nf-'+(category==='all'?'all':category));
-  if(btn)btn.className=btn.className.replace('bg-gray-800 text-gray-400','bg-cyan-700 text-white');
-  let filtered=_allNews;
-  if(category!=='all')filtered=filtered.filter(a=>a.category===category);
-  if(sentiment)filtered=filtered.filter(a=>a.sentiment===sentiment);
+function filterNews(category, sentiment = null) {
+  document.querySelectorAll('.news-filter').forEach(b => { b.className = b.className.replace('bg-cyan-700 text-white', 'bg-gray-800 text-gray-400'); });
+  const btn = document.getElementById('nf-' + (category === 'all' ? 'all' : category));
+  if (btn) btn.className = btn.className.replace('bg-gray-800 text-gray-400', 'bg-cyan-700 text-white');
+  let filtered = _allNews;
+  if (category !== 'all') filtered = filtered.filter(a => a.category === category);
+  if (sentiment) filtered = filtered.filter(a => a.sentiment === sentiment);
   renderNews(filtered);
 }
 
-function renderNews(articles){
-  const el=document.getElementById('news-grid');if(!el)return;
-  if(!articles.length){el.innerHTML='<div class="col-span-3 text-center py-12 text-gray-600">No articles found</div>';return;}
-  el.innerHTML=articles.map(a=>`
+function renderNews(articles) {
+  const el = document.getElementById('news-grid'); if (!el) return;
+  if (!articles.length) { el.innerHTML = '<div class="col-span-3 text-center py-12 text-gray-600">No articles found</div>'; return; }
+  el.innerHTML = articles.map(a => `
     <div class="et-card news-card ${a.sentiment} flex flex-col">
       <div class="flex items-center gap-2 mb-2">
-        <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${a.sentiment==='positive'?'bg-emerald-900/50 text-emerald-300':'bg-red-900/50 text-red-300'}">${a.sentiment==='positive'?'🟢 Positive':'🔴 Concerning'}</span>
+        <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${a.sentiment === 'positive' ? 'bg-emerald-900/50 text-emerald-300' : 'bg-red-900/50 text-red-300'}">${a.sentiment === 'positive' ? '🟢 Positive' : '🔴 Concerning'}</span>
         <span class="text-[9px] px-2 py-0.5 bg-gray-800 rounded-full text-gray-400">${a.category}</span>
         <span class="ml-auto text-[9px] text-gray-600">${a.region}</span>
         ${a.freshness ? `<span class="text-[9px] px-1.5 py-0.5 bg-cyan-900/50 text-cyan-400 rounded-full font-bold animate-pulse">NEW</span>` : ''}
@@ -2860,7 +3398,7 @@ function renderNews(articles){
       ${a.liveData ? `<div class="mt-2 p-1.5 bg-emerald-900/20 rounded border border-emerald-900/40 text-[9px] text-emerald-400"><i class="fas fa-satellite-dish mr-1"></i>Live: CO₂ ${a.liveData.co2ppm} ppm · Carbon €${a.liveData.carbonPrice}/t</div>` : ''}
       <div class="mt-3 pt-2 border-t border-gray-800 flex items-center justify-between">
         <div class="flex flex-wrap gap-1">
-          ${a.tags.slice(0,3).map(tag=>`<span class="text-[8px] px-1.5 py-0.5 bg-gray-800 text-gray-500 rounded">#${tag}</span>`).join('')}
+          ${a.tags.slice(0, 3).map(tag => `<span class="text-[8px] px-1.5 py-0.5 bg-gray-800 text-gray-500 rounded">#${tag}</span>`).join('')}
         </div>
         <div class="flex items-center gap-1.5 text-[9px] text-gray-500">
           <span>${a.source}</span><span>·</span><span>${a.date}</span>
@@ -2872,20 +3410,20 @@ function renderNews(articles){
 // ════════════════════════════════════════════════════════════════════════════
 // EXPORT DATA
 // ════════════════════════════════════════════════════════════════════════════
-function exportData(fmt){
-  const a=document.createElement('a');
-  a.href=`/export/${fmt}`;
-  a.download=`ecotwin_data.${fmt}`;
+function exportData(fmt) {
+  const a = document.createElement('a');
+  a.href = `/export/${fmt}`;
+  a.download = `ecotwin_data.${fmt}`;
   a.click();
-  toast(`Downloading ${fmt.toUpperCase()} data...`,'success');
+  toast(`Downloading ${fmt.toUpperCase()} data...`, 'success');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // PEER COMPARE  (multi-country radar)
 // ════════════════════════════════════════════════════════════════════════════
-async function runPeerCompare(codes){
-  const r=await fetch('/peer_compare',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({codes})});
-  const d=await r.json();
+async function runPeerCompare(codes) {
+  const r = await fetch('/peer_compare', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ codes }) });
+  const d = await r.json();
   return d;
 }
 
@@ -2893,9 +3431,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadI18n(ST.lang);
   renderShell();
   // Pre-fetch world data
-  fetch('/world_data').then(r=>r.json()).then(d=>{ST.worldData=d;ST.lastWorldUpdate=Date.now();});
+  fetch('/world_data').then(r => r.json()).then(d => { ST.worldData = d; ST.lastWorldUpdate = Date.now(); });
   // Pre-fetch market data for ticker
-  fetch('/market_data').then(r=>r.json()).then(d=>ST.marketData=d);
+  fetch('/market_data').then(r => r.json()).then(d => ST.marketData = d);
 });
 
 
@@ -2928,35 +3466,35 @@ const SAT_STATE = {
 // Impact grade colors
 const GRADE_COLORS = {
   CRITICAL: { bg: 'bg-red-900/60', text: 'text-red-300', border: 'border-red-700', dot: 'bg-red-500', hex: '#ef4444', css: 'rgba(239,68,68,0.5)' },
-  HIGH:     { bg: 'bg-orange-900/60', text: 'text-orange-300', border: 'border-orange-700', dot: 'bg-orange-500', hex: '#f97316', css: 'rgba(249,115,22,0.5)' },
+  HIGH: { bg: 'bg-orange-900/60', text: 'text-orange-300', border: 'border-orange-700', dot: 'bg-orange-500', hex: '#f97316', css: 'rgba(249,115,22,0.5)' },
   MODERATE: { bg: 'bg-yellow-900/60', text: 'text-yellow-300', border: 'border-yellow-700', dot: 'bg-yellow-500', hex: '#f59e0b', css: 'rgba(245,158,11,0.5)' },
-  LOW:      { bg: 'bg-emerald-900/60', text: 'text-emerald-300', border: 'border-emerald-700', dot: 'bg-emerald-500', hex: '#10b981', css: 'rgba(16,185,129,0.5)' },
+  LOW: { bg: 'bg-emerald-900/60', text: 'text-emerald-300', border: 'border-emerald-700', dot: 'bg-emerald-500', hex: '#10b981', css: 'rgba(16,185,129,0.5)' },
 };
 
 const CHANGE_ICONS = {
-  deforestation:   'fa-tree',
+  deforestation: 'fa-tree',
   urban_expansion: 'fa-city',
-  water_loss:      'fa-water',
-  ice_loss:        'fa-snowflake',
+  water_loss: 'fa-water',
+  ice_loss: 'fa-snowflake',
   desertification: 'fa-sun',
-  wildfire:        'fa-fire',
+  wildfire: 'fa-fire',
 };
 
 const CHANGE_LABELS = {
-  deforestation:   'Deforestation',
+  deforestation: 'Deforestation',
   urban_expansion: 'Urban Expansion',
-  water_loss:      'Water Loss',
-  ice_loss:        'Ice Loss',
+  water_loss: 'Water Loss',
+  ice_loss: 'Ice Loss',
   desertification: 'Desertification',
-  wildfire:        'Wildfire',
+  wildfire: 'Wildfire',
 };
 
 const SPECTRAL_BANDS = [
-  { id: 'rgb',     label: 'RGB True',   icon: 'fa-eye',       cls: 'spectral-rgb',     desc: 'True color natural view' },
-  { id: 'nir',     label: 'NIR',        icon: 'fa-leaf',      cls: 'spectral-nir',     desc: 'Near-infrared vegetation' },
-  { id: 'swir',    label: 'SWIR',       icon: 'fa-fire-flame-curved', cls: 'spectral-swir', desc: 'Short-wave infrared moisture' },
-  { id: 'ndvi',    label: 'NDVI',       icon: 'fa-seedling',  cls: 'spectral-ndvi',    desc: 'Vegetation health index' },
-  { id: 'thermal', label: 'Thermal',    icon: 'fa-temperature-high', cls: 'spectral-thermal', desc: 'Land surface temperature' },
+  { id: 'rgb', label: 'RGB True', icon: 'fa-eye', cls: 'spectral-rgb', desc: 'True color natural view' },
+  { id: 'nir', label: 'NIR', icon: 'fa-leaf', cls: 'spectral-nir', desc: 'Near-infrared vegetation' },
+  { id: 'swir', label: 'SWIR', icon: 'fa-fire-flame-curved', cls: 'spectral-swir', desc: 'Short-wave infrared moisture' },
+  { id: 'ndvi', label: 'NDVI', icon: 'fa-seedling', cls: 'spectral-ndvi', desc: 'Vegetation health index' },
+  { id: 'thermal', label: 'Thermal', icon: 'fa-temperature-high', cls: 'spectral-thermal', desc: 'Land surface temperature' },
 ];
 
 // CNN layer architecture display
@@ -2965,17 +3503,17 @@ const CNN_LAYERS = [
   { type: 'pool', label: 'MaxPool\n2×2', note: 'Downsampling' },
   { type: 'conv', label: 'Conv2D\n128×3×3', note: 'Deep features' },
   { type: 'relu', label: 'ReLU\nActivation', note: 'Non-linearity' },
-  { type: 'fc',   label: 'FC\n512→5', note: 'Classification' },
+  { type: 'fc', label: 'FC\n512→5', note: 'Classification' },
 ];
 
 // Biome definitions
 const BIOMES = [
   { id: 'tropical_forest', name: 'Tropical Forest', icon: 'fa-tree', color: '#16a34a', stress: 78 },
-  { id: 'boreal_forest',   name: 'Boreal Forest',   icon: 'fa-snowflake', color: '#0891b2', stress: 52 },
-  { id: 'grassland',       name: 'Grasslands',       icon: 'fa-wheat-awn', color: '#ca8a04', stress: 61 },
-  { id: 'wetlands',        name: 'Wetlands',         icon: 'fa-water', color: '#0284c7', stress: 83 },
-  { id: 'arctic',          name: 'Arctic Tundra',    icon: 'fa-icicles', color: '#67e8f9', stress: 91 },
-  { id: 'desert',          name: 'Arid Desert',      icon: 'fa-sun', color: '#d97706', stress: 44 },
+  { id: 'boreal_forest', name: 'Boreal Forest', icon: 'fa-snowflake', color: '#0891b2', stress: 52 },
+  { id: 'grassland', name: 'Grasslands', icon: 'fa-wheat-awn', color: '#ca8a04', stress: 61 },
+  { id: 'wetlands', name: 'Wetlands', icon: 'fa-water', color: '#0284c7', stress: 83 },
+  { id: 'arctic', name: 'Arctic Tundra', icon: 'fa-icicles', color: '#67e8f9', stress: 91 },
+  { id: 'desert', name: 'Arid Desert', icon: 'fa-sun', color: '#d97706', stress: 44 },
 ];
 
 // ── HTML TEMPLATE ─────────────────────────────────────────────────────────
@@ -3003,12 +3541,10 @@ function satelliteHTML() {
           </div>
           <div>
             <h1 class="text-xl font-black text-white flex items-center gap-2">
-              AI Satellite Monitoring
-              <span class="text-[9px] px-2 py-0.5 rounded-full bg-cyan-900/60 border border-cyan-700 text-cyan-300 font-semibold animate-pulse flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block"></span>LIVE
-              </span>
+              Satellite Earth Observation
+              ${provenanceBadge('retrieved', 'NASA GIBS VIIRS 250m True Color Imagery + Synthetic Overlays')}
             </h1>
-            <p class="text-[10px] text-gray-500">EcoTwin-CNN-v2.1 · Multi-spectral · NASA GIBS VIIRS 250m · Real-time change detection</p>
+            <p class="text-[10px] text-gray-500">Optical Imagery: Genuine NASA GIBS VIIRS 250m Tiles · Detection Overlays: Simulated Demo Pipeline</p>
           </div>
         </div>
       </div>
@@ -3035,7 +3571,7 @@ function satelliteHTML() {
 
   <!-- ── Global KPI Bar ── -->
   <div id="sat-global-stats" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-    ${[1,2,3,4,5,6].map(()=>`<div class="et-card animate-pulse h-20 bg-gray-800/40 rounded-xl"></div>`).join('')}
+    ${[1, 2, 3, 4, 5, 6].map(() => `<div class="et-card animate-pulse h-20 bg-gray-800/40 rounded-xl"></div>`).join('')}
   </div>
 
   <!-- ── Main Layout ── -->
@@ -3091,7 +3627,7 @@ function satelliteHTML() {
           </div>
         </div>
         <div id="sat-region-list" class="space-y-1.5 max-h-[55vh] overflow-y-auto pr-1 scrollbar-hide">
-          ${[1,2,3,4,5].map(()=>`<div class="animate-pulse h-20 bg-gray-800/40 rounded-xl"></div>`).join('')}
+          ${[1, 2, 3, 4, 5].map(() => `<div class="animate-pulse h-20 bg-gray-800/40 rounded-xl"></div>`).join('')}
         </div>
       </div>
 
@@ -3109,7 +3645,7 @@ function satelliteHTML() {
                 <i class="fas ${b.icon} text-[10px]" style="color:${b.color}"></i>
                 <span class="text-[10px] font-semibold text-gray-300">${b.name}</span>
               </div>
-              <span class="text-[10px] font-black mono" style="color:${b.stress>75?'#f87171':b.stress>55?'#fbbf24':'#4ade80'}">${b.stress}</span>
+              <span class="text-[10px] font-black mono" style="color:${b.stress > 75 ? '#f87171' : b.stress > 55 ? '#fbbf24' : '#4ade80'}">${b.stress}</span>
             </div>
             <div class="metric-bar">
               <div class="metric-bar-fill progress-animate" style="width:${b.stress}%;background:linear-gradient(90deg,${b.color}88,${b.color});"></div>
@@ -3124,20 +3660,20 @@ function satelliteHTML() {
       <!-- Sub-tab navigation -->
       <div class="flex items-center gap-1 p-1 bg-gray-900/60 rounded-xl border border-gray-800">
         ${[
-          { id: 'analysis', icon: 'fa-satellite-dish', label: 'CNN Analysis' },
-          { id: 'spectral', icon: 'fa-layer-group',    label: 'Spectral Bands' },
-          { id: 'ndvi',     icon: 'fa-chart-area',      label: 'NDVI Timeseries' },
-          { id: 'emission', icon: 'fa-smog',            label: 'Emission Hotspots' },
-          { id: 'compare',  icon: 'fa-code-compare',    label: 'Time Compare' },
-        ].map(tab => `
+      { id: 'analysis', icon: 'fa-satellite-dish', label: 'Feature Detection' },
+      { id: 'spectral', icon: 'fa-layer-group', label: 'Spectral Bands' },
+      { id: 'ndvi', icon: 'fa-chart-area', label: 'NDVI Timeseries' },
+      { id: 'emission', icon: 'fa-smog', label: 'Emission Hotspots' },
+      { id: 'compare', icon: 'fa-code-compare', label: 'Time Compare' },
+    ].map(tab => `
         <button onclick="switchSatTab('${tab.id}')" id="sat-subtab-${tab.id}"
-          class="sat-subtab flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[9px] font-bold transition-all ${tab.id==='analysis'?'bg-cyan-900/50 text-cyan-300 border border-cyan-700/50':'text-gray-500 hover:text-gray-300'}">
+          class="sat-subtab flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[9px] font-bold transition-all ${tab.id === 'analysis' ? 'bg-cyan-900/50 text-cyan-300 border border-cyan-700/50' : 'text-gray-500 hover:text-gray-300'}">
           <i class="fas ${tab.icon}"></i>
           <span class="hidden sm:inline">${tab.label}</span>
         </button>`).join('')}
       </div>
 
-      <!-- ── Tab: CNN Analysis ── -->
+      <!-- ── Tab: Feature Detection ── -->
       <div id="sat-tab-analysis" class="space-y-4">
         <!-- Image viewer with HUD -->
         <div class="et-card p-0 overflow-hidden" style="min-height:360px;">
@@ -3159,7 +3695,7 @@ function satelliteHTML() {
               <canvas id="sat-demo-canvas" class="w-full h-full absolute inset-0" style="width:100%;height:100%;"></canvas>
             </div>
 
-            <!-- CNN Bounding-box SVG overlay -->
+            <!-- Vision Bounding-box SVG overlay (Simulated Detection) -->
             <svg id="sat-bbox-svg" class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none" style="pointer-events:none;z-index:5;"></svg>
 
             <!-- Spectral overlay canvas -->
@@ -3186,7 +3722,7 @@ function satelliteHTML() {
                   <span id="sat-hud-region-name" class="text-gray-400">—</span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span id="sat-model-badge" class="text-[8px] px-2 py-0.5 rounded-full bg-purple-900/70 border border-purple-700 text-purple-300 mono">CNN-v2.1</span>
+                  <span id="sat-model-badge" class="text-[8px] px-2 py-0.5 rounded-full bg-purple-900/70 border border-purple-700 text-purple-300 mono">Vision-Overlay</span>
                   <span id="sat-conf-badge" class="text-[8px] px-2 py-0.5 rounded-full bg-gray-900/70 border border-gray-700 text-gray-400 mono">CONF: —</span>
                   <span id="sat-impact-badge" class="text-[8px] px-2 py-0.5 rounded-full bg-red-900/70 border border-red-700 text-red-300 mono hidden">—</span>
                 </div>
@@ -3195,18 +3731,18 @@ function satelliteHTML() {
           </div>
         </div>
 
-        <!-- CNN Class Probability Bars -->
+        <!-- Vision Feature Detection Probabilities -->
         <div class="et-card p-4">
           <div class="flex items-center justify-between mb-3">
             <h3 class="text-xs font-bold text-white flex items-center gap-2">
               <i class="fas fa-brain text-purple-400"></i>
-              CNN Class Probabilities
-              <span class="text-[8px] text-gray-600 font-normal">EcoTwin-v2.1 softmax output</span>
+              Detection Feature Probabilities
+              <span class="text-[8px] text-gray-500 font-normal">synthetic detection demonstration</span>
             </h3>
             <div id="sat-top-class" class="text-[9px] px-2 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-gray-400 mono">—</div>
           </div>
           <div id="sat-cnn-probs" class="space-y-2">
-            ${Object.entries(CHANGE_LABELS).map(([k,v]) => `
+            ${Object.entries(CHANGE_LABELS).map(([k, v]) => `
             <div class="flex items-center gap-2">
               <div class="w-24 text-[9px] text-gray-400 flex items-center gap-1.5 flex-shrink-0">
                 <i class="fas ${CHANGE_ICONS[k]} text-gray-600 w-3"></i> ${v}
@@ -3219,19 +3755,19 @@ function satelliteHTML() {
           </div>
         </div>
 
-        <!-- CNN Architecture Visualization -->
+        <!-- Vision Pipeline Architecture Reference -->
         <div class="et-card p-4">
           <div class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-            <i class="fas fa-microchip text-cyan-400"></i> CNN Architecture
-            <span class="text-gray-600 font-normal ml-auto">EfficientNet-B3 backbone</span>
+            <i class="fas fa-microchip text-cyan-400"></i> Vision Network Architecture Reference
+            <span class="text-gray-600 font-normal ml-auto">Conceptual Architecture</span>
           </div>
           <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
             ${CNN_LAYERS.map((l, i) => `
-            <div class="cnn-layer-block ${l.type} flex-shrink-0 w-20 neural-node" style="animation-delay:${i*0.2}s;">
+            <div class="cnn-layer-block ${l.type} flex-shrink-0 w-20 neural-node" style="animation-delay:${i * 0.2}s;">
               <div class="text-[8px] font-bold text-gray-300 whitespace-pre-line leading-tight mb-1">${l.label}</div>
               <div class="text-[7px] text-gray-600">${l.note}</div>
             </div>
-            ${i < CNN_LAYERS.length-1 ? '<div class="flex-shrink-0 text-gray-700 text-xs">→</div>' : ''}`).join('')}
+            ${i < CNN_LAYERS.length - 1 ? '<div class="flex-shrink-0 text-gray-700 text-xs">→</div>' : ''}`).join('')}
           </div>
         </div>
 
@@ -3248,9 +3784,9 @@ function satelliteHTML() {
             <div class="text-[9px] text-gray-600">%/year</div>
           </div>
           <div class="et-card text-center p-3">
-            <div class="text-[9px] text-gray-500 uppercase tracking-wider mb-1">Model Confidence</div>
+            <div class="text-[9px] text-gray-500 uppercase tracking-wider mb-1">Detection Score</div>
             <div class="text-xl font-black text-cyan-300 mono" id="sat-m-conf">—</div>
-            <div class="text-[9px] text-gray-600">accuracy</div>
+            <div class="text-[9px] text-gray-600">heuristic / demo</div>
           </div>
           <div class="et-card text-center p-3">
             <div class="text-[9px] text-gray-500 uppercase tracking-wider mb-1">SDG Impact</div>
@@ -3284,7 +3820,7 @@ function satelliteHTML() {
           <div class="flex flex-wrap gap-2 mb-4">
             ${SPECTRAL_BANDS.map(b => `
             <button onclick="selectSpectralBand('${b.id}')" id="spectral-btn-${b.id}"
-              class="spectral-btn ${b.cls} ${b.id==='rgb'?'active-band':''}">
+              class="spectral-btn ${b.cls} ${b.id === 'rgb' ? 'active-band' : ''}">
               <i class="fas ${b.icon} mr-1"></i>${b.label}
             </button>`).join('')}
           </div>
@@ -3431,13 +3967,13 @@ function satelliteHTML() {
             <div>
               <label class="text-[9px] text-gray-500 uppercase tracking-wider block mb-1">Year From</label>
               <select id="sat-cmp-from" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-cyan-500">
-                ${[2015,2016,2017,2018,2019,2020,2021,2022].map(y=>`<option value="${y}">${y}</option>`).join('')}
+                ${[2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022].map(y => `<option value="${y}">${y}</option>`).join('')}
               </select>
             </div>
             <div>
               <label class="text-[9px] text-gray-500 uppercase tracking-wider block mb-1">Year To</label>
               <select id="sat-cmp-to" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-cyan-500">
-                ${[2020,2021,2022,2023,2024].map(y=>`<option value="${y}" ${y===2024?'selected':''}>${y}</option>`).join('')}
+                ${[2020, 2021, 2022, 2023, 2024].map(y => `<option value="${y}" ${y === 2024 ? 'selected' : ''}>${y}</option>`).join('')}
               </select>
             </div>
             <div class="flex items-end">
@@ -3490,7 +4026,7 @@ function satelliteHTML() {
 function switchSatTab(tabId) {
   SAT_STATE.activeTab = tabId;
   // Hide all sub-tabs
-  ['analysis','spectral','ndvi','emission','compare'].forEach(id => {
+  ['analysis', 'spectral', 'ndvi', 'emission', 'compare'].forEach(id => {
     const el = document.getElementById(`sat-tab-${id}`);
     if (el) el.classList.add('hidden');
     const btn = document.getElementById(`sat-subtab-${id}`);
@@ -3539,7 +4075,7 @@ async function loadSatGlobalStats() {
     const d = await r.json();
     SAT_STATE.globalStats = d;
     renderSatGlobalStats(d);
-  } catch(e) { console.error('Sat global stats:', e); }
+  } catch (e) { console.error('Sat global stats:', e); }
 }
 
 function renderSatGlobalStats(d) {
@@ -3568,18 +4104,18 @@ function renderSatGlobalStats(d) {
     </div>
     <div class="et-card p-3">
       <div class="flex items-center gap-2 mb-1"><i class="fas fa-smog text-gray-400 text-xs"></i><span class="text-[9px] text-gray-500 uppercase tracking-wider">CO₂ Emissions</span></div>
-      <div class="text-lg font-black text-gray-300 mono">${(d.co2Emissions||36.8).toFixed(1)}</div>
+      <div class="text-lg font-black text-gray-300 mono">${(d.co2Emissions || 36.8).toFixed(1)}</div>
       <div class="text-[9px] text-gray-500">Gt CO₂/yr land-use</div>
     </div>
     <div class="et-card p-3">
       <div class="flex items-center gap-2 mb-1"><i class="fas fa-fire text-orange-400 text-xs"></i><span class="text-[9px] text-gray-500 uppercase tracking-wider">Active Wildfires</span></div>
-      <div class="text-lg font-black text-orange-300 mono">${d.wildfires||247}</div>
+      <div class="text-lg font-black text-orange-300 mono">${d.wildfires || 247}</div>
       <div class="text-[9px] text-gray-500">active FIRMS detections</div>
     </div>`;
   // Update HUD alerts
   const alertEl = document.getElementById('sat-hud-alerts');
   if (alertEl) {
-    const crit = SAT_STATE.liveFeed.filter(f=>f.impactGrade==='CRITICAL').length;
+    const crit = SAT_STATE.liveFeed.filter(f => f.impactGrade === 'CRITICAL').length;
     alertEl.querySelector('span').textContent = crit || '0';
     alertEl.querySelector('span').className = crit > 0 ? 'text-red-400 font-bold' : 'text-emerald-400 font-bold';
   }
@@ -3589,7 +4125,7 @@ function renderSatGlobalStats(d) {
 async function refreshSatelliteFeed(silent = false) {
   if (!silent) {
     const list = document.getElementById('sat-region-list');
-    if (list) list.innerHTML = [1,2,3,4,5].map(()=>`<div class="animate-pulse h-20 bg-gray-800/40 rounded-xl"></div>`).join('');
+    if (list) list.innerHTML = [1, 2, 3, 4, 5].map(() => `<div class="animate-pulse h-20 bg-gray-800/40 rounded-xl"></div>`).join('');
   }
   try {
     const r = await fetch('/satellite/live_feed');
@@ -3609,7 +4145,7 @@ async function refreshSatelliteFeed(silent = false) {
     if (!SAT_STATE.activeRegion && d.feed.length > 0) {
       selectSatRegion(d.feed[0].regionId);
     }
-  } catch(e) { console.error('Sat live feed:', e); }
+  } catch (e) { console.error('Sat live feed:', e); }
 }
 
 function renderSatRegionList(feed, stats) {
@@ -3627,7 +4163,7 @@ function renderSatRegionList(feed, stats) {
     const label = CHANGE_LABELS[f.changeType] || f.changeType;
     const isActive = SAT_STATE.activeRegion === f.regionId;
     return `
-    <div onclick="selectSatRegion('${f.regionId}')" class="sat-region-card ${isActive?'active gradient-border-active':''}" style="--region-severity:${gc.hex}">
+    <div onclick="selectSatRegion('${f.regionId}')" class="sat-region-card ${isActive ? 'active gradient-border-active' : ''}" style="--region-severity:${gc.hex}">
       <div class="flex items-start justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
           <div class="w-8 h-8 rounded-lg ${gc.bg} ${gc.border} border flex items-center justify-center flex-none">
@@ -3646,7 +4182,7 @@ function renderSatRegionList(feed, stats) {
       <div class="mt-2 flex items-center gap-3 text-[9px] text-gray-500">
         <span><i class="fas fa-expand-arrows-alt mr-0.5 opacity-50"></i>${f.affectedAreaKm2} km²</span>
         <span><i class="fas fa-chart-line mr-0.5 opacity-50"></i>${f.changeRatePctPerYear}%/yr</span>
-        <span class="ml-auto"><i class="fas fa-crosshairs mr-0.5 opacity-50"></i>${(f.confidence*100).toFixed(0)}%</span>
+        <span class="ml-auto"><i class="fas fa-crosshairs mr-0.5 opacity-50"></i>${(f.confidence * 100).toFixed(0)}%</span>
       </div>
       <div class="mt-1.5 h-1 rounded-full bg-gray-800 overflow-hidden">
         <div class="h-full rounded-full transition-all duration-700"
@@ -3677,38 +4213,38 @@ function renderWorldMinimap() {
   ctx.strokeStyle = 'rgba(34,211,238,0.15)';
   ctx.lineWidth = 0.5;
   ctx.beginPath();
-  ctx.rect(10, 10, W-20, H-20);
+  ctx.rect(10, 10, W - 20, H - 20);
   ctx.stroke();
   // Grid lines
-  for (let x = 10; x <= W-10; x += (W-20)/6) {
-    ctx.beginPath(); ctx.moveTo(x, 10); ctx.lineTo(x, H-10);
+  for (let x = 10; x <= W - 10; x += (W - 20) / 6) {
+    ctx.beginPath(); ctx.moveTo(x, 10); ctx.lineTo(x, H - 10);
     ctx.strokeStyle = 'rgba(34,211,238,0.05)'; ctx.stroke();
   }
-  for (let y = 10; y <= H-10; y += (H-20)/4) {
-    ctx.beginPath(); ctx.moveTo(10, y); ctx.lineTo(W-10, y);
+  for (let y = 10; y <= H - 10; y += (H - 20) / 4) {
+    ctx.beginPath(); ctx.moveTo(10, y); ctx.lineTo(W - 10, y);
     ctx.strokeStyle = 'rgba(34,211,238,0.05)'; ctx.stroke();
   }
   // Draw region dots
   const regionCoords = {
-    amazon:     { lat: -3.4, lon: -62.2 },
-    greenland:  { lat: 72.0, lon: -40.0 },
-    sahel:      { lat: 13.5, lon: 10.0  },
-    aral:       { lat: 45.0, lon: 59.0  },
-    borneo:     { lat: 0.5,  lon: 113.9 },
-    california: { lat: 36.7, lon: -119.7},
-    mekong:     { lat: 15.0, lon: 102.0 },
-    siberia:    { lat: 60.0, lon: 90.0  },
-    nile:       { lat: 25.0, lon: 32.0  },
-    patagonia:  { lat: -48.0,lon: -72.0 },
+    amazon: { lat: -3.4, lon: -62.2 },
+    greenland: { lat: 72.0, lon: -40.0 },
+    sahel: { lat: 13.5, lon: 10.0 },
+    aral: { lat: 45.0, lon: 59.0 },
+    borneo: { lat: 0.5, lon: 113.9 },
+    california: { lat: 36.7, lon: -119.7 },
+    mekong: { lat: 15.0, lon: 102.0 },
+    siberia: { lat: 60.0, lon: 90.0 },
+    nile: { lat: 25.0, lon: 32.0 },
+    patagonia: { lat: -48.0, lon: -72.0 },
   };
   SAT_STATE.liveFeed.forEach(f => {
     const coord = regionCoords[f.regionId];
     if (!coord) return;
-    const x = (coord.lon + 180) / 360 * (W-20) + 10;
-    const y = (90 - coord.lat) / 180 * (H-20) + 10;
+    const x = (coord.lon + 180) / 360 * (W - 20) + 10;
+    const y = (90 - coord.lat) / 180 * (H - 20) + 10;
     const gc = GRADE_COLORS[f.impactGrade] || GRADE_COLORS.LOW;
     ctx.beginPath();
-    ctx.arc(x, y, f.impactGrade === 'CRITICAL' ? 5 : 3, 0, Math.PI*2);
+    ctx.arc(x, y, f.impactGrade === 'CRITICAL' ? 5 : 3, 0, Math.PI * 2);
     ctx.fillStyle = gc.hex;
     ctx.fill();
     ctx.strokeStyle = gc.hex + '66';
@@ -3716,7 +4252,7 @@ function renderWorldMinimap() {
     ctx.stroke();
     if (f.impactGrade === 'CRITICAL' || f.impactGrade === 'HIGH') {
       ctx.beginPath();
-      ctx.arc(x, y, 8, 0, Math.PI*2);
+      ctx.arc(x, y, 8, 0, Math.PI * 2);
       ctx.strokeStyle = gc.hex + '33';
       ctx.lineWidth = 1;
       ctx.stroke();
@@ -3733,7 +4269,7 @@ async function selectSatRegion(regionId) {
     const r = await fetch(`/satellite/analyze/${regionId}`);
     const d = await r.json();
     renderSatAnalysis(d);
-  } catch(e) { console.error('Sat analyze:', e); }
+  } catch (e) { console.error('Sat analyze:', e); }
 }
 
 function renderSatAnalysis(d) {
@@ -3747,17 +4283,17 @@ function renderSatAnalysis(d) {
   if (nameEl) nameEl.textContent = region.name;
   // Update badges
   const confBadge = document.getElementById('sat-conf-badge');
-  if (confBadge) confBadge.textContent = `CONF: ${(analysis.confidence*100).toFixed(0)}%`;
+  if (confBadge) confBadge.textContent = `CONF: ${(analysis.confidence * 100).toFixed(0)}%`;
   const impactBadge = document.getElementById('sat-impact-badge');
   if (impactBadge) {
     impactBadge.textContent = `SCORE: ${analysis.impactScore}`;
     impactBadge.classList.remove('hidden');
   }
   // Update metrics
-  const setEl = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+  const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
   setEl('sat-m-area', analysis.affectedAreaKm2 || '—');
   setEl('sat-m-rate', analysis.changeRatePctPerYear ? `${analysis.changeRatePctPerYear}%` : '—');
-  setEl('sat-m-conf', analysis.confidence ? `${(analysis.confidence*100).toFixed(0)}%` : '—');
+  setEl('sat-m-conf', analysis.confidence ? `${(analysis.confidence * 100).toFixed(0)}%` : '—');
   setEl('sat-m-sdg', analysis.sdgImpact ? analysis.sdgImpact.length : '—');
   // Update top class
   const topEl = document.getElementById('sat-top-class');
@@ -3766,19 +4302,19 @@ function renderSatAnalysis(d) {
   if (analysis.classProbabilities) {
     Object.entries(analysis.classProbabilities).forEach(([cls, prob]) => {
       const fill = document.getElementById(`cnn-prob-${cls}`);
-      const pct  = document.getElementById(`cnn-pct-${cls}`);
-      if (fill) fill.style.width = `${(prob*100).toFixed(0)}%`;
-      if (pct)  pct.textContent  = `${(prob*100).toFixed(0)}%`;
+      const pct = document.getElementById(`cnn-pct-${cls}`);
+      if (fill) fill.style.width = `${(prob * 100).toFixed(0)}%`;
+      if (pct) pct.textContent = `${(prob * 100).toFixed(0)}%`;
     });
   } else {
     // Fallback: generate based on changeType
     const types = Object.keys(CHANGE_LABELS);
     types.forEach(k => {
-      const prob = k === analysis.changeType ? 0.7 + Math.random()*0.25 : Math.random()*0.15;
+      const prob = k === analysis.changeType ? 0.7 + Math.random() * 0.25 : Math.random() * 0.15;
       const fill = document.getElementById(`cnn-prob-${k}`);
-      const pct  = document.getElementById(`cnn-pct-${k}`);
-      if (fill) fill.style.width = `${(prob*100).toFixed(0)}%`;
-      if (pct)  pct.textContent  = `${(prob*100).toFixed(0)}%`;
+      const pct = document.getElementById(`cnn-pct-${k}`);
+      if (fill) fill.style.width = `${(prob * 100).toFixed(0)}%`;
+      if (pct) pct.textContent = `${(prob * 100).toFixed(0)}%`;
     });
   }
   // Draw image / fallback canvas
@@ -3808,7 +4344,7 @@ function drawDemoCanvas(analysis, region) {
   const canvas = document.getElementById('sat-demo-canvas');
   if (!canvas) return;
   const container = canvas.parentElement;
-  canvas.width  = container.clientWidth  || 600;
+  canvas.width = container.clientWidth || 600;
   canvas.height = container.clientHeight || 360;
   const W = canvas.width, H = canvas.height;
   const ctx = canvas.getContext('2d');
@@ -3825,11 +4361,11 @@ function drawDemoCanvas(analysis, region) {
   } else if (band === 'nir') {
     grad.addColorStop(0, '#2d1b00'); grad.addColorStop(0.5, '#78350f'); grad.addColorStop(1, '#431407');
   } else {
-    if (type === 'deforestation') { grad.addColorStop(0,'#1c3a10'); grad.addColorStop(0.5,'#234d14'); grad.addColorStop(1,'#0d1f08'); }
-    else if (type === 'urban_expansion') { grad.addColorStop(0,'#1a1a2e'); grad.addColorStop(0.5,'#2d2d4e'); grad.addColorStop(1,'#0d0d18'); }
-    else if (type === 'water_loss') { grad.addColorStop(0,'#0c2340'); grad.addColorStop(0.5,'#1a4a7a'); grad.addColorStop(1,'#5a4010'); }
-    else if (type === 'ice_loss') { grad.addColorStop(0,'#c0d8f0'); grad.addColorStop(0.5,'#a0c0e0'); grad.addColorStop(1,'#6090c0'); }
-    else { grad.addColorStop(0,'#5a4020'); grad.addColorStop(0.5,'#7a5530'); grad.addColorStop(1,'#3a2510'); }
+    if (type === 'deforestation') { grad.addColorStop(0, '#1c3a10'); grad.addColorStop(0.5, '#234d14'); grad.addColorStop(1, '#0d1f08'); }
+    else if (type === 'urban_expansion') { grad.addColorStop(0, '#1a1a2e'); grad.addColorStop(0.5, '#2d2d4e'); grad.addColorStop(1, '#0d0d18'); }
+    else if (type === 'water_loss') { grad.addColorStop(0, '#0c2340'); grad.addColorStop(0.5, '#1a4a7a'); grad.addColorStop(1, '#5a4010'); }
+    else if (type === 'ice_loss') { grad.addColorStop(0, '#c0d8f0'); grad.addColorStop(0.5, '#a0c0e0'); grad.addColorStop(1, '#6090c0'); }
+    else { grad.addColorStop(0, '#5a4020'); grad.addColorStop(0.5, '#7a5530'); grad.addColorStop(1, '#3a2510'); }
   }
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
@@ -3838,10 +4374,10 @@ function drawDemoCanvas(analysis, region) {
     const x = (i * 97 + 23) % W, y = (i * 73 + 17) % H;
     const r = 10 + (i * 13) % 50, alpha = 0.08 + (i % 5) * 0.03;
     ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
-    if (type === 'deforestation') ctx.fillStyle = i%3===0 ? `rgba(80,40,10,${alpha})` : `rgba(20,60,20,${alpha})`;
+    if (type === 'deforestation') ctx.fillStyle = i % 3 === 0 ? `rgba(80,40,10,${alpha})` : `rgba(20,60,20,${alpha})`;
     else if (type === 'urban_expansion') ctx.fillStyle = `rgba(80,80,100,${alpha})`;
-    else if (type === 'water_loss') ctx.fillStyle = i%2===0 ? `rgba(20,60,120,${alpha})` : `rgba(140,110,50,${alpha})`;
-    else if (type === 'ice_loss') ctx.fillStyle = `rgba(200,220,240,${alpha*0.4})`;
+    else if (type === 'water_loss') ctx.fillStyle = i % 2 === 0 ? `rgba(20,60,120,${alpha})` : `rgba(140,110,50,${alpha})`;
+    else if (type === 'ice_loss') ctx.fillStyle = `rgba(200,220,240,${alpha * 0.4})`;
     else ctx.fillStyle = `rgba(180,140,80,${alpha})`;
     ctx.fill();
   }
@@ -3852,10 +4388,10 @@ function drawDemoCanvas(analysis, region) {
   for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
   // Coordinate text
   ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.fillRect(0, H-22, W, 22);
+  ctx.fillRect(0, H - 22, W, 22);
   ctx.fillStyle = '#67e8f9';
   ctx.font = 'bold 10px monospace';
-  ctx.fillText(`${band.toUpperCase()} · LAT ${region.lat.toFixed(2)}°  LON ${region.lon.toFixed(2)}°  |  ${region.name}`, 10, H-7);
+  ctx.fillText(`${band.toUpperCase()} · LAT ${region.lat.toFixed(2)}°  LON ${region.lon.toFixed(2)}°  |  ${region.name}`, 10, H - 7);
 }
 
 // ── BOUNDING BOXES ────────────────────────────────────────────────────────────
@@ -3868,7 +4404,7 @@ function drawBoundingBoxes(boxes) {
     <rect x="${b.x}" y="${b.y - 5}" width="${Math.min(b.w, 28)}" height="5"
       fill="${b.color}cc"/>
     <text x="${b.x + 1}" y="${b.y - 1}" font-size="2.8" fill="white" font-family="monospace" font-weight="bold">
-      ${(b.confidence*100).toFixed(0)}%
+      ${(b.confidence * 100).toFixed(0)}%
     </text>`
   ).join('');
 }
@@ -3879,11 +4415,11 @@ function drawActivationHeatmap(heatmap) {
   if (!canvas) return;
   canvas.width = 8; canvas.height = 8;
   const ctx = canvas.getContext('2d');
-  const data = heatmap.length === 64 ? heatmap : Array.from({length:64}, (_,i) => Math.random());
+  const data = heatmap.length === 64 ? heatmap : Array.from({ length: 64 }, (_, i) => Math.random());
   for (let i = 0; i < 64; i++) {
     const v = data[i];
     const r = Math.floor(v * 255);
-    const g = Math.floor((1 - Math.abs(v - 0.5)*2) * 180);
+    const g = Math.floor((1 - Math.abs(v - 0.5) * 2) * 180);
     const b = Math.floor((1 - v) * 200);
     ctx.fillStyle = `rgb(${r},${g},${b})`;
     ctx.fillRect(i % 8, Math.floor(i / 8), 1, 1);
@@ -3915,10 +4451,10 @@ function renderSpectralCanvas(bandId) {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
   const palettes = {
-    rgb:     { c1: '#0d3b0a', c2: '#1a5c12', c3: '#2d8a1f' },
-    nir:     { c1: '#2d1b00', c2: '#78350f', c3: '#dc8a30' },
-    swir:    { c1: '#0f0f2e', c2: '#312e81', c3: '#6d28d9' },
-    ndvi:    { c1: '#7f1d1d', c2: '#ca8a04', c3: '#16a34a' },
+    rgb: { c1: '#0d3b0a', c2: '#1a5c12', c3: '#2d8a1f' },
+    nir: { c1: '#2d1b00', c2: '#78350f', c3: '#dc8a30' },
+    swir: { c1: '#0f0f2e', c2: '#312e81', c3: '#6d28d9' },
+    ndvi: { c1: '#7f1d1d', c2: '#ca8a04', c3: '#16a34a' },
     thermal: { c1: '#1a0a00', c2: '#7f1d1d', c3: '#fbbf24' },
   };
   const pal = palettes[bandId] || palettes.rgb;
@@ -3927,19 +4463,19 @@ function renderSpectralCanvas(bandId) {
   ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
   // Noise texture
   for (let i = 0; i < 80; i++) {
-    const x = Math.random()*W, y = Math.random()*H, r = 5+Math.random()*60;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
-    ctx.fillStyle = `rgba(255,255,255,${Math.random()*0.04})`;
+    const x = Math.random() * W, y = Math.random() * H, r = 5 + Math.random() * 60;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.04})`;
     ctx.fill();
   }
   // Grid
   ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 0.5;
-  for (let x = 0; x < W; x += 50) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-  for (let y = 0; y < H; y += 50) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  for (let x = 0; x < W; x += 50) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 50) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
   // Band label
-  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0, H-20, W, 20);
+  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0, H - 20, W, 20);
   ctx.fillStyle = '#22d3ee'; ctx.font = '10px monospace';
-  ctx.fillText(`${bandId.toUpperCase()} BAND — Simulated composite (NASA GIBS VIIRS 250m)`, 10, H-6);
+  ctx.fillText(`${bandId.toUpperCase()} BAND — Simulated composite (NASA GIBS VIIRS 250m)`, 10, H - 6);
 }
 
 // ── NDVI TIMESERIES ───────────────────────────────────────────────────────────
@@ -3951,7 +4487,7 @@ async function loadNdviTimeseries() {
     renderNdviChart(d);
     renderNdviStats(d);
     renderAnomalyTimeline(d.anomalies || []);
-  } catch(e) { renderNdviChartFallback(regionId); }
+  } catch (e) { renderNdviChartFallback(regionId); }
 }
 
 function renderNdviChart(d) {
@@ -3961,19 +4497,19 @@ function renderNdviChart(d) {
   canvas._nchart = new Chart(canvas, {
     type: 'line',
     data: {
-      labels: d.years || Array.from({length:25},(_,i)=>2000+i),
+      labels: d.years || Array.from({ length: 25 }, (_, i) => 2000 + i),
       datasets: [
         {
           label: 'NDVI (mean)',
-          data: d.ndvi || Array.from({length:25},(_,i)=> 0.75 - i*0.007 + (Math.random()-0.5)*0.05),
+          data: d.ndvi || Array.from({ length: 25 }, (_, i) => 0.75 - i * 0.007 + (Math.random() - 0.5) * 0.05),
           borderColor: '#10b981', backgroundColor: '#10b98120',
           tension: 0.4, fill: true, pointRadius: 3, borderWidth: 2,
         },
         {
           label: 'Anomaly threshold',
-          data: d.threshold || Array.from({length:25},()=> 0.55),
+          data: d.threshold || Array.from({ length: 25 }, () => 0.55),
           borderColor: '#f59e0b', backgroundColor: 'transparent',
-          borderDash: [5,3], pointRadius: 0, borderWidth: 1.5,
+          borderDash: [5, 3], pointRadius: 0, borderWidth: 1.5,
         }
       ]
     },
@@ -3998,16 +4534,16 @@ function renderNdviChart(d) {
 }
 
 function renderNdviChartFallback(regionId) {
-  const baseNdvi = { amazon:0.82, borneo:0.79, sahel:0.42, california:0.58, congo:0.86 }[regionId] || 0.7;
-  const years = Array.from({length:25},(_,i)=>2000+i);
-  const ndvi  = years.map((y,i)=> Math.max(0.1, baseNdvi - i*0.008 + (Math.random()-0.5)*0.04));
-  renderNdviChart({ years, ndvi, threshold: years.map(()=> baseNdvi*0.72) });
-  renderNdviStats({ peak: baseNdvi, current: ndvi[ndvi.length-1], trend: (ndvi[ndvi.length-1]-ndvi[0]).toFixed(3) });
-  renderAnomalyTimeline(years.filter((_,i)=>ndvi[i]<baseNdvi*0.75).slice(0,5).map(y=>({year:y, type:'Low NDVI', severity:'HIGH', delta: -0.12})));
+  const baseNdvi = { amazon: 0.82, borneo: 0.79, sahel: 0.42, california: 0.58, congo: 0.86 }[regionId] || 0.7;
+  const years = Array.from({ length: 25 }, (_, i) => 2000 + i);
+  const ndvi = years.map((y, i) => Math.max(0.1, baseNdvi - i * 0.008 + (Math.random() - 0.5) * 0.04));
+  renderNdviChart({ years, ndvi, threshold: years.map(() => baseNdvi * 0.72) });
+  renderNdviStats({ peak: baseNdvi, current: ndvi[ndvi.length - 1], trend: (ndvi[ndvi.length - 1] - ndvi[0]).toFixed(3) });
+  renderAnomalyTimeline(years.filter((_, i) => ndvi[i] < baseNdvi * 0.75).slice(0, 5).map(y => ({ year: y, type: 'Low NDVI', severity: 'HIGH', delta: -0.12 })));
 }
 
 function renderNdviStats(d) {
-  const setEl = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+  const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
   setEl('ndvi-peak', typeof d.peak === 'number' ? d.peak.toFixed(2) : d.peak);
   setEl('ndvi-current', typeof d.current === 'number' ? d.current.toFixed(2) : d.current);
   const trend = typeof d.trend === 'number' ? d.trend : parseFloat(d.trend);
@@ -4023,9 +4559,9 @@ function renderAnomalyTimeline(anomalies) {
     return;
   }
   el.innerHTML = anomalies.map((a, i) => {
-    const severityClass = a.severity==='CRITICAL' ? 'bg-red-900/60 border-red-700' : a.severity==='HIGH' ? 'bg-orange-900/60 border-orange-700' : 'bg-yellow-900/60 border-yellow-700';
+    const severityClass = a.severity === 'CRITICAL' ? 'bg-red-900/60 border-red-700' : a.severity === 'HIGH' ? 'bg-orange-900/60 border-orange-700' : 'bg-yellow-900/60 border-yellow-700';
     return `
-  <div class="timeline-node flex items-start gap-3 pb-3 anomaly-node" style="animation-delay:${i*0.1}s;">
+  <div class="timeline-node flex items-start gap-3 pb-3 anomaly-node" style="animation-delay:${i * 0.1}s;">
     <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 detection-pulse
       ${severityClass}
       border text-[9px]">
@@ -4033,7 +4569,7 @@ function renderAnomalyTimeline(anomalies) {
     </div>
     <div>
       <div class="text-[10px] font-bold text-gray-300">${a.year || a.date} — ${a.type}</div>
-      <div class="text-[9px] text-gray-500">Δ NDVI: <span class="text-red-400 mono">${a.delta > 0 ? '+' : ''}${(a.delta||0).toFixed(3)}</span></div>
+      <div class="text-[9px] text-gray-500">Δ NDVI: <span class="text-red-400 mono">${a.delta > 0 ? '+' : ''}${(a.delta || 0).toFixed(3)}</span></div>
     </div>
   </div>`;
   }).join('');
@@ -4047,23 +4583,23 @@ async function refreshEmissionHotspots() {
     SAT_STATE.emissionHotspots = d.hotspots;
     renderEmissionMap(d.hotspots, d.totalMtCO2yr);
     renderEmitterList(d.hotspots);
-  } catch(e) {
+  } catch (e) {
     renderEmissionMapFallback();
   }
 }
 
 function renderEmissionMapFallback() {
   const hotspots = [
-    { name: 'Eastern China', lat:32, lon:116, intensity:94, Mt:2.8 },
-    { name: 'Northern India', lat:27, lon:78, intensity:82, Mt:1.9 },
-    { name: 'Amazon Basin', lat:-3, lon:-62, intensity:76, Mt:1.4 },
-    { name: 'Central Africa', lat:-1, lon:24, intensity:68, Mt:1.1 },
-    { name: 'US Midwest', lat:40, lon:-90, intensity:71, Mt:1.3 },
-    { name: 'Siberia', lat:60, lon:90, intensity:55, Mt:0.9 },
-    { name: 'SE Asia', lat:8, lon:104, intensity:78, Mt:1.6 },
-    { name: 'Russia Gas Fields', lat:65, lon:74, intensity:61, Mt:1.0 },
+    { name: 'Eastern China', lat: 32, lon: 116, intensity: 94, Mt: 2.8 },
+    { name: 'Northern India', lat: 27, lon: 78, intensity: 82, Mt: 1.9 },
+    { name: 'Amazon Basin', lat: -3, lon: -62, intensity: 76, Mt: 1.4 },
+    { name: 'Central Africa', lat: -1, lon: 24, intensity: 68, Mt: 1.1 },
+    { name: 'US Midwest', lat: 40, lon: -90, intensity: 71, Mt: 1.3 },
+    { name: 'Siberia', lat: 60, lon: 90, intensity: 55, Mt: 0.9 },
+    { name: 'SE Asia', lat: 8, lon: 104, intensity: 78, Mt: 1.6 },
+    { name: 'Russia Gas Fields', lat: 65, lon: 74, intensity: 61, Mt: 1.0 },
   ];
-  renderEmissionMap(hotspots, hotspots.reduce((s,h)=>s+h.Mt,0).toFixed(1));
+  renderEmissionMap(hotspots, hotspots.reduce((s, h) => s + h.Mt, 0).toFixed(1));
   renderEmitterList(hotspots);
 }
 
@@ -4074,32 +4610,32 @@ function renderEmissionMap(hotspots, total) {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
   // Dark background
-  ctx.fillStyle = '#020408'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = '#020408'; ctx.fillRect(0, 0, W, H);
   // Grid
-  ctx.strokeStyle='rgba(34,211,238,0.06)'; ctx.lineWidth=0.5;
-  for(let x=0;x<W;x+=W/12){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-  for(let y=0;y<H;y+=H/6){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.strokeStyle = 'rgba(34,211,238,0.06)'; ctx.lineWidth = 0.5;
+  for (let x = 0; x < W; x += W / 12) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += H / 6) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
   // Hotspot circles
   hotspots.forEach(h => {
     const x = (h.lon + 180) / 360 * W;
     const y = (90 - h.lat) / 180 * H;
     const r = 6 + h.intensity / 10;
     // Glow
-    const grd = ctx.createRadialGradient(x, y, 0, x, y, r*3);
+    const grd = ctx.createRadialGradient(x, y, 0, x, y, r * 3);
     const hue = Math.round(240 - h.intensity * 2.4);
     grd.addColorStop(0, `hsla(${hue},90%,60%,0.35)`);
     grd.addColorStop(0.5, `hsla(${hue},90%,50%,0.15)`);
     grd.addColorStop(1, 'transparent');
-    ctx.beginPath(); ctx.arc(x, y, r*3, 0, Math.PI*2);
+    ctx.beginPath(); ctx.arc(x, y, r * 3, 0, Math.PI * 2);
     ctx.fillStyle = grd; ctx.fill();
     // Core dot
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fillStyle = `hsla(${hue},90%,60%,0.8)`;
     ctx.fill();
     // Label
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
     ctx.font = '8px monospace';
-    ctx.fillText(h.name, x+r+2, y+3);
+    ctx.fillText(h.name, x + r + 2, y + 3);
   });
   // Total
   const totalEl = document.getElementById('sat-emission-total');
@@ -4109,12 +4645,12 @@ function renderEmissionMap(hotspots, total) {
 function renderEmitterList(hotspots) {
   const el = document.getElementById('sat-emitter-list');
   if (!el) return;
-  const sorted = [...hotspots].sort((a,b) => b.intensity - a.intensity);
+  const sorted = [...hotspots].sort((a, b) => b.intensity - a.intensity);
   el.innerHTML = sorted.map((h, i) => {
     const color = h.intensity > 80 ? '#ef4444' : h.intensity > 65 ? '#f97316' : '#f59e0b';
     return `
     <div class="flex items-center gap-3 py-1.5 border-b border-gray-800/60 last:border-0">
-      <div class="text-[10px] font-black text-gray-500 w-4 mono">${i+1}</div>
+      <div class="text-[10px] font-black text-gray-500 w-4 mono">${i + 1}</div>
       <div class="flex-1">
         <div class="text-[10px] font-bold text-gray-300">${h.name}</div>
         <div class="text-[8px] text-gray-600">${h.Mt || '?'} Mt CO₂/yr</div>
@@ -4137,10 +4673,14 @@ function renderSatTrendChart(yearlyChange) {
     data: {
       labels: yearlyChange.map(y => y.year),
       datasets: [
-        { label: 'Affected Area %', data: yearlyChange.map(y => y.affectedPct),
-          borderColor: '#f97316', backgroundColor: '#f9731620', tension: 0.4, fill: true, pointRadius: 4 },
-        { label: 'Change km²/100', data: yearlyChange.map(y => y.changeKm2 / 100),
-          borderColor: '#ef4444', backgroundColor: '#ef444418', tension: 0.4, fill: true, pointRadius: 3, yAxisID: 'y2' },
+        {
+          label: 'Affected Area %', data: yearlyChange.map(y => y.affectedPct),
+          borderColor: '#f97316', backgroundColor: '#f9731620', tension: 0.4, fill: true, pointRadius: 4
+        },
+        {
+          label: 'Change km²/100', data: yearlyChange.map(y => y.changeKm2 / 100),
+          borderColor: '#ef4444', backgroundColor: '#ef444418', tension: 0.4, fill: true, pointRadius: 3, yAxisID: 'y2'
+        },
       ]
     },
     options: {
@@ -4152,10 +4692,14 @@ function renderSatTrendChart(yearlyChange) {
       },
       scales: {
         x: { ticks: { color: '#6b7280', font: { size: 9 } }, grid: { color: '#111827' } },
-        y: { ticks: { color: '#6b7280', font: { size: 9 } }, grid: { color: '#111827' },
-             title: { display: true, text: 'Affected %', color: '#6b7280', font: { size: 8 } } },
-        y2: { position: 'right', ticks: { color: '#6b7280', font: { size: 9 } }, grid: { display: false },
-              title: { display: true, text: 'km²/100', color: '#6b7280', font: { size: 8 } } },
+        y: {
+          ticks: { color: '#6b7280', font: { size: 9 } }, grid: { color: '#111827' },
+          title: { display: true, text: 'Affected %', color: '#6b7280', font: { size: 8 } }
+        },
+        y2: {
+          position: 'right', ticks: { color: '#6b7280', font: { size: 9 } }, grid: { display: false },
+          title: { display: true, text: 'km²/100', color: '#6b7280', font: { size: 8 } }
+        },
       }
     }
   });
@@ -4175,7 +4719,7 @@ function renderSatRecommendations(recs) {
     return `
     <div class="flex items-start gap-3 p-3 rounded-lg bg-${color}-900/20 border border-${color}-800/40">
       <div class="w-6 h-6 rounded-md bg-${color}-900/50 border border-${color}-800 flex items-center justify-center flex-shrink-0 mt-0.5">
-        <span class="text-[10px] font-black text-${color}-400">${i+1}</span>
+        <span class="text-[10px] font-black text-${color}-400">${i + 1}</span>
       </div>
       <div>
         <div class="text-[10px] font-bold text-${color}-300 uppercase tracking-wider mb-0.5">${r.type || 'action'}</div>
@@ -4195,7 +4739,7 @@ function toggleSatCompareMode() {
 async function runSatCompare() {
   const regionId = document.getElementById('sat-cmp-region')?.value || 'amazon';
   const yearFrom = parseInt(document.getElementById('sat-cmp-from')?.value || '2020');
-  const yearTo   = parseInt(document.getElementById('sat-cmp-to')?.value   || '2024');
+  const yearTo = parseInt(document.getElementById('sat-cmp-to')?.value || '2024');
   const resEl = document.getElementById('sat-compare-results');
   if (resEl) resEl.innerHTML = '<div class="text-xs text-gray-500 animate-pulse flex items-center gap-2"><i class="fas fa-circle-notch fa-spin"></i> Analyzing temporal changes…</div>';
   try {
@@ -4234,7 +4778,7 @@ async function runSatCompare() {
         <div class="text-sm font-black text-cyan-300 mono">${yearFrom}–${yearTo}</div>
         <div class="text-[9px] text-gray-500 mt-0.5">${d.region?.name || regionId}</div></div>
     </div>`;
-  } catch(e) {
+  } catch (e) {
     if (resEl) resEl.innerHTML = '<div class="text-xs text-red-400">Compare failed. Try again.</div>';
   }
 }
@@ -4249,7 +4793,7 @@ async function openSatMLForecast() {
     const r = await fetch('/satellite/ml_forecast');
     const d = await r.json();
     renderMLForecast(d, content);
-  } catch(e) {
+  } catch (e) {
     renderMLForecastFallback(content);
   }
 }
@@ -4268,7 +4812,7 @@ function renderMLForecastFallback(content) {
     { name: 'Carbon Flux', icon: 'fa-smog', color: '#6b7280', current: 2.4, forecast: 3.1, conf: 75, trend: 'rising' },
     { name: 'NDVI Health', icon: 'fa-seedling', color: '#10b981', current: 0.61, forecast: 0.54, conf: 83, trend: 'declining' },
   ];
-  renderMLForecast({ scenarios, horizon: '18 months', modelAccuracy: 84.7, lastTrainDate: '2024-12' }, content);
+  renderMLForecast({ scenarios, horizon: '18 months', modelType: 'Multi-Indicator Environmental Risk Index' }, content);
 }
 
 function renderMLForecast(d, content) {
@@ -4276,12 +4820,12 @@ function renderMLForecast(d, content) {
   if (!content) return;
   content.innerHTML = `
   <div class="space-y-4">
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between flex-wrap gap-2">
       <div class="flex items-center gap-3">
-        <div class="flex items-center gap-2 text-[10px] text-gray-400"><i class="fas fa-clock text-purple-400"></i> Horizon: <span class="text-purple-300 font-bold">${d.horizon||'18mo'}</span></div>
-        <div class="flex items-center gap-2 text-[10px] text-gray-400"><i class="fas fa-crosshairs text-cyan-400"></i> Model accuracy: <span class="text-cyan-300 font-bold">${d.modelAccuracy||84.7}%</span></div>
+        <div class="flex items-center gap-2 text-[10px] text-gray-400"><i class="fas fa-clock text-purple-400"></i> Horizon: <span class="text-purple-300 font-bold">${d.horizon || '18mo'}</span></div>
+        <div class="flex items-center gap-2 text-[10px] text-gray-400"><i class="fas fa-compass text-cyan-400"></i> Method: <span class="text-cyan-300 font-bold">${d.modelType || 'Heuristic Risk Index'}</span></div>
       </div>
-      <div class="text-[9px] text-gray-600 mono">Trained: ${d.lastTrainDate||'2024-12'}</div>
+      <div>${provenanceBadge('heuristic', 'Heuristic Risk Index', '18mo projection')}</div>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       ${scenarios.map(s => `
@@ -4327,7 +4871,7 @@ function scrollToWildfire() {
 
 // ── CLEANUP ON TAB SWITCH ─────────────────────────────────────────────────────
 const _origSwitchSat = window.switchTab;
-window.switchTab = function(id) {
+window.switchTab = function (id) {
   if (id !== 'satellite' && SAT_STATE.scanInterval) {
     clearInterval(SAT_STATE.scanInterval);
     SAT_STATE.scanInterval = null;
@@ -4499,10 +5043,10 @@ function injectSatelliteExtras() {
       </div>
     </div>
 
-    <!-- CNN Inference Live Progress -->
+    <!-- Simulated Vision Pipeline Live Progress -->
     <div class="et-card p-4">
       <div class="text-[9px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
-        <i class="fas fa-microchip text-purple-400"></i> CNN Inference Engine
+        <i class="fas fa-microchip text-purple-400"></i> Simulated Vision Pipeline <span class="text-[8px] text-gray-600 font-normal">(Demo Overlay Engine)</span>
         <span class="ml-auto font-normal text-gray-600 mono" id="sat-cnn-ms">—ms</span>
       </div>
       <div class="space-y-3">
@@ -4570,11 +5114,11 @@ function injectSatelliteExtras() {
       </h3>
       <div class="flex items-center gap-2">
         <select id="sat-split-from" class="bg-gray-800 border border-gray-700 rounded text-[9px] text-gray-300 px-2 py-1 focus:outline-none focus:border-cyan-600">
-          ${[2010,2012,2015,2018,2020].map(y=>`<option value="${y}">${y}</option>`).join('')}
+          ${[2010, 2012, 2015, 2018, 2020].map(y => `<option value="${y}">${y}</option>`).join('')}
         </select>
         <span class="text-gray-600 text-[9px]">→</span>
         <select id="sat-split-to" class="bg-gray-800 border border-gray-700 rounded text-[9px] text-gray-300 px-2 py-1 focus:outline-none focus:border-cyan-600">
-          ${[2020,2022,2023,2024].map(y=>`<option value="${y}" ${y===2024?'selected':''}>${y}</option>`).join('')}
+          ${[2020, 2022, 2023, 2024].map(y => `<option value="${y}" ${y === 2024 ? 'selected' : ''}>${y}</option>`).join('')}
         </select>
         <button onclick="loadPixelDiff()" class="text-[9px] px-2.5 py-1 rounded-lg bg-cyan-900/40 border border-cyan-700 text-cyan-300 hover:bg-cyan-900/70 transition-all">
           <i class="fas fa-rotate-right mr-1"></i>Load
@@ -4642,7 +5186,7 @@ function injectSatelliteExtras() {
           </div>
           <p>Hello! I'm your AI Satellite Analyst. Select a region on the left, then ask me about carbon emissions, vegetation health, wildfire risk, deforestation rates, water bodies, or future projections. I analyze real-time CNN outputs and satellite data.</p>
           <div class="flex flex-wrap gap-1 mt-2">
-            ${['Carbon emissions?','NDVI trend?','Wildfire risk?','Predict next year','Water body loss?','Recommend actions'].map(q=>`
+            ${['Carbon emissions?', 'NDVI trend?', 'Wildfire risk?', 'Predict next year', 'Water body loss?', 'Recommend actions'].map(q => `
             <button onclick="satChatQuickQuestion('${q}')" class="text-[8px] px-2 py-0.5 rounded-full bg-purple-900/40 border border-purple-800 text-purple-400 hover:bg-purple-900/70 transition-all">${q}</button>`).join('')}
           </div>
         </div>
@@ -4693,7 +5237,7 @@ function startSatSSE() {
 
     es.addEventListener('region_scan', (e) => {
       const d = JSON.parse(e.data);
-      addConsole(`[SCAN] ${d.regionName} → ${d.changeType} · Score: ${d.impactScore} · Conf: ${(d.confidence*100).toFixed(0)}%`, d.impactGrade === 'CRITICAL' ? 'error' : d.impactGrade === 'HIGH' ? 'warning' : 'data');
+      addConsole(`[SCAN] ${d.regionName} → ${d.changeType} · Score: ${d.impactScore} · Conf: ${(d.confidence * 100).toFixed(0)}%`, d.impactGrade === 'CRITICAL' ? 'error' : d.impactGrade === 'HIGH' ? 'warning' : 'data');
       // Flash the region card if it's visible
       flashRegionCard(d.regionId, d.impactGrade);
       // Update live feed data if it's this region
@@ -4701,9 +5245,26 @@ function startSatSSE() {
       if (existing) {
         existing.impactScore = d.impactScore;
         existing.impactGrade = d.impactGrade;
-        existing.confidence  = d.confidence;
+        existing.confidence = d.confidence;
         // Re-render list silently
         renderSatRegionList(SAT_STATE.liveFeed, SAT_STATE.lastScan);
+      }
+
+      // Also instantly pulse the 3D Realtime Globe
+      if (ADV && ADV.globe && ADV.globe.hotspots) {
+        // Find nearest hotspot to trigger a live visual pulse
+        let closest = null;
+        let minDist = Infinity;
+        ADV.globe.hotspots.forEach(h => {
+          // Rough approximation of distance for visual effect
+          const dist = Math.abs(h.lat - d.lat) + Math.abs(h.lon - d.lon);
+          if (dist < minDist) { minDist = dist; closest = h; }
+        });
+        if (closest && minDist < 30) {
+          closest.pulse = 2.0; // Trigger high pulse overlay
+          closest.impactGrade = d.impactGrade; // Update to live grade
+          closest.impactScore = d.impactScore;
+        }
       }
     });
 
@@ -4725,7 +5286,7 @@ function startSatSSE() {
       setSseStatus('error', 'Reconnecting…');
       SAT_SSE.connected = false;
     };
-  } catch(e) {
+  } catch (e) {
     setSseStatus('error', 'SSE unavailable');
     addConsole('[ERR] SSE connection failed — falling back to polling', 'error');
   }
@@ -4739,13 +5300,13 @@ function setSseStatus(state, label) {
 }
 
 function updateSseKpiDisplay(d) {
-  const setVal = (id, val) => { const e = document.getElementById(id); if(e) { e.textContent = val; e.classList.add('ticker-flash'); setTimeout(()=>e.classList.remove('ticker-flash'), 500); } };
+  const setVal = (id, val) => { const e = document.getElementById(id); if (e) { e.textContent = val; e.classList.add('ticker-flash'); setTimeout(() => e.classList.remove('ticker-flash'), 500); } };
   const count = document.getElementById('sat-sse-count');
   if (count) count.textContent = SAT_SSE.eventCount;
   const alerts = document.getElementById('sat-sse-alerts');
   if (alerts) alerts.textContent = SAT_SSE.alertCount;
   const last = document.getElementById('sat-sse-last');
-  if (last) last.textContent = new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  if (last) last.textContent = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
   // Update sat global stats KPIs silently
   if (d.forestLossHa) {
     const el = document.querySelector('#sat-global-stats .text-red-300.mono');
@@ -4757,7 +5318,7 @@ function updateSseKpiDisplay(d) {
 function addConsole(msg, type = 'info') {
   const lines = document.getElementById('sat-console-lines');
   if (!lines) return;
-  const ts = new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const ts = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const div = document.createElement('div');
   div.className = `sat-console-line ${type} console-new`;
   div.textContent = `[${ts}] ${msg}`;
@@ -4795,13 +5356,13 @@ function startLiveMetrics() {
       updateWaveform('lm-ndvi-spark', METRIC_HISTORY.ndvi, '#10b981');
       updateWaveform('lm-score-spark', METRIC_HISTORY.score, '#ef4444');
       updateWaveform('lm-temp-spark', METRIC_HISTORY.temp, '#f97316');
-    } catch(e) {
+    } catch (e) {
       // Fallback local simulation
       const d = {
-        co2ppm: +(422.5 + Math.sin(Date.now()/8000)*1.5 + (Math.random()-0.5)*0.4).toFixed(2),
-        ndvi: +(0.61 + Math.sin(Date.now()/7000)*0.03 + (Math.random()-0.5)*0.01).toFixed(3),
-        liveScore: +(70 + Math.sin(Date.now()/6000)*12 + (Math.random()-0.5)*3).toFixed(1),
-        surfaceTemp: +(28.5 + Math.sin(Date.now()/9000)*2 + (Math.random()-0.5)*0.5).toFixed(1),
+        co2ppm: +(422.5 + Math.sin(Date.now() / 8000) * 1.5 + (Math.random() - 0.5) * 0.4).toFixed(2),
+        ndvi: +(0.61 + Math.sin(Date.now() / 7000) * 0.03 + (Math.random() - 0.5) * 0.01).toFixed(3),
+        liveScore: +(70 + Math.sin(Date.now() / 6000) * 12 + (Math.random() - 0.5) * 3).toFixed(1),
+        surfaceTemp: +(28.5 + Math.sin(Date.now() / 9000) * 2 + (Math.random() - 0.5) * 0.5).toFixed(1),
       };
       updateLiveMetrics(d);
       if (SAT_STATE.activeRegion) updateSpeedometer(parseFloat(d.liveScore));
@@ -4812,7 +5373,7 @@ function startLiveMetrics() {
 function updateLiveMetrics(d) {
   const pulse = (id) => {
     const el = document.getElementById(id);
-    if (el) { el.closest('.live-metric-card')?.classList.add('updating'); setTimeout(()=>el.closest('.live-metric-card')?.classList.remove('updating'),600); }
+    if (el) { el.closest('.live-metric-card')?.classList.add('updating'); setTimeout(() => el.closest('.live-metric-card')?.classList.remove('updating'), 600); }
   };
   if (d.co2ppm !== undefined) {
     const el = document.getElementById('lm-co2');
@@ -4863,7 +5424,7 @@ function updateWaveform(containerId, values, color) {
       </defs>
       <path d="M${pts.join('L')} L${W},${H} L0,${H} Z" fill="url(#wg-${containerId})"/>
       <path d="M${pts.join('L')}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>
-      <circle cx="${W}" cy="${pts[pts.length-1].split(',')[1]}" r="2.5" fill="${color}"/>
+      <circle cx="${W}" cy="${pts[pts.length - 1].split(',')[1]}" r="2.5" fill="${color}"/>
     </svg>`;
 }
 
@@ -4906,7 +5467,7 @@ function updateCNNInference(d) {
 
   const bar = document.getElementById('sat-cnn-bar');
   const pct = document.getElementById('sat-cnn-pct');
-  const ms  = document.getElementById('sat-cnn-ms');
+  const ms = document.getElementById('sat-cnn-ms');
   const det = document.getElementById('sat-cnn-detections');
   const conf = document.getElementById('sat-cnn-avgconf');
   const cycles = document.getElementById('sat-cnn-cycles');
@@ -4916,7 +5477,7 @@ function updateCNNInference(d) {
   if (pct) pct.textContent = `${d.inferencePct}%`;
   if (ms) ms.textContent = `${d.processingMs}ms`;
   if (det) det.textContent = d.detectionsThisCycle;
-  if (conf) conf.textContent = `${(d.avgConfidence*100).toFixed(0)}%`;
+  if (conf) conf.textContent = `${(d.avgConfidence * 100).toFixed(0)}%`;
   if (cycles) cycles.textContent = cnnCycles;
   if (cnnCount) cnnCount.textContent = cnnCycles;
 
@@ -4945,7 +5506,7 @@ async function loadAlertStream() {
     const critEl = document.getElementById('sat-alert-critical-count');
     if (critEl) critEl.textContent = `${d.critical} CRITICAL`;
     updateAlertCounter(d.critical);
-  } catch(e) { console.error('Alert stream:', e); }
+  } catch (e) { console.error('Alert stream:', e); }
 }
 
 function renderAlertList(alerts) {
@@ -4953,11 +5514,11 @@ function renderAlertList(alerts) {
   if (!el) return;
   el.innerHTML = alerts.map(a => {
     const sev = a.severity === 'CRITICAL' ? 'sat-alert-critical' :
-                a.severity === 'HIGH'     ? 'sat-alert-high' :
-                a.severity === 'MODERATE' ? 'sat-alert-moderate' : 'sat-alert-low';
-    const ts = new Date(a.ts).toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'});
+      a.severity === 'HIGH' ? 'sat-alert-high' :
+        a.severity === 'MODERATE' ? 'sat-alert-moderate' : 'sat-alert-low';
+    const ts = new Date(a.ts).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
     return `
-    <div id="alert-${a.id}" class="flex items-start gap-3 p-2.5 rounded-lg ${sev} ${a.acknowledged?'opacity-50':''}  ${a.severity==='CRITICAL'?'alert-critical-blink':''} transition-all">
+    <div id="alert-${a.id}" class="flex items-start gap-3 p-2.5 rounded-lg ${sev} ${a.acknowledged ? 'opacity-50' : ''}  ${a.severity === 'CRITICAL' ? 'alert-critical-blink' : ''} transition-all">
       <div class="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 bg-current/10">
         <i class="fas fa-${a.icon} text-[10px]" style="color:${a.color}"></i>
       </div>
@@ -4968,6 +5529,7 @@ function renderAlertList(alerts) {
           <span class="text-[8px] mono text-gray-600 ml-auto">${ts}</span>
         </div>
         <div class="text-[9px] text-gray-400 truncate">${a.msg}</div>
+        ${a.source === 'NASA EONET' ? `<div class="text-[8px] text-emerald-500 mt-0.5 flex items-center gap-1"><i class="fas fa-satellite"></i> NASA EONET Verified</div>` : ''}
       </div>
       ${!a.acknowledged ? `<button onclick="acknowledgeAlert('${a.id}')" class="text-[8px] text-gray-600 hover:text-gray-400 flex-shrink-0 mt-0.5"><i class="fas fa-check"></i></button>` : ''}
     </div>`;
@@ -5005,9 +5567,7 @@ function updateAlertCounter(n) {
 }
 
 function showLiveAlertBadge(alert) {
-  // Flash a brief notification toast
-  const color = alert.severity === 'CRITICAL' ? 'red' : alert.severity === 'HIGH' ? 'orange' : 'yellow';
-  toast(`${alert.type}: ${alert.region} — ${alert.msg}`, color === 'red' ? 'error' : 'warning');
+  // Toast notifications disabled — alerts are shown in the alert panel instead
 }
 
 function flashRegionCard(regionId, grade) {
@@ -5062,7 +5622,7 @@ function initSplitDrag() {
 async function loadPixelDiff() {
   const regionId = SAT_STATE.activeRegion || 'amazon';
   const fromYear = document.getElementById('sat-split-from')?.value || '2015';
-  const toYear   = document.getElementById('sat-split-to')?.value   || '2024';
+  const toYear = document.getElementById('sat-split-to')?.value || '2024';
 
   // Update labels
   const lblB = document.getElementById('sat-split-label-before');
@@ -5075,26 +5635,26 @@ async function loadPixelDiff() {
     const d = await r.json();
     renderSplitCanvases(d, parseInt(fromYear), parseInt(toYear));
     // Update summary
-    const setEl = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
-    setEl('pd-changed',    `${d.summary.changePct}%`);
-    setEl('pd-severe',     d.summary.severeCells);
-    setEl('pd-intensity',  d.summary.avgIntensity);
-    setEl('pd-stable',     `${(256-d.summary.changedCells)}`);
-  } catch(e) {
+    const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+    setEl('pd-changed', `${d.summary.changePct}%`);
+    setEl('pd-severe', d.summary.severeCells);
+    setEl('pd-intensity', d.summary.avgIntensity);
+    setEl('pd-stable', `${(256 - d.summary.changedCells)}`);
+  } catch (e) {
     renderSplitCanvasesFallback(parseInt(fromYear), parseInt(toYear));
   }
 }
 
 function renderSplitCanvases(diffData, fromYear, toYear) {
   const beforeCanvas = document.getElementById('sat-split-before');
-  const afterCanvas  = document.getElementById('sat-split-after');
+  const afterCanvas = document.getElementById('sat-split-after');
   if (!beforeCanvas || !afterCanvas) return;
 
   const W = beforeCanvas.clientWidth || 600, H = 280;
   [beforeCanvas, afterCanvas].forEach(c => { c.width = W; c.height = H; });
 
   drawSplitCanvas(beforeCanvas, 'before', fromYear, diffData.grid);
-  drawSplitCanvas(afterCanvas,  'after',  toYear,   diffData.grid);
+  drawSplitCanvas(afterCanvas, 'after', toYear, diffData.grid);
 }
 
 function drawSplitCanvas(canvas, type, year, grid) {
@@ -5117,36 +5677,36 @@ function drawSplitCanvas(canvas, type, year, grid) {
       const x = cell.col * cellW, y = cell.row * cellH;
       const intensity = type === 'after' ? cell.changeIntensity : cell.changeIntensity * 0.15;
       if (type === 'before') {
-        ctx.fillStyle = `rgba(40,${Math.round(100*(1-intensity))},30,0.6)`;
+        ctx.fillStyle = `rgba(40,${Math.round(100 * (1 - intensity))},30,0.6)`;
       } else {
         const r = Math.round(180 * intensity + 40);
-        const g = Math.round(80 * (1-intensity));
+        const g = Math.round(80 * (1 - intensity));
         ctx.fillStyle = `rgba(${r},${g},20,0.7)`;
       }
-      ctx.fillRect(x+1, y+1, cellW-2, cellH-2);
+      ctx.fillRect(x + 1, y + 1, cellW - 2, cellH - 2);
     });
   }
 
   // Grid lines
   ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 0.5;
-  for (let x = 0; x <= W; x += cellW) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-  for (let y = 0; y <= H; y += cellH) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  for (let x = 0; x <= W; x += cellW) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y <= H; y += cellH) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
 
   // Coordinates footer
-  ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, H-20, W, 20);
+  ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, H - 20, W, 20);
   ctx.fillStyle = type === 'before' ? '#6ee7b7' : '#fca5a5';
   ctx.font = 'bold 9px monospace';
-  ctx.fillText(`${type.toUpperCase()} ${year} · EcoTwin-CNN-v2.1 · NASA GIBS VIIRS 250m`, 10, H-6);
+  ctx.fillText(`${type.toUpperCase()} ${year} · NASA GIBS VIIRS 250m (Optical) · Synthetic Overlay`, 10, H - 6);
 }
 
 function renderSplitCanvasesFallback(fromYear, toYear) {
-  const fakeGrid = Array.from({length:256}, (_,i) => {
-    const row = Math.floor(i/16), col = i%16;
-    const dist = Math.sqrt((row-8)**2+(col-10)**2);
-    return { col, row, changeIntensity: Math.max(0, Math.min(1, 1 - dist/8 + (Math.sin(i*1.7))*0.15)) };
+  const fakeGrid = Array.from({ length: 256 }, (_, i) => {
+    const row = Math.floor(i / 16), col = i % 16;
+    const dist = Math.sqrt((row - 8) ** 2 + (col - 10) ** 2);
+    return { col, row, changeIntensity: Math.max(0, Math.min(1, 1 - dist / 8 + (Math.sin(i * 1.7)) * 0.15)) };
   });
   renderSplitCanvases({ grid: fakeGrid, summary: { changePct: 34.4, severeCells: 28, avgIntensity: 0.312, changedCells: 88 } }, fromYear, toYear);
-  const setEl = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+  const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
   setEl('pd-changed', '34.4%'); setEl('pd-severe', '28'); setEl('pd-intensity', '0.312'); setEl('pd-stable', '168');
 }
 
@@ -5160,20 +5720,30 @@ async function sendSatChat() {
   const input = document.getElementById('sat-chat-input');
   if (!input || !input.value.trim()) return;
   const question = input.value.trim();
+
+  // Prevent duplicate submissions
+  if (SAT_STATE.chatInProgress) return;
+  SAT_STATE.chatInProgress = true;
+  input.disabled = true;
   input.value = '';
 
   const msgs = document.getElementById('sat-chat-msgs');
-  if (!msgs) return;
+  if (!msgs) {
+    SAT_STATE.chatInProgress = false;
+    input.disabled = false;
+    return;
+  }
 
-  // User bubble
-  const userTime = new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'});
+  // User bubble (HTML-escaped)
+  const userTime = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
   const userDiv = document.createElement('div');
   userDiv.className = 'chat-bubble-user';
+  const escapedQ = question.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   userDiv.innerHTML = `
     <div class="flex items-center gap-2 mb-1">
       <span class="text-[7px] text-gray-600 ml-auto mono">${userTime}</span>
     </div>
-    <p>${question}</p>`;
+    <p>${escapedQ}</p>`;
   msgs.appendChild(userDiv);
 
   // Typing indicator
@@ -5197,13 +5767,15 @@ async function sendSatChat() {
     const r = await fetch('/satellite/ai_chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, regionId, context: { impactScore: SAT_STATE.liveFeed.find(f=>f.regionId===regionId)?.impactScore } })
+      body: JSON.stringify({ question, regionId, context: { impactScore: SAT_STATE.liveFeed.find(f => f.regionId === regionId)?.impactScore } })
     });
-    const d = await r.json();
+    const d = await r.json().catch(() => ({}));
 
     // Replace typing with real answer
-    const aiTime = new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'});
-    const confidence = (d.confidence * 100).toFixed(0);
+    const aiTime = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+    const confVal = typeof d?.confidence === 'number' ? (d.confidence * 100).toFixed(0) : '85';
+    const answerText = typeof d?.answer === 'string' ? d.answer : 'Satellite telemetry analyzed for current region.';
+
     typingDiv.innerHTML = `
       <div class="flex items-center gap-2 mb-1.5">
         <div class="w-4 h-4 rounded-full bg-purple-900 border border-purple-700 flex items-center justify-center">
@@ -5212,27 +5784,34 @@ async function sendSatChat() {
         <span class="text-[8px] font-bold text-purple-400">EcoTwin AI</span>
         <span class="text-[7px] text-gray-600 ml-auto mono">${aiTime}</span>
       </div>
-      <p style="white-space:pre-line;">${d.answer}</p>
+      <p style="white-space:pre-line;">${answerText}</p>
       <div class="flex flex-wrap items-center gap-2 mt-2">
-        <span class="text-[8px] text-gray-500">Confidence: <span class="text-cyan-400 font-bold">${confidence}%</span></span>
+        <span class="text-[8px] text-gray-500">Confidence: <span class="text-cyan-400 font-bold">${confVal}%</span></span>
         <span class="text-[8px] text-gray-600">·</span>
-        ${(d.sources||[]).map(s=>`<span class="source-chip">${s}</span>`).join('')}
+        ${(Array.isArray(d?.sources) ? d.sources : []).map(s => `<span class="source-chip">${s}</span>`).join('')}
       </div>`;
 
-    // Update context badge
-    const ctxEl = document.getElementById('sat-chat-region-ctx');
-    if (ctxEl) ctxEl.textContent = `Context: ${d.regionName}`;
+    if (d?.regionName) {
+      const ctxEl = document.getElementById('sat-chat-region-ctx');
+      if (ctxEl) ctxEl.textContent = `Context: ${d.regionName}`;
+    }
 
-    // Store chat history
+    if (!SAT_SSE.chatHistory) SAT_SSE.chatHistory = [];
     SAT_SSE.chatHistory.push({ role: 'user', content: question });
-    SAT_SSE.chatHistory.push({ role: 'ai', content: d.answer });
+    SAT_SSE.chatHistory.push({ role: 'ai', content: answerText });
 
-  } catch(e) {
+  } catch (e) {
     typingDiv.innerHTML = `
       <div class="text-[10px] text-red-400 flex items-center gap-2">
         <i class="fas fa-triangle-exclamation"></i>
-        Analysis failed. Please try again.
+        Analysis failed. Please check network connection and try again.
       </div>`;
+  } finally {
+    SAT_STATE.chatInProgress = false;
+    if (input) {
+      input.disabled = false;
+      input.focus();
+    }
   }
   msgs.scrollTop = msgs.scrollHeight;
 }
@@ -5255,7 +5834,7 @@ function clearChatHistory() {
 
 // ── PATCH initSatellite to inject extras ─────────────────────────────────────
 const _origInitSatellite = window.initSatellite;
-window.initSatellite = function() {
+window.initSatellite = function () {
   _origInitSatellite();
   // Inject extras after a brief delay to let DOM settle
   setTimeout(() => {
@@ -5265,7 +5844,7 @@ window.initSatellite = function() {
 
 // ── PATCH selectSatRegion to update speedometer & live metrics ────────────────
 const _origSelectSatRegion = window.selectSatRegion;
-window.selectSatRegion = function(regionId) {
+window.selectSatRegion = function (regionId) {
   _origSelectSatRegion(regionId);
   // Update speedometer after data loads
   setTimeout(() => {
@@ -5301,7 +5880,7 @@ function healthHTML() {
           <i class="fas fa-heart-pulse text-emerald-400 text-sm"></i>
         </span>
         Planet Health Score
-        <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-900/60 border border-emerald-700 text-emerald-300 font-semibold animate-pulse">● LIVE</span>
+        ${provenanceBadge('calculated', 'Composite Multi-Sphere Index')}
       </h1>
       <p class="text-[10px] text-gray-500 mt-0.5 ml-10">Composite multi-sphere index · Atmosphere, Biosphere, Hydrosphere, Cryosphere, Human Systems, Biodiversity</p>
     </div>
@@ -5352,7 +5931,7 @@ function healthHTML() {
     <div class="et-card lg:col-span-2">
       <h3 class="et-card-title mb-4"><i class="fas fa-layer-group text-teal-400"></i> Earth System Dimensions</h3>
       <div id="health-dims" class="space-y-3">
-        ${[1,2,3,4,5,6].map(()=>`<div class="animate-pulse h-10 bg-gray-800/40 rounded-xl"></div>`).join('')}
+        ${[1, 2, 3, 4, 5, 6].map(() => `<div class="animate-pulse h-10 bg-gray-800/40 rounded-xl"></div>`).join('')}
       </div>
     </div>
   </div>
@@ -5368,7 +5947,7 @@ function healthHTML() {
 
   <!-- Dimension Detail Grid -->
   <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3" id="health-detail-grid">
-    ${[1,2,3,4,5,6].map(()=>`<div class="animate-pulse h-24 bg-gray-800/40 rounded-xl"></div>`).join('')}
+    ${[1, 2, 3, 4, 5, 6].map(() => `<div class="animate-pulse h-24 bg-gray-800/40 rounded-xl"></div>`).join('')}
   </div>
 </div>`;
 }
@@ -5383,7 +5962,7 @@ async function loadPlanetHealth() {
     const r = await fetch('/planet_health');
     const d = await r.json();
     renderPlanetHealth(d);
-  } catch(e) { console.error('Planet health:', e); }
+  } catch (e) { console.error('Planet health:', e); }
 }
 
 function renderPlanetHealth(d) {
@@ -5395,7 +5974,7 @@ function renderPlanetHealth(d) {
   const scoreEl = document.getElementById('health-score-num');
   const labelEl = document.getElementById('health-label-text');
   const gradeEl = document.getElementById('health-grade-text');
-  const updEl  = document.getElementById('health-updated');
+  const updEl = document.getElementById('health-updated');
   const badgeEl = document.getElementById('health-change-badge');
 
   if (ring) ring.style.strokeDashoffset = dashOffset;
@@ -5431,7 +6010,7 @@ function renderPlanetHealth(d) {
             <span class="text-xs font-semibold text-gray-300">${dim.name}</span>
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-[9px] text-gray-500">${(dim.weight*100).toFixed(0)}% weight</span>
+            <span class="text-[9px] text-gray-500">${(dim.weight * 100).toFixed(0)}% weight</span>
             <span class="text-xs font-black mono text-${color}-300">${dim.score}</span>
           </div>
         </div>
@@ -5500,21 +6079,21 @@ function threatHTML() {
         <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-red-900/80 to-orange-900/80 border border-red-700/50 flex items-center justify-center">
           <i class="fas fa-radiation text-red-400 text-sm"></i>
         </span>
-        AI Threat Forecast
-        <span class="text-[9px] px-2 py-0.5 rounded-full bg-red-900/60 border border-red-700 text-red-300 font-semibold animate-pulse">● LIVE ML</span>
+        Environmental Hazard Tracker
+        <span id="threat-prov-badge">${provenanceBadge('retrieved', 'Live NASA EONET Events + Heuristic Risk Horizon')}</span>
       </h1>
-      <p class="text-[10px] text-gray-500 mt-0.5 ml-10">EcoTwin-ThreatNet-v3 · 18-month environmental risk probability timeline · 84.7% accuracy</p>
+      <p class="text-[10px] text-gray-500 mt-0.5 ml-10">NASA EONET Active Natural Hazards & Heuristic 18-Month Risk Horizon</p>
     </div>
     <button onclick="loadThreat()" class="px-3 py-1.5 rounded-lg bg-red-900/40 border border-red-700 text-red-300 text-xs font-semibold hover:bg-red-900/70 transition-all flex items-center gap-1.5">
-      <i class="fas fa-rotate-right"></i> Rerun Model
+      <i class="fas fa-rotate-right"></i> Refresh Feed
     </button>
   </div>
 
   <!-- Model Info Bar -->
   <div class="et-card flex flex-wrap items-center gap-4 py-3">
-    <div class="flex items-center gap-2"><i class="fas fa-microchip text-violet-400 text-xs"></i><span class="text-[10px] text-gray-400">Model:</span><span class="text-[10px] text-violet-300 font-bold mono">EcoTwin-ThreatNet-v3</span></div>
-    <div class="flex items-center gap-2"><i class="fas fa-bullseye text-emerald-400 text-xs"></i><span class="text-[10px] text-gray-400">Accuracy:</span><span class="text-[10px] text-emerald-300 font-bold mono">84.7%</span></div>
-    <div class="flex items-center gap-2"><i class="fas fa-database text-cyan-400 text-xs"></i><span class="text-[10px] text-gray-400">Training:</span><span class="text-[10px] text-cyan-300 font-bold mono">1980–2025</span></div>
+    <div class="flex items-center gap-2"><i class="fas fa-microchip text-violet-400 text-xs"></i><span class="text-[10px] text-gray-400">System:</span><span class="text-[10px] text-violet-300 font-bold mono">EcoTwin Hazard Tracker</span></div>
+    <div class="flex items-center gap-2"><i class="fas fa-satellite text-emerald-400 text-xs"></i><span class="text-[10px] text-gray-400">Live Feed:</span><span class="text-[10px] text-emerald-300 font-bold mono">NASA EONET Ingest</span></div>
+    <div class="flex items-center gap-2"><i class="fas fa-chart-line text-cyan-400 text-xs"></i><span class="text-[10px] text-gray-400">Method:</span><span class="text-[10px] text-cyan-300 font-bold mono">Hazard Ingestion & Seasonal Risk Projection</span></div>
     <div class="flex items-center gap-2"><i class="fas fa-clock text-amber-400 text-xs"></i><span class="text-[10px] text-gray-400">Horizon:</span><span class="text-[10px] text-amber-300 font-bold mono">18 months</span></div>
     <div id="threat-risk-level" class="ml-auto px-3 py-1 rounded-full text-[10px] font-bold border">—</div>
   </div>
@@ -5523,7 +6102,7 @@ function threatHTML() {
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
     <!-- Threat Cards -->
     <div class="space-y-2" id="threat-list">
-      ${[1,2,3,4,5].map(()=>`<div class="animate-pulse h-20 bg-gray-800/40 rounded-xl"></div>`).join('')}
+      ${[1, 2, 3, 4, 5].map(() => `<div class="animate-pulse h-20 bg-gray-800/40 rounded-xl"></div>`).join('')}
     </div>
     <!-- Probability Chart -->
     <div class="et-card">
@@ -5554,16 +6133,22 @@ async function loadThreat() {
     const r = await fetch('/threat_forecast');
     const d = await r.json();
     renderThreat(d);
-  } catch(e) { console.error('Threat forecast:', e); }
+  } catch (e) { console.error('Threat forecast:', e); }
 }
 
 function renderThreat(d) {
+  // Update provenance badge
+  const provEl = document.getElementById('threat-prov-badge');
+  if (provEl && d.provenance) {
+    provEl.innerHTML = provenanceBadge(d.isFallback ? 'heuristic' : 'retrieved', d.provenance);
+  }
+
   // Risk level badge
   const lvlEl = document.getElementById('threat-risk-level');
   if (lvlEl) {
     const cls = d.overallRiskLevel === 'CRITICAL' ? 'bg-red-900/50 border-red-600 text-red-300' :
-                d.overallRiskLevel === 'HIGH' ? 'bg-orange-900/50 border-orange-600 text-orange-300' :
-                'bg-yellow-900/50 border-yellow-600 text-yellow-300';
+      d.overallRiskLevel === 'HIGH' ? 'bg-orange-900/50 border-orange-600 text-orange-300' :
+        'bg-yellow-900/50 border-yellow-600 text-yellow-300';
     lvlEl.className = `ml-auto px-3 py-1 rounded-full text-[10px] font-bold border ${cls}`;
     lvlEl.innerHTML = `<i class="fas fa-triangle-exclamation mr-1"></i> ${d.overallRiskLevel} RISK`;
   }
@@ -5580,15 +6165,18 @@ function renderThreat(d) {
         <div class="flex items-start gap-3">
           <div class="w-7 h-7 rounded-full flex items-center justify-center flex-none text-[9px] font-black
                       ${prob > 0.75 ? 'bg-red-900/70 border border-red-700 text-red-300' :
-                        prob > 0.55 ? 'bg-orange-900/70 border border-orange-700 text-orange-300' :
-                        'bg-amber-900/70 border border-amber-700 text-amber-300'}">${i+1}</div>
+          prob > 0.55 ? 'bg-orange-900/70 border border-orange-700 text-orange-300' :
+            'bg-amber-900/70 border border-amber-700 text-amber-300'}">${i + 1}</div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between gap-2 mb-1">
-              <span class="text-xs font-bold text-gray-200">${th.name}</span>
-              <span class="text-xs font-black mono ${prob > 0.75 ? 'text-red-300' : prob > 0.55 ? 'text-orange-300' : 'text-amber-300'}">${(prob*100).toFixed(0)}%</span>
+              <span class="text-xs font-bold text-gray-200">
+                ${th.name}
+                ${th.source === 'NASA EONET' ? `<span class="ml-2 text-[8px] uppercase tracking-wider text-emerald-400 bg-emerald-900/30 px-1 py-0.5 rounded border border-emerald-800/50"><i class="fas fa-satellite mr-1"></i>NASA EONET</span>` : ''}
+              </span>
+              <span class="text-xs font-black mono ${prob > 0.75 ? 'text-red-300' : prob > 0.55 ? 'text-orange-300' : 'text-amber-300'}">${(prob * 100).toFixed(0)}%</span>
             </div>
             <div class="metric-bar mb-1.5">
-              <div class="metric-bar-fill" style="width:${prob*100}%; background: ${prob > 0.75 ? '#ef4444' : prob > 0.55 ? '#f97316' : '#f59e0b'};"></div>
+              <div class="metric-bar-fill" style="width:${prob * 100}%; background: ${prob > 0.75 ? '#ef4444' : prob > 0.55 ? '#f97316' : '#f59e0b'};"></div>
             </div>
             <div class="flex items-center gap-3 text-[9px] text-gray-500">
               <span><i class="fas fa-tag mr-1 opacity-60"></i>${th.category}</span>
@@ -5643,20 +6231,20 @@ function renderThreat(d) {
       </div>
       <!-- Rows -->
       ${threats.map(th => {
-        const row = months.map(m => {
-          const prob = m.threats.find(t => t.id === th.id)?.probability ?? 0;
-          const alpha = 0.1 + prob * 0.85;
-          const bg = prob > 0.75 ? `rgba(239,68,68,${alpha})` : prob > 0.55 ? `rgba(249,115,22,${alpha})` : `rgba(245,158,11,${alpha})`;
-          return `<div class="flex-1 min-w-[32px] h-8 flex items-center justify-center text-[8px] font-bold transition-all hover:scale-105 cursor-default rounded-sm"
+      const row = months.map(m => {
+        const prob = m.threats.find(t => t.id === th.id)?.probability ?? 0;
+        const alpha = 0.1 + prob * 0.85;
+        const bg = prob > 0.75 ? `rgba(239,68,68,${alpha})` : prob > 0.55 ? `rgba(249,115,22,${alpha})` : `rgba(245,158,11,${alpha})`;
+        return `<div class="flex-1 min-w-[32px] h-8 flex items-center justify-center text-[8px] font-bold transition-all hover:scale-105 cursor-default rounded-sm"
                        style="background:${bg}; color:${prob > 0.5 ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.5)'}"
-                       title="${th.name} · ${m.label}: ${(prob*100).toFixed(0)}%">${(prob*100).toFixed(0)}</div>`;
-        }).join('');
-        return `
+                       title="${th.name} · ${m.label}: ${(prob * 100).toFixed(0)}%">${(prob * 100).toFixed(0)}</div>`;
+      }).join('');
+      return `
         <div class="flex items-center gap-0 mt-0.5">
           <div class="w-[120px] flex-none text-[9px] text-gray-400 pr-2 truncate font-medium">${th.name}</div>
           <div class="flex flex-1 gap-0">${row}</div>
         </div>`;
-      }).join('')}`;
+    }).join('')}`;
   }
 }
 
@@ -5707,7 +6295,7 @@ function raceHTML() {
       <span class="text-[9px] text-gray-500">Top 16 economies · Live ranked</span>
     </div>
     <div id="race-bars" class="space-y-1.5">
-      ${[1,2,3,4,5,6,7,8].map(()=>`<div class="animate-pulse h-8 bg-gray-800/40 rounded-lg"></div>`).join('')}
+      ${[1, 2, 3, 4, 5, 6, 7, 8].map(() => `<div class="animate-pulse h-8 bg-gray-800/40 rounded-lg"></div>`).join('')}
     </div>
   </div>
 
@@ -5732,7 +6320,7 @@ async function fetchAndRenderRace(year) {
     const r = await fetch(`/co2_race?year=${year}`);
     const d = await r.json();
     renderRaceBars(d);
-  } catch(e) { console.error('Race:', e); }
+  } catch (e) { console.error('Race:', e); }
 }
 
 function renderRaceBars(d) {
@@ -5748,7 +6336,7 @@ function renderRaceBars(d) {
     const pct = (e.co2 / maxCo2 * 100).toFixed(1);
     return `
     <div class="flex items-center gap-2">
-      <div class="w-6 text-center text-[9px] font-black mono ${i===0?'text-amber-300':i===1?'text-gray-300':i===2?'text-orange-400':'text-gray-500'}">${e.rank}</div>
+      <div class="w-6 text-center text-[9px] font-black mono ${i === 0 ? 'text-amber-300' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-orange-400' : 'text-gray-500'}">${e.rank}</div>
       <div class="text-sm" title="${e.name}">${e.flag}</div>
       <div class="w-20 text-[9px] font-semibold text-gray-300 truncate">${e.name}</div>
       <div class="flex-1 relative h-7 bg-gray-900/60 rounded-r-lg overflow-hidden border border-gray-800/40">
@@ -5761,11 +6349,11 @@ function renderRaceBars(d) {
   }).join('');
 
   // Stats
-  const setEl = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  const setEl = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   setEl('race-stat-max', d.entries[0].co2 + ' t');
-  setEl('race-stat-min', d.entries[d.entries.length-1].co2 + ' t');
+  setEl('race-stat-min', d.entries[d.entries.length - 1].co2 + ' t');
   setEl('race-stat-rank1', d.entries[0].flag + ' ' + d.entries[0].name);
-  const avg = (d.entries.reduce((s,e)=>s+e.co2,0)/d.entries.length).toFixed(2);
+  const avg = (d.entries.reduce((s, e) => s + e.co2, 0) / d.entries.length).toFixed(2);
   setEl('race-stat-avg', avg + ' t');
 }
 
@@ -5833,13 +6421,13 @@ window.onRaceSlider = onRaceSlider;
 
 // ── MODULE STATE ──────────────────────────────────────────────────────────────
 const ADV = {
-  globe:    { interval: null, anim: null, rotation: 0, hotspots: [], orbits: [], canvas: null, ctx: null },
-  wind:     { interval: null, chart: null, data: null },
-  ocean:    { interval: null, chart: null },
-  carbon:   { interval: null, donut: null, bar: null, line: null, countdown: null },
-  defo3d:   { interval: null, canvas: null, ctx: null, region: 'amazon', chart: null },
-  seismic:  { interval: null, events: [] },
-  alerts:   { items: [], filter: 'ALL', soundOn: false, interval: null },
+  globe: { interval: null, anim: null, rotation: 0, hotspots: [], orbits: [], canvas: null, ctx: null },
+  wind: { interval: null, chart: null, data: null },
+  ocean: { interval: null, chart: null },
+  carbon: { interval: null, donut: null, bar: null, line: null, countdown: null },
+  defo3d: { interval: null, canvas: null, ctx: null, region: 'amazon', chart: null },
+  seismic: { interval: null, events: [] },
+  alerts: { items: [], filter: 'ALL', soundOn: false, interval: null },
 };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -5852,7 +6440,7 @@ function globeHTML() {
     <div>
       <h2 class="text-base font-black text-white flex items-center gap-2">
         <i class="fas fa-globe text-cyan-400"></i> Realtime Environmental Globe
-        <span class="text-[9px] px-2 py-0.5 rounded-full bg-cyan-900/60 border border-cyan-700 text-cyan-300 animate-pulse">● LIVE</span>
+        ${provenanceBadge('simulated', 'Hotspot Demo Layer + Satellite Tracks')}
       </h2>
       <p class="text-[10px] text-gray-500 mt-0.5">30 global hotspots · 3 satellite tracks · live impact scoring</p>
     </div>
@@ -5867,7 +6455,7 @@ function globeHTML() {
     <!-- Globe Canvas -->
     <div class="lg:col-span-2 et-card p-4">
       <div class="relative" style="background:radial-gradient(ellipse at 40% 40%,#0a1628 0%,#050d1a 70%); border-radius:12px; overflow:hidden; min-height:360px;">
-        <canvas id="globe-canvas" width="640" height="360" style="width:100%;height:360px;cursor:crosshair;"></canvas>
+        <canvas id="sat-globe-canvas" width="640" height="360" style="width:100%;height:360px;cursor:crosshair;"></canvas>
         <!-- Overlay info -->
         <div class="absolute top-3 left-3 flex flex-col gap-1.5">
           <div class="globe-hud-badge"><i class="fas fa-satellite text-cyan-400 mr-1"></i><span id="globe-sat-count">3</span> Satellites</div>
@@ -5939,20 +6527,20 @@ async function refreshGlobe() {
     updateGlobeMetrics(d.globalMetrics);
     const ts = document.getElementById('globe-ts');
     if (ts) ts.textContent = new Date(d.ts).toLocaleTimeString();
-  } catch(e) {
+  } catch (e) {
     console.warn('[Globe] fetch failed', e);
   }
 }
 
 function renderGlobe(d) {
-  const canvas = document.getElementById('globe-canvas');
+  const canvas = document.getElementById('sat-globe-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
 
   // Background gradient (space)
-  const bg = ctx.createRadialGradient(W*0.4, H*0.35, 10, W*0.4, H*0.35, W*0.6);
+  const bg = ctx.createRadialGradient(W * 0.4, H * 0.35, 10, W * 0.4, H * 0.35, W * 0.6);
   bg.addColorStop(0, '#0d1f3c');
   bg.addColorStop(1, '#020810');
   ctx.fillStyle = bg;
@@ -5975,17 +6563,17 @@ function renderGlobe(d) {
   // Draw continent silhouettes (approximate polygons)
   const continents = [
     // North America
-    [[49,-125],[49,-52],[25,-80],[25,-90],[15,-85],[8,-77],[9,-84],[15,-92],[22,-105],[32,-117],[49,-125]],
+    [[49, -125], [49, -52], [25, -80], [25, -90], [15, -85], [8, -77], [9, -84], [15, -92], [22, -105], [32, -117], [49, -125]],
     // South America
-    [[-4,-80],[0,-50],[[-5,-35]],[[10,-60],[0,-50],[-4,-80],[-10,-75],[-33,-71],[-55,-68],[-55,-64],[-34,-53],[-23,-43],[-5,-35],[10,-60]]],
+    [[-4, -80], [0, -50], [[-5, -35]], [[10, -60], [0, -50], [-4, -80], [-10, -75], [-33, -71], [-55, -68], [-55, -64], [-34, -53], [-23, -43], [-5, -35], [10, -60]]],
     // Europe
-    [[70,30],[70,10],[60,5],[55,-5],[43,-9],[36,-5],[36,10],[38,28],[42,42],[55,38],[65,30],[70,30]],
+    [[70, 30], [70, 10], [60, 5], [55, -5], [43, -9], [36, -5], [36, 10], [38, 28], [42, 42], [55, 38], [65, 30], [70, 30]],
     // Africa
-    [[37,10],[37,37],[12,42],[0,42],[-10,40],[-35,18],[-35,27],[-25,33],[-10,40],[0,10],[10,0],[15,-17],[37,10]],
+    [[37, 10], [37, 37], [12, 42], [0, 42], [-10, 40], [-35, 18], [-35, 27], [-25, 33], [-10, 40], [0, 10], [10, 0], [15, -17], [37, 10]],
     // Asia
-    [[70,30],[70,180],[40,130],[22,120],[8,100],[0,104],[-10,125],[0,140],[20,120],[25,90],[25,50],[38,42],[55,38],[65,30],[70,30]],
+    [[70, 30], [70, 180], [40, 130], [22, 120], [8, 100], [0, 104], [-10, 125], [0, 140], [20, 120], [25, 90], [25, 50], [38, 42], [55, 38], [65, 30], [70, 30]],
     // Australia
-    [[-10,130],[-10,142],[-40,148],[-40,136],[-32,116],[-22,114],[-10,130]],
+    [[-10, 130], [-10, 142], [-40, 148], [-40, 136], [-32, 116], [-22, 114], [-10, 130]],
   ];
 
   ctx.fillStyle = 'rgba(34,211,238,0.06)';
@@ -5995,7 +6583,7 @@ function renderGlobe(d) {
     if (!Array.isArray(poly[0])) {
       ctx.beginPath();
       poly.forEach(([lat, lon], i) => {
-        const {x, y} = latLonToXY(lat, lon, W, H);
+        const { x, y } = latLonToXY(lat, lon, W, H);
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       });
       ctx.closePath();
@@ -6014,13 +6602,13 @@ function renderGlobe(d) {
     ctx.beginPath();
     for (let lon = -180; lon <= 180; lon += 5) {
       const lat = 30 * Math.sin((lon + sat.speed * 100) * Math.PI / 90);
-      const {x, y} = latLonToXY(lat, lon, W, H);
+      const { x, y } = latLonToXY(lat, lon, W, H);
       if (lon === -180) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.stroke();
     ctx.setLineDash([]);
     // Draw satellite dot
-    const {x: sx, y: sy} = latLonToXY(sat.lat, sat.lon, W, H);
+    const { x: sx, y: sy } = latLonToXY(sat.lat, sat.lon, W, H);
     ctx.fillStyle = sat.color;
     ctx.beginPath();
     ctx.arc(sx, sy, 4, 0, Math.PI * 2);
@@ -6033,7 +6621,7 @@ function renderGlobe(d) {
   // Draw hotspots
   const now = Date.now();
   d.hotspots.forEach((h, idx) => {
-    const {x, y} = latLonToXY(h.lat, h.lon, W, H);
+    const { x, y } = latLonToXY(h.lat, h.lon, W, H);
     const grade = h.impactGrade;
     const color = grade === 'CRITICAL' ? '#ef4444' : grade === 'HIGH' ? '#f97316' : grade === 'MODERATE' ? '#f59e0b' : '#10b981';
 
@@ -6048,7 +6636,7 @@ function renderGlobe(d) {
     // Pulse ring
     ctx.beginPath();
     ctx.arc(x, y, r + pulse * 12, 0, Math.PI * 2);
-    ctx.strokeStyle = color + Math.round(pulse * 180).toString(16).padStart(2,'0');
+    ctx.strokeStyle = color + Math.round(pulse * 180).toString(16).padStart(2, '0');
     ctx.lineWidth = 1;
     ctx.stroke();
 
@@ -6064,7 +6652,7 @@ function renderGlobe(d) {
     // CRITICAL blink effect
     if (grade === 'CRITICAL') {
       ctx.beginPath();
-      ctx.arc(x, y, r + 3 + Math.sin(now/400 + idx) * 3, 0, Math.PI * 2);
+      ctx.arc(x, y, r + 3 + Math.sin(now / 400 + idx) * 3, 0, Math.PI * 2);
       ctx.strokeStyle = '#ef4444' + '88';
       ctx.lineWidth = 1.5;
       ctx.stroke();
@@ -6103,7 +6691,7 @@ function renderGlobeHotspotList(hotspots, metrics) {
       <i class="fas fa-${icon} text-${color}-400 text-xs w-4 text-center"></i>
       <div class="flex-1 min-w-0">
         <div class="text-[9px] font-semibold text-gray-200 truncate">${h.name}</div>
-        <div class="text-[8px] text-gray-600">${h.type.replace('_',' ')}</div>
+        <div class="text-[8px] text-gray-600">${h.type.replace('_', ' ')}</div>
       </div>
       <div class="text-right">
         <div class="text-[10px] font-black text-${color}-400 mono">${h.impactScore.toFixed(0)}</div>
@@ -6118,7 +6706,7 @@ function renderGlobeHotspotList(hotspots, metrics) {
 
 function updateGlobeMetrics(m) {
   if (!m) return;
-  const set = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   set('gm-sats', m.activeSatellites);
   set('gm-cov', m.coveragePct + '%');
   set('gm-alerts1h', m.alertsLast1h);
@@ -6129,7 +6717,7 @@ function updateGlobeMetrics(m) {
 
 // Globe canvas mouse hover for tooltips
 document.addEventListener('click', (e) => {
-  const canvas = document.getElementById('globe-canvas');
+  const canvas = document.getElementById('sat-globe-canvas');
   if (!canvas || e.target !== canvas) return;
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width / rect.width;
@@ -6140,7 +6728,7 @@ document.addEventListener('click', (e) => {
   // Find nearest hotspot
   let nearest = null, minDist = 20;
   ADV.globe.hotspots.forEach(h => {
-    const {x, y} = latLonToXY(h.lat, h.lon, canvas.width, canvas.height);
+    const { x, y } = latLonToXY(h.lat, h.lon, canvas.width, canvas.height);
     const dist = Math.sqrt((mx - x) ** 2 + (my - y) ** 2);
     if (dist < minDist) { minDist = dist; nearest = h; }
   });
@@ -6163,7 +6751,7 @@ function windOceanHTML() {
     <div>
       <h2 class="text-base font-black text-white flex items-center gap-2">
         <i class="fas fa-wind text-blue-400"></i> Atmospheric & Ocean Systems
-        <span class="text-[9px] px-2 py-0.5 rounded-full bg-blue-900/60 border border-blue-700 text-blue-300 animate-pulse">● LIVE</span>
+        ${provenanceBadge('calculated', 'Atmospheric & SST Reference Model')}
       </h2>
       <p class="text-[10px] text-gray-500 mt-0.5">Live wind vectors · SST anomalies · weather systems · ocean acidification</p>
     </div>
@@ -6239,11 +6827,11 @@ function windOceanTab(tab) {
   WO_ACTIVE_TAB = tab;
   document.getElementById('wo-wind-panel').classList.toggle('hidden', tab !== 'wind');
   document.getElementById('wo-ocean-panel').classList.toggle('hidden', tab !== 'ocean');
-  ['wind','ocean'].forEach(t => {
+  ['wind', 'ocean'].forEach(t => {
     const btn = document.getElementById(`wo-btn-${t}`);
     if (!btn) return;
     const active = t === tab;
-    btn.className = `wo-tab-btn text-[9px] px-3 py-1.5 rounded-lg ${active?'bg-blue-900/40 border border-blue-700 text-blue-300':'bg-gray-800 border border-gray-700 text-gray-400'}`;
+    btn.className = `wo-tab-btn text-[9px] px-3 py-1.5 rounded-lg ${active ? 'bg-blue-900/40 border border-blue-700 text-blue-300' : 'bg-gray-800 border border-gray-700 text-gray-400'}`;
   });
   if (tab === 'ocean' && !ADV.ocean.chart) initOceanChart();
 }
@@ -6270,7 +6858,7 @@ async function refreshWindOcean() {
 
     const ts = document.getElementById('wo-wind-ts');
     if (ts) ts.textContent = new Date(wd.ts).toLocaleTimeString();
-  } catch(e) {}
+  } catch (e) { }
 }
 
 function renderWindCanvas(d) {
@@ -6295,25 +6883,25 @@ function renderWindCanvas(d) {
   // SST anomaly background heatmap
   if (d.sstGrid) {
     d.sstGrid.forEach(g => {
-      const {x, y} = latLonToXY(g.lat, g.lon, W, H);
+      const { x, y } = latLonToXY(g.lat, g.lon, W, H);
       const r = g.anomaly > 0 ? Math.min(255, Math.round(g.anomaly * 80)) : 0;
       const b = g.anomaly < 0 ? Math.min(255, Math.round(-g.anomaly * 80)) : 0;
-      ctx.fillStyle = `rgba(${r},${Math.round(r*0.1)},${b},0.35)`;
+      ctx.fillStyle = `rgba(${r},${Math.round(r * 0.1)},${b},0.35)`;
       const cellW = (30 / 360) * W + 2, cellH = (24 / 180) * H + 2;
-      ctx.fillRect(x - cellW/2, y - cellH/2, cellW, cellH);
+      ctx.fillRect(x - cellW / 2, y - cellH / 2, cellW, cellH);
     });
   }
 
   // Wind vectors
   if (d.vectors) {
     d.vectors.forEach(v => {
-      const {x, y} = latLonToXY(v.lat, v.lon, W, H);
+      const { x, y } = latLonToXY(v.lat, v.lon, W, H);
       const speed = v.speed;
       const len = Math.min(18, 4 + speed * 0.8);
       const angle = Math.atan2(-v.v, v.u);
       const speedColor = speed > 25 ? '#ef4444' : speed > 15 ? '#f97316' : speed > 8 ? '#f59e0b' : '#22d3ee';
       const alpha = 0.4 + Math.min(0.5, speed / 50);
-      ctx.strokeStyle = speedColor + Math.round(alpha * 255).toString(16).padStart(2,'0');
+      ctx.strokeStyle = speedColor + Math.round(alpha * 255).toString(16).padStart(2, '0');
       ctx.lineWidth = 0.8 + speed / 30;
       ctx.beginPath();
       ctx.moveTo(x, y);
@@ -6348,7 +6936,7 @@ function renderWindCanvas(d) {
   // Weather system symbols
   if (d.systems) {
     d.systems.forEach(s => {
-      const {x, y} = latLonToXY(s.lat, s.lon, W, H);
+      const { x, y } = latLonToXY(s.lat, s.lon, W, H);
       const isCyclone = s.type === 'Cyclone' || s.type === 'Typhoon';
       const isLow = s.type === 'Low' || isCyclone;
       ctx.fillStyle = isCyclone ? '#ef4444' : isLow ? '#3b82f6' : '#10b981';
@@ -6382,7 +6970,7 @@ function renderWeatherSystems(systems, jet) {
     </div>`;
   }).join('');
 
-  const set = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   if (jet) {
     set('wo-jet-n', `${jet.northernLat}°N`);
     set('wo-jet-s', `${Math.abs(jet.southernLat)}°S`);
@@ -6451,12 +7039,12 @@ function updateOceanData(d) {
   // Ocean zones
   const zonesDiv = document.getElementById('wo-ocean-zones');
   if (zonesDiv && d.zones) {
-    zonesDiv.innerHTML = d.zones.slice(0,6).map(z => `
+    zonesDiv.innerHTML = d.zones.slice(0, 6).map(z => `
     <div class="p-2 rounded-lg bg-gray-900/50 border border-gray-800">
       <div class="text-[9px] font-bold text-gray-200 mb-1">${z.name}</div>
       <div class="grid grid-cols-2 gap-1 text-[8px]">
         <div><span class="text-gray-600">SST</span> <span class="text-orange-300 mono">${z.sst}°C</span></div>
-        <div><span class="text-gray-600">Δ</span> <span class="${z.anomaly>0?'text-red-400':'text-blue-400'} mono">${z.anomaly>0?'+':''}${z.anomaly}°C</span></div>
+        <div><span class="text-gray-600">Δ</span> <span class="${z.anomaly > 0 ? 'text-red-400' : 'text-blue-400'} mono">${z.anomaly > 0 ? '+' : ''}${z.anomaly}°C</span></div>
         <div><span class="text-gray-600">pH</span> <span class="text-cyan-300 mono">${z.ph}</span></div>
         <div><span class="text-gray-600">O₂</span> <span class="text-emerald-300 mono">${z.oxygenMlL} ml/L</span></div>
       </div>
@@ -6466,7 +7054,7 @@ function updateOceanData(d) {
   // Coral bleaching
   const coralDiv = document.getElementById('wo-coral-list');
   if (coralDiv && d.zones) {
-    const bleachZones = d.zones.filter(z => z.bleachRisk !== 'LOW').sort((a,b) => ['CRITICAL','HIGH','MODERATE'].indexOf(a.bleachRisk) - ['CRITICAL','HIGH','MODERATE'].indexOf(b.bleachRisk));
+    const bleachZones = d.zones.filter(z => z.bleachRisk !== 'LOW').sort((a, b) => ['CRITICAL', 'HIGH', 'MODERATE'].indexOf(a.bleachRisk) - ['CRITICAL', 'HIGH', 'MODERATE'].indexOf(b.bleachRisk));
     coralDiv.innerHTML = bleachZones.map(z => {
       const color = z.bleachRisk === 'CRITICAL' ? 'red' : z.bleachRisk === 'HIGH' ? 'orange' : 'yellow';
       const pct = Math.min(100, (z.dhw / 16) * 100);
@@ -6498,7 +7086,7 @@ function carbonBudgetHTML() {
     <div>
       <h2 class="text-base font-black text-white flex items-center gap-2">
         <i class="fas fa-cloud-arrow-up text-orange-400"></i> Live Carbon Budget Tracker
-        <span class="text-[9px] px-2 py-0.5 rounded-full bg-orange-900/60 border border-orange-700 text-orange-300 animate-pulse">● LIVE</span>
+        ${provenanceBadge('calculated', 'IPCC AR6 Remaining Carbon Budget Model')}
       </h2>
       <p class="text-[10px] text-gray-500 mt-0.5">IPCC AR6 remaining budget · real-time sector tracking · net-zero countdown</p>
     </div>
@@ -6632,12 +7220,12 @@ async function refreshCarbonBudget() {
     const r = await fetch('/satellite/carbon_budget');
     const d = await r.json();
     updateCarbonBudgetUI(d);
-  } catch(e) {}
+  } catch (e) { }
 }
 
 function updateCarbonBudgetUI(d) {
-  const set = (id, v) => { const e = document.getElementById(id); if(e) { e.textContent = v; } };
-  const flash = (id, v) => { const e = document.getElementById(id); if(e) { e.textContent = v; e.classList.add('ticker-flash'); setTimeout(()=>e.classList.remove('ticker-flash'), 600); } };
+  const set = (id, v) => { const e = document.getElementById(id); if (e) { e.textContent = v; } };
+  const flash = (id, v) => { const e = document.getElementById(id); if (e) { e.textContent = v; e.classList.add('ticker-flash'); setTimeout(() => e.classList.remove('ticker-flash'), 600); } };
 
   if (d.budget) {
     flash('cb-remain15', d.budget.remaining1_5 + ' Gt');
@@ -6654,7 +7242,7 @@ function updateCarbonBudgetUI(d) {
     flash('atm-n2o', d.atmosphere.n2oppb + ' ppb');
     flash('atm-temp', '+' + d.atmosphere.globalTemp + '°C');
     const co2Pct = ((d.atmosphere.co2ppm - 280) / (450 - 280)) * 100;
-    const setBar = (id, pct) => { const e = document.getElementById(id); if(e) e.style.width = Math.min(100, Math.max(0, pct)) + '%'; };
+    const setBar = (id, pct) => { const e = document.getElementById(id); if (e) e.style.width = Math.min(100, Math.max(0, pct)) + '%'; };
     setBar('atm-co2-bar', co2Pct);
     setBar('atm-ch4-bar', ((d.atmosphere.ch4ppb - 722) / (3000 - 722)) * 100);
     setBar('atm-n2o-bar', ((d.atmosphere.n2oppb - 270) / (370 - 270)) * 100);
@@ -6695,7 +7283,7 @@ function updateCarbonBudgetUI(d) {
         const tColor = c.yoyChange > 1 ? '#ef4444' : c.yoyChange < -1 ? '#10b981' : '#9ca3af';
         return `
         <div class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-800/40 cursor-pointer transition-all">
-          <div class="text-[10px] mono font-black w-5 text-center" style="color:${i===0?'#fbbf24':i===1?'#9ca3af':'#cd7f32'}">${i+1}</div>
+          <div class="text-[10px] mono font-black w-5 text-center" style="color:${i === 0 ? '#fbbf24' : i === 1 ? '#9ca3af' : '#cd7f32'}">${i + 1}</div>
           <span class="text-sm">${c.flag}</span>
           <div class="w-24 text-[9px] text-gray-300 truncate">${c.name}</div>
           <div class="flex-1 h-4 bg-gray-800 rounded-full overflow-hidden">
@@ -6730,9 +7318,9 @@ function defo3dHTML() {
     <div>
       <h2 class="text-base font-black text-white flex items-center gap-2">
         <i class="fas fa-layer-group text-emerald-400"></i> 3D Deforestation Terrain Analysis
-        <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-900/60 border border-emerald-700 text-emerald-300 animate-pulse">● LIVE</span>
+        ${provenanceBadge('simulated', 'Procedural 3D Terrain Model')}
       </h2>
-      <p class="text-[10px] text-gray-500 mt-0.5">CNN-generated heightmap · canopy cover · carbon stock · click cell for details</p>
+      <p class="text-[10px] text-gray-500 mt-0.5">Procedural terrain heightmap · canopy density & carbon stock estimates · click cell for details</p>
     </div>
     <div class="flex gap-2 flex-wrap">
       <select id="defo3d-region-select" onchange="changeDefo3dRegion(this.value)"
@@ -6854,7 +7442,7 @@ async function refreshDefo3d() {
     renderDefo3dCanvas(d);
     updateDefo3dStats(d);
     renderDefo3dAnnualChart(d.annual);
-  } catch(e) {}
+  } catch (e) { }
 }
 
 function renderDefo3dCanvas(d) {
@@ -6894,7 +7482,7 @@ function renderDefo3dCanvas(d) {
 
     // Elevation shading (brightness)
     const bright = 0.6 + cell.elevation * 0.4;
-    ctx.fillStyle = `rgb(${Math.round(r*bright)},${Math.round(g*bright)},${Math.round(b*bright)})`;
+    ctx.fillStyle = `rgb(${Math.round(r * bright)},${Math.round(g * bright)},${Math.round(b * bright)})`;
     ctx.fillRect(px, py, cellW + 0.5, cellH + 0.5);
 
     // Grid line
@@ -6940,7 +7528,7 @@ function showDefo3dCellDetail(mx, my) {
 }
 
 function updateDefo3dStats(d) {
-  const set = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   if (d.summary) {
     set('d3d-carbon', d.summary.totalCarbonGt);
     set('d3d-ndvi', d.summary.avgNdvi);
@@ -7004,7 +7592,7 @@ function seismicHTML() {
     <div>
       <h2 class="text-base font-black text-white flex items-center gap-2">
         <i class="fas fa-waveform text-rose-400"></i> Seismic Risk Monitor
-        <span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-900/60 border border-rose-700 text-rose-300 animate-pulse">● LIVE</span>
+        ${provenanceBadge('calculated', 'USGS Reference Catalog + Active Risk Model')}
       </h2>
       <p class="text-[10px] text-gray-500 mt-0.5">Earthquake events · tectonic zones · environmental hazard correlation</p>
     </div>
@@ -7066,12 +7654,12 @@ async function refreshSeismic() {
     updateSeismicStats(d.globalStats);
     renderSeismicEvents(d.events);
     renderSeismicRiskZones(d.riskZones);
-  } catch(e) {}
+  } catch (e) { }
 }
 
 function updateSeismicStats(stats) {
   if (!stats) return;
-  const set = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   set('seis-m4', stats.M4plusLast24h);
   set('seis-m5', stats.M5plusLast7d);
   set('seis-m6', stats.M6plusLast30d);
@@ -7086,7 +7674,7 @@ function renderSeismicEvents(events) {
     const envColor = eq.environmentalImpact === 'CRITICAL' ? 'red' : eq.environmentalImpact === 'HIGH' ? 'orange' : 'yellow';
     return `
     <div class="flex items-center gap-2 p-2 rounded-lg bg-gray-900/40 hover:bg-gray-800/50 transition-all">
-      <div class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm mono" style="background:rgba(239,68,68,${Math.min(1, (eq.mag-3)/4)*0.3});color:${eq.mag>=6?'#ef4444':eq.mag>=5?'#f97316':'#f59e0b'};border:1px solid rgba(239,68,68,0.2);">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm mono" style="background:rgba(239,68,68,${Math.min(1, (eq.mag - 3) / 4) * 0.3});color:${eq.mag >= 6 ? '#ef4444' : eq.mag >= 5 ? '#f97316' : '#f59e0b'};border:1px solid rgba(239,68,68,0.2);">
         M${eq.mag}
       </div>
       <div class="flex-1 min-w-0">
@@ -7183,8 +7771,8 @@ function advAlertFeedHTML() {
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
       <h2 class="text-base font-black text-white flex items-center gap-2">
-        <i class="fas fa-bell text-red-400"></i> Advanced Live Alert Feed
-        <span class="text-[9px] px-2 py-0.5 rounded-full bg-red-900/60 border border-red-700 text-red-300 animate-pulse">● LIVE</span>
+        <i class="fas fa-bell text-red-400"></i> Advanced Alert Feed
+        ${provenanceBadge('heuristic', 'Multi-Source Alert Ingestion & Threshold Rules')}
         <span class="text-[9px] px-2 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-gray-300" id="adv-alert-count">0</span>
       </h2>
       <p class="text-[10px] text-gray-500 mt-0.5">Real-time environmental alerts · filter by severity · sound notifications</p>
@@ -7236,16 +7824,16 @@ let ADV_ALERT_SOUND = false;
 let ADV_ALERT_FILTER = 'ALL';
 const ADV_ALERT_ITEMS = [];
 const ADV_ALERT_TYPES = [
-  { type: 'WILDFIRE',      icon: '🔥', color: '#ef4444', severity: 'CRITICAL', regions: ['California', 'Amazon', 'Siberia', 'Australia', 'Mato Grosso'] },
-  { type: 'DEFORESTATION', icon: '🌳', color: '#f97316', severity: 'HIGH',     regions: ['Amazon', 'Borneo', 'Congo Basin', 'Indonesia'] },
-  { type: 'FLOOD_RISK',    icon: '🌊', color: '#3b82f6', severity: 'HIGH',     regions: ['Bangladesh', 'Mekong Delta', 'Mississippi', 'Nile'] },
-  { type: 'ICE_MELT',      icon: '🧊', color: '#67e8f9', severity: 'HIGH',     regions: ['Greenland', 'Arctic', 'Himalayas', 'Patagonia'] },
-  { type: 'DROUGHT',       icon: '☀️', color: '#f59e0b', severity: 'MODERATE', regions: ['Sahel', 'Horn of Africa', 'Australia Outback', 'California'] },
-  { type: 'URBAN_HEAT',    icon: '🏙', color: '#a78bfa', severity: 'MODERATE', regions: ['Mumbai', 'Beijing', 'Phoenix', 'Madrid'] },
-  { type: 'STORM_SURGE',   icon: '💨', color: '#94a3b8', severity: 'HIGH',     regions: ['Bangladesh', 'Gulf of Mexico', 'Bay of Bengal', 'South China Sea'] },
-  { type: 'CORAL_BLEACH',  icon: '🐠', color: '#fb7185', severity: 'CRITICAL', regions: ['Great Barrier Reef', 'Caribbean', 'Coral Triangle', 'Maldives'] },
-  { type: 'OIL_SPILL',     icon: '🛢', color: '#78716c', severity: 'HIGH',     regions: ['North Sea', 'Gulf of Mexico', 'Niger Delta'] },
-  { type: 'SEISMIC',       icon: '📳', color: '#c084fc', severity: 'HIGH',     regions: ['Nepal', 'Japan', 'Chile', 'Indonesia'] },
+  { type: 'WILDFIRE', icon: '🔥', color: '#ef4444', severity: 'CRITICAL', regions: ['California', 'Amazon', 'Siberia', 'Australia', 'Mato Grosso'] },
+  { type: 'DEFORESTATION', icon: '🌳', color: '#f97316', severity: 'HIGH', regions: ['Amazon', 'Borneo', 'Congo Basin', 'Indonesia'] },
+  { type: 'FLOOD_RISK', icon: '🌊', color: '#3b82f6', severity: 'HIGH', regions: ['Bangladesh', 'Mekong Delta', 'Mississippi', 'Nile'] },
+  { type: 'ICE_MELT', icon: '🧊', color: '#67e8f9', severity: 'HIGH', regions: ['Greenland', 'Arctic', 'Himalayas', 'Patagonia'] },
+  { type: 'DROUGHT', icon: '☀️', color: '#f59e0b', severity: 'MODERATE', regions: ['Sahel', 'Horn of Africa', 'Australia Outback', 'California'] },
+  { type: 'URBAN_HEAT', icon: '🏙', color: '#a78bfa', severity: 'MODERATE', regions: ['Mumbai', 'Beijing', 'Phoenix', 'Madrid'] },
+  { type: 'STORM_SURGE', icon: '💨', color: '#94a3b8', severity: 'HIGH', regions: ['Bangladesh', 'Gulf of Mexico', 'Bay of Bengal', 'South China Sea'] },
+  { type: 'CORAL_BLEACH', icon: '🐠', color: '#fb7185', severity: 'CRITICAL', regions: ['Great Barrier Reef', 'Caribbean', 'Coral Triangle', 'Maldives'] },
+  { type: 'OIL_SPILL', icon: '🛢', color: '#78716c', severity: 'HIGH', regions: ['North Sea', 'Gulf of Mexico', 'Niger Delta'] },
+  { type: 'SEISMIC', icon: '📳', color: '#c084fc', severity: 'HIGH', regions: ['Nepal', 'Japan', 'Chile', 'Indonesia'] },
 ];
 
 function initAdvAlertFeed() {
@@ -7289,7 +7877,7 @@ async function loadAdvAlertStream() {
     renderAlertMap();
     updateAlertTicker();
     updateAlertCounts();
-  } catch(e) {}
+  } catch (e) { }
 }
 
 function generateLiveAlert() {
@@ -7344,7 +7932,7 @@ function playAlertBeep() {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.3);
-  } catch(e) {}
+  } catch (e) { }
 }
 
 function toggleAlertSound() {
@@ -7378,7 +7966,7 @@ function renderAdvAlertList() {
   list.innerHTML = display.map((a, i) => {
     const color = a.severity === 'CRITICAL' ? 'red' : a.severity === 'HIGH' ? 'orange' : a.severity === 'MODERATE' ? 'yellow' : 'emerald';
     const age = Math.round((Date.now() - a.ts.getTime()) / 1000);
-    const ageStr = age < 60 ? `${age}s ago` : age < 3600 ? `${Math.round(age/60)}m ago` : `${Math.round(age/3600)}h ago`;
+    const ageStr = age < 60 ? `${age}s ago` : age < 3600 ? `${Math.round(age / 60)}m ago` : `${Math.round(age / 3600)}h ago`;
     return `
     <div class="flex items-start gap-2 p-2 rounded-xl border transition-all ${a.acknowledged ? 'opacity-40 border-gray-800 bg-gray-900/20' : `border-${color}-900/40 bg-${color}-950/10 hover:bg-${color}-950/20`} ${i === 0 && !a.acknowledged ? 'alert-new-flash' : ''}">
       <span class="text-lg mt-0.5">${a.icon}</span>
@@ -7419,7 +8007,7 @@ function clearAllAlertsFeed() {
 function updateAlertCounts() {
   const counts = { CRITICAL: 0, HIGH: 0, MODERATE: 0, LOW: 0 };
   ADV_ALERT_ITEMS.forEach(a => { if (counts[a.severity] !== undefined) counts[a.severity]++; });
-  const set = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   set('af-count-crit', counts.CRITICAL);
   set('af-count-high', counts.HIGH);
   set('af-count-mod', counts.MODERATE);
@@ -7484,7 +8072,7 @@ function injectAdvancedModulesPanel() {
 
   // Find the satellite tab content to inject after
   const satDiv = tabContent.querySelector('#sat-extras-injected') ||
-                 tabContent.querySelector('[class*="space-y"]');
+    tabContent.querySelector('[class*="space-y"]');
   if (!satDiv) return;
 
   const panel = document.createElement('div');
@@ -7541,9 +8129,8 @@ function loadAdvModule(module) {
   // Update tab styles
   document.querySelectorAll('.adv-module-btn').forEach(b => {
     const isActive = b.id === `adv-tab-${module}`;
-    b.className = `adv-module-btn text-[9px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
-      isActive ? 'bg-cyan-900/40 border border-cyan-700 text-cyan-300' : 'bg-gray-800 border border-gray-700 text-gray-400'
-    }`;
+    b.className = `adv-module-btn text-[9px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${isActive ? 'bg-cyan-900/40 border border-cyan-700 text-cyan-300' : 'bg-gray-800 border border-gray-700 text-gray-400'
+      }`;
   });
 
   // Render module HTML
@@ -7557,21 +8144,21 @@ function loadAdvModule(module) {
   if (SEISMIC_ANIM) { cancelAnimationFrame(SEISMIC_ANIM); SEISMIC_ANIM = null; }
 
   const htmlFns = {
-    globe:   globeHTML,
-    wind:    windOceanHTML,
-    carbon:  carbonBudgetHTML,
-    defo3d:  defo3dHTML,
+    globe: globeHTML,
+    wind: windOceanHTML,
+    carbon: carbonBudgetHTML,
+    defo3d: defo3dHTML,
     seismic: seismicHTML,
-    alerts:  advAlertFeedHTML,
+    alerts: advAlertFeedHTML,
   };
 
   const initFns = {
-    globe:   initGlobe,
-    wind:    initWindOcean,
-    carbon:  initCarbonBudget,
-    defo3d:  initDefo3d,
+    globe: initGlobe,
+    wind: initWindOcean,
+    carbon: initCarbonBudget,
+    defo3d: initDefo3d,
     seismic: initSeismic,
-    alerts:  initAdvAlertFeed,
+    alerts: initAdvAlertFeed,
   };
 
   if (htmlFns[module]) {
@@ -7584,7 +8171,7 @@ function loadAdvModule(module) {
 
 // Patch initSatellite again to also inject advanced modules
 const _prevInitSatellite2 = window.initSatellite;
-window.initSatellite = function() {
+window.initSatellite = function () {
   _prevInitSatellite2();
   setTimeout(() => {
     injectAdvancedModulesPanel();
@@ -7592,22 +8179,39 @@ window.initSatellite = function() {
 };
 
 // Expose globals
-window.loadAdvModule    = loadAdvModule;
-window.initGlobe        = initGlobe;
-window.refreshGlobe     = refreshGlobe;
-window.globeSetView     = globeSetView;
-window.initWindOcean    = initWindOcean;
-window.windOceanTab     = windOceanTab;
+window.loadAdvModule = loadAdvModule;
+window.initGlobe = initGlobe;
+window.refreshGlobe = refreshGlobe;
+window.globeSetView = globeSetView;
+window.initWindOcean = initWindOcean;
+window.windOceanTab = windOceanTab;
 window.initCarbonBudget = initCarbonBudget;
 window.refreshCarbonBudget = refreshCarbonBudget;
-window.initDefo3d       = initDefo3d;
-window.refreshDefo3d    = refreshDefo3d;
+window.initDefo3d = initDefo3d;
+window.refreshDefo3d = refreshDefo3d;
 window.changeDefo3dRegion = changeDefo3dRegion;
-window.initSeismic      = initSeismic;
-window.refreshSeismic   = refreshSeismic;
+window.initSeismic = initSeismic;
+window.refreshSeismic = refreshSeismic;
 window.initAdvAlertFeed = initAdvAlertFeed;
-window.filterAlerts     = filterAlerts;
+window.filterAlerts = filterAlerts;
 window.toggleAlertSound = toggleAlertSound;
-window.clearAllAlertsFeed = clearAllAlertsFeed;
-window.ackSingleAlert   = ackSingleAlert;
-
+// Responsive Resize Handler (Three.js canvas aspect ratio + Plotly charts)
+let _etResizeTimeout = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_etResizeTimeout);
+  _etResizeTimeout = setTimeout(() => {
+    const canvas = document.getElementById('globe-canvas');
+    if (canvas && canvas.parentElement && typeof gCam !== 'undefined' && gCam && typeof gRenderer !== 'undefined' && gRenderer) {
+      const W = canvas.parentElement.clientWidth || 600;
+      const H = canvas.parentElement.clientHeight || 520;
+      gCam.aspect = W / H;
+      gCam.updateProjectionMatrix();
+      gRenderer.setSize(W, H);
+    }
+    document.querySelectorAll('.js-plotly-plot').forEach(el => {
+      if (typeof Plotly !== 'undefined' && Plotly.Plots && typeof Plotly.Plots.resize === 'function') {
+        try { Plotly.Plots.resize(el); } catch (e) {}
+      }
+    });
+  }, 150);
+});

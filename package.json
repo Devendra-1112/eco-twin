@@ -9,6 +9,7 @@
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "hono": "^4.12.5",
     "js-yaml": "^4.1.1",
     "openai": "^6.25.0"

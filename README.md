@@ -2,98 +2,132 @@
 
 ## Project Overview
 - **Name**: EcoTwin Smart City Digital Twin
-- **Goal**: A comprehensive AI-powered sustainability intelligence platform for tracking and predicting global environmental metrics
-- **Tech Stack**: Hono + TypeScript + TailwindCSS + Plotly + Three.js + Chart.js
+- **Goal**: A comprehensive, AI-assisted sustainability intelligence platform for tracking, predicting, and optimizing global environmental metrics
+- **Tech Stack**: Hono + TypeScript + Vanilla CSS + Plotly + Three.js + Chart.js + Google Gemini API
+- **Deployment**: Edge-ready SSR (Cloudflare Pages / Node.js)
 
-## 🚀 Live URL
-- **Development**: http://localhost:3000
-- **Platform**: Cloudflare Pages (edge-deployable)
+## 🚀 Getting Started
 
-## 🧩 Modules
+### Prerequisites
+- Node.js v18.0.0+ (v20+ recommended)
+- npm v9+
 
-### 1. 📊 Dashboard
-- Global KPI cards (60+ countries, avg scores, CO₂, renewables)
-- Top 10 countries bar chart
-- Renewable vs CO₂ scatter correlation
-- Global trend line chart (2015–2025)
-- Categorized status grid (Sustainable/Moderate/Critical)
+### Startup
+```bash
+# Install dependencies
+npm install
 
-### 2. 🗺️ Interactive World Sustainability Map
-- Choropleth world map (Plotly geo)
-- Green/Yellow/Red color coding by sustainability score
-- Filter by category (Sustainable / Moderate / Critical)
-- Click any country → popup with all metrics + AI 5-year prediction
-- Year slider animation (2015 → 2030)
+# Start local development server
+npm run dev
 
-### 3. 🔮 Predictive Scenario Simulator (LSTM)
-- 5 parameter sliders: Renewable %, Recycling %, Water Access, CO₂, Population Growth
-- LSTM-style 10-year forecasting engine
-- Animated Plotly line charts (score, CO₂ trend, renewable growth)
-- AI explanation panel with year-by-year insights
-- Final sustainability score prediction with color coding
+# Or build production SSR bundle & preview
+npm run build
+npm run preview
+```
+- **Local Dev URL**: `http://localhost:5173`
+- **Demo Credentials**:
+  - **Admin**: `admin@ecotwin.ai` / `admin123`
+  - **Analyst**: `analyst@ecotwin.ai` / `demo123`
 
-### 4. 🧠 Reinforcement Learning Policy Optimizer
-- Deep Q-Learning / PPO algorithm selection
-- Configurable training episodes, learning rate, discount factor
-- Animated training progress chart (reward + score convergence)
-- Optimal policy recommendation (4 environmental levers)
-- Maximum achievable sustainability score display
+---
 
-### 5. ⚠️ AI Anomaly Detection System
-- 30-day environmental monitoring timeline
-- Isolation Forest + Autoencoder detection
-- Alert banners for detected anomalies with cause identification
-- CO₂ timeline chart with highlighted anomaly spikes
-- Water usage & energy consumption anomaly charts
+## 🧩 Core Modules & Architecture
 
-### 6. 🌐 3D Interactive Earth Visualization (Three.js)
-- WebGL globe with star field and atmospheric glow
-- Glowing colored markers for 35+ countries
-- Metric toggle: Sustainability Score / CO₂ Emissions / Renewable Energy
-- Smooth rotation with pause/resume control
-- Top 5 emission hotspots sidebar
-- Click markers for country environmental data
+### 1. 📊 Executive Dashboard & Global Telemetry
+- Global KPI cards (60+ countries, composite planet health score, CO₂ run rates, renewable shares)
+- Top 10 countries sustainability ranking
+- Scatter correlation between renewable penetration and per-capita emissions
+- 10-year historical trajectory trendlines (2015–2025)
+- Real-time animated ticker with live carbon pricing corridors and atmospheric CO₂ levels
 
-### 7. 🎯 UN SDG Progress Tracker
-- 6 SDGs tracked: Clean Water (6), Clean Energy (7), Sustainable Cities (11), Climate Action (13), Life on Land (15), Life Below Water (14)
-- Animated progress bars per SDG
-- Sparkline trend charts (2020–2025)
-- Radar chart for comprehensive SDG achievement overview
-- AI policy recommendations per goal
+### 2. 🗺️ Interactive World Sustainability Map & 3D Globe
+- Choropleth world map (Plotly Geo) with green/amber/crimson performance categorization
+- Interactive Three.js 3D WebGL globe with atmospheric glow, starfields, and clickable telemetry beacons
+- Country profile drawer with socio-economic context enriched via REST Countries API
+- 5-year trend projections and empirical SDG progress
 
-### 8. 💬 Ask EcoTwin AI (Natural Language Query)
-- LLM-powered chatbot connected to sustainability dataset
-- Context-aware answers about countries, metrics, policies
-- Animated typing indicator
-- Suggested questions panel (8 presets + dynamic updates)
-- Data-driven responses with policy recommendations
+### 3. 🔮 Predictive Scenario Simulator
+- Multi-factor dynamic projection model (2025–2035) with adjustable policy levers:
+  - Renewable Energy Share (%)
+  - Recycling Rate (%)
+  - Clean Water Access (%)
+  - CO₂ Emissions Target (t/capita)
+  - Population Growth Rate (%)
+- Deterministic simulation mode with configurable PRNG seed ($42$) for reproducible scientific analysis
+- Confidence bounds envelope (upper/lower variance bounds) computed over the 10-year temporal horizon
+- Scenario comparison engine evaluating baseline vs. intervention deltas and net emissions avoided
 
-## 🌐 API Endpoints
-| Endpoint | Method | Description |
-|---|---|---|
-| `/` | GET | Main dashboard SPA |
-| `/world_data` | GET | 60+ countries sustainability dataset |
-| `/simulate_future` | POST | LSTM 10-year forecast |
-| `/rl_optimize` | POST | RL policy optimization |
-| `/anomaly_data` | GET | Environmental anomaly timeline |
-| `/sdg_data` | GET | UN SDG progress data |
-| `/ai_query` | POST | Natural language sustainability Q&A |
+### 4. ⚖️ Explainable Feature Attribution (SHAP-style)
+- Additive linear feature contribution analysis
+- Waterfall decomposition explaining exactly how each environmental lever shifts the predicted score from the baseline ($61.0$)
+- Strict mathematical adherence: $\sum \text{contributions} = \text{Score} - \text{Base}$
 
-## 📦 Data Architecture
-- **Data Models**: Country sustainability profiles (CO₂, renewable, water, recycling, score)
-- **Storage**: In-memory/edge (Cloudflare Workers runtime)
-- **ML Models**: Simulated LSTM forecasting, Deep Q-Learning, Isolation Forest
-- **AI**: Keyword-intent NLP with dataset-driven responses
+### 5. 🧠 Policy Target Optimizer
+- Parameterized gradient-decay multi-objective search algorithm
+- Finds balanced lever allocations that converge toward desired sustainability targets
+- Visual convergence curves showing metric optimization over evaluation cycles
 
-## 🎨 UI Design
-- Dark futuristic theme (gray-950 base)
-- Cyan/Emerald accent color system
-- Plotly interactive charts (dark theme)
-- Three.js WebGL 3D globe
-- TailwindCSS responsive layout
-- FontAwesome icons
+### 6. 🛰️ Remote Sensing & NASA Satellite Imagery
+- Integration with NASA GIBS VIIRS True-Color Corrected Reflectance optical tiles (250m resolution)
+- Synthetic computer vision defect localization overlays (deforestation zones, industrial heat islands, glacial retreat)
+- Hotspot telemetry and environmental threat correlation via live NASA EONET feed
 
-## Deployment
-- **Platform**: Cloudflare Pages
-- **Status**: ✅ Active (Development)
-- **Last Updated**: 2025-03-04
+### 7. ⚠️ Environmental Anomaly Detection & Hazard Triage
+- 30-day temporal baseline monitoring with severity thresholding
+- Detection of industrial pollution spikes, wildfire surges, and power grid stress events
+- Triage action recommendations and historical incident log
+
+### 8. 🎯 UN SDG Progress Tracker & City Benchmarking
+- Tracking of SDGs 6, 7, 11, 13, 14, and 15 with multi-axis radar charts and sparklines
+- Municipal benchmarking across 15 global cities with live Open-Meteo weather and AQI enrichment
+- Policy simulation matrix computing cost-effectiveness, job creation, and carbon mitigation
+
+### 9. 💬 Resilient EcoTwin AI Analyst
+- Conversational intelligence powered by Google Gemini (`gemini-1.5-flash`)
+- Server-side execution ensuring API keys are never exposed to the client
+- Automatic failover cascading across fallback keys (`GEMINI_API_KEY_FALLBACK_1`, `FALLBACK_2`)
+- Local telemetry fallback grounding if external APIs are unreachable or offline
+
+### 10. 🛡️ Secure Role-Based Administration
+- Bcrypt password hashing ($10$ rounds) and cryptographically random session tokens (`et_...`)
+- Role-based route authorization (`admin` vs `analyst` vs `viewer`)
+- Complete credential zeroization (passwords and OTPs never transmitted to client)
+- Audit log and active session management
+
+---
+
+## 🏷️ Data Provenance Framework
+
+EcoTwin maintains complete transparency regarding data provenance. Every metric and layer is classified into five rigorous tiers:
+- 🟢 **Live external data**: Retrieved directly from external APIs (Open-Meteo, NASA EONET, Gemini AI).
+- 🔵 **Retrieved external data**: Real cached datasets (REST Countries, NASA GIBS optical tiles).
+- 💠 **Calculated estimate**: Deterministic formulas from scientific baselines (IPCC AR6 Carbon Budget).
+- 🟣 **Heuristic result**: Parameterized algorithms (Scenario Projections, Additive Feature Attribution, Policy Optimization).
+- 🟡 **Simulated demo data**: Procedurally generated IoT telemetry and synthetic vision overlays for demonstration.
+
+For full technical specifications, see [`DATA_TRUST_REPORT.md`](file:///c:/Users/HP/Downloads/eco%20twin/eco%20twin/DATA_TRUST_REPORT.md).
+
+---
+
+## 🧪 Verification & Testing
+
+EcoTwin includes 270 comprehensive regression tests across 4 suites:
+
+```bash
+# Run security & authentication tests (46 tests)
+node test_security.js
+
+# Run Gemini AI failover & error resilience tests (45 tests)
+node test_part3.js
+
+# Run data trust, honest representation & provenance tests (98 tests)
+node test_part4.js
+
+# Run end-to-end QA, journey workflows & edge resilience tests (81 tests)
+node test_part5.js
+```
+
+---
+
+## 📖 Live Demonstration Runbook
+For the 3–5 minute live presentation flow and technical judge Q&A guide, refer to [`HACKATHON_DEMO_RUNBOOK.md`](file:///c:/Users/HP/Downloads/eco%20twin/eco%20twin/HACKATHON_DEMO_RUNBOOK.md).

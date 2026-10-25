@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const serverKeys = ['GEMINI_API_KEY', 'GEMINI_API_KEY_FALLBACK_1', 'GEMINI_API_KEY_FALLBACK_2', 'GEMINI_MODEL']
   for (const k of serverKeys) {
-    if (env[k] && !process.env[k]) {
+    if (env[k]) {
       process.env[k] = env[k]
     }
   }

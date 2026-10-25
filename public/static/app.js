@@ -495,6 +495,7 @@ function switchTab(id) {
   if (ST.healthInterval && id !== 'health') { clearInterval(ST.healthInterval); ST.healthInterval = null; }
   if (ST.raceInterval && id !== 'race') { clearInterval(ST.raceInterval); ST.raceInterval = null; }
   if (typeof marketInterval !== 'undefined' && marketInterval && id !== 'market') { clearInterval(marketInterval); marketInterval = null; }
+  if (ST.newsInterval && id !== 'news') { clearInterval(ST.newsInterval); ST.newsInterval = null; }
   if (id !== 'satellite') {
     if (typeof SAT_STATE !== 'undefined' && SAT_STATE && SAT_STATE.scanInterval) {
       clearInterval(SAT_STATE.scanInterval);
@@ -2982,7 +2983,7 @@ window.runRiskAssessment = runRiskAssessment;
 window.loadCarbon = loadCarbon; window.runCarbonScenario = runCarbonScenario;
 window.loadCities = loadCities; window.benchmarkCity = benchmarkCity;
 window.togglePolicy = togglePolicy; window.runPolicySim = runPolicySim;
-window.loadNews = loadNews; window.filterNews = filterNews;
+window.loadNews = loadNews; window.filterNews = filterNews; window.refreshLiveNews = refreshLiveNews; window.searchNews = searchNews;
 window.exportData = exportData;
 window.runPeerCompare = runPeerCompare;
 
@@ -3747,72 +3748,312 @@ async function fetchAndUpdateMarket() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// SUSTAINABILITY NEWS FEED
+// SUSTAINABILITY NEWS FEED — Real-Time Live Feed & Auto-Update Engine
 // ════════════════════════════════════════════════════════════════════════════
+let _allNews = [];
+let _newsCategory = 'all';
+let _newsSentiment = null;
+let _newsSearchQuery = '';
+let _newsLastUpdated = null;
+
 function newsHTML() {
   return `
   <div class="space-y-5">
-    <div class="flex flex-wrap items-center gap-3">
-      <div>
-        <h2 class="text-xl font-black text-cyan-300 flex items-center gap-2"><i class="fas fa-newspaper text-blue-300"></i> Sustainability News Feed</h2>
-        <p class="text-xs text-gray-500 mt-0.5">Curated global sustainability intelligence & policy updates</p>
+    <!-- TOP BAR -->
+    <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-gray-900/60 border border-gray-800 backdrop-blur-md">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-800/60 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-950/50">
+          <i class="fas fa-satellite-dish text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-xl font-black text-white flex items-center gap-2">
+              Sustainability News Feed
+            </h2>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 shadow-sm shadow-emerald-950/50">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              LIVE DISPATCH
+            </span>
+          </div>
+          <p class="text-xs text-gray-400 mt-0.5 flex items-center gap-2">
+            <span>Global Real-Time RSS & Environmental Intelligence</span>
+            <span class="text-gray-600">•</span>
+            <span id="news-last-updated-text" class="text-cyan-400 font-mono text-[11px]">Syncing live telemetry...</span>
+          </p>
+        </div>
       </div>
-      <div class="ml-auto flex gap-2 flex-wrap">
-        <button onclick="filterNews('all')" id="nf-all" class="news-filter px-2.5 py-1 text-[10px] rounded-lg font-bold bg-cyan-700 text-white transition-all">All</button>
+
+      <!-- ACTIONS & SEARCH -->
+      <div class="flex items-center gap-2.5 flex-wrap ml-auto">
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs pointer-events-none"></i>
+          <input type="text" id="news-search-input" oninput="searchNews(this.value)" placeholder="Search live news, topics, sources..."
+                 class="pl-8 pr-3 py-1.5 text-xs bg-gray-950/80 border border-gray-700/70 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-all w-56 sm:w-64" />
+        </div>
+
+        <button onclick="refreshLiveNews(true)" id="news-refresh-btn"
+                class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-cyan-900/40 hover:bg-cyan-800/60 text-cyan-200 border border-cyan-700/50 shadow-md hover:shadow-cyan-900/30 transition-all cursor-pointer">
+          <i class="fas fa-rotate text-xs" id="news-refresh-icon"></i>
+          <span>Refresh Now</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- BREAKING SPOTLIGHT BANNER -->
+    <div id="news-breaking-banner" class="hidden"></div>
+
+    <!-- FILTERS & COUNTERS -->
+    <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+      <div class="flex gap-1.5 flex-wrap items-center">
+        <span class="text-[11px] font-semibold text-gray-400 mr-1 flex items-center gap-1"><i class="fas fa-filter text-[10px]"></i> Category:</span>
+        <button onclick="filterNews('all')" id="nf-all" class="news-filter px-2.5 py-1 text-[11px] rounded-lg font-bold bg-cyan-700 text-white shadow transition-all cursor-pointer">All</button>
         ${['Policy', 'Climate', 'Energy', 'Transport', 'Oceans', 'Forests', 'Water', 'Technology', 'Achievement', 'Economics'].map(c =>
-    `<button onclick="filterNews('${c}')" id="nf-${c}" class="news-filter px-2.5 py-1 text-[10px] rounded-lg font-bold bg-gray-800 text-gray-400 hover:bg-gray-700 transition-all">${c}</button>`
-  ).join('')}
+          `<button onclick="filterNews('${c}')" id="nf-${c}" class="news-filter px-2.5 py-1 text-[11px] rounded-lg font-medium bg-gray-800/90 text-gray-400 hover:bg-gray-700 hover:text-gray-200 transition-all cursor-pointer">${c}</button>`
+        ).join('')}
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="text-[11px] font-semibold text-gray-400 mr-1">Sentiment:</span>
+        <button onclick="filterNews(null, 'all')" id="sent-all" class="px-2.5 py-1 text-[11px] rounded-lg font-bold bg-gray-700 text-gray-100 transition-all cursor-pointer">All</button>
+        <button onclick="filterNews(null, 'positive')" id="sent-pos" class="px-2.5 py-1 text-[11px] rounded-lg bg-emerald-950/60 text-emerald-300 border border-emerald-800/50 hover:bg-emerald-900/60 transition-all flex items-center gap-1 cursor-pointer">🟢 Positive</button>
+        <button onclick="filterNews(null, 'negative')" id="sent-neg" class="px-2.5 py-1 text-[11px] rounded-lg bg-red-950/60 text-red-300 border border-red-800/50 hover:bg-red-900/60 transition-all flex items-center gap-1 cursor-pointer">🔴 Concerning</button>
       </div>
     </div>
-    <div class="flex gap-2 items-center">
-      <button onclick="filterNews('all','positive')" class="px-2.5 py-1 text-[10px] rounded-lg bg-emerald-900/40 text-emerald-300 border border-emerald-800/50 hover:bg-emerald-800/40 transition-all">🟢 Positive</button>
-      <button onclick="filterNews('all','negative')" class="px-2.5 py-1 text-[10px] rounded-lg bg-red-900/40 text-red-300 border border-red-800/50 hover:bg-red-800/40 transition-all">🔴 Concerning</button>
-    </div>
+
+    <!-- NEWS GRID -->
     <div id="news-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-      <div class="flex justify-center py-12 col-span-3"><div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div></div>
+      <div class="flex flex-col items-center justify-center py-20 col-span-3 text-cyan-400 gap-3">
+        <div class="animate-spin w-8 h-8 border-3 border-cyan-500 border-t-transparent rounded-full"></div>
+        <p class="text-xs text-gray-400 animate-pulse">Aggregating live real-time environmental dispatches...</p>
+      </div>
     </div>
   </div>`;
 }
 
-let _allNews = [];
-async function loadNews() {
-  const r = await fetch('/news_feed'); _allNews = await r.json();
-  renderNews(_allNews);
+async function loadNews(silent = false) {
+  try {
+    if (!silent) {
+      const icon = document.getElementById('news-refresh-icon');
+      if (icon) icon.classList.add('fa-spin');
+    }
+    const r = await fetch('/news_feed');
+    _allNews = await r.json();
+    _newsLastUpdated = new Date();
+    updateNewsCountdown();
+    applyNewsFilters();
+  } catch (err) {
+    console.error('Failed to load news:', err);
+    const grid = document.getElementById('news-grid');
+    if (grid && !_allNews.length) {
+      grid.innerHTML = '<div class="col-span-3 text-center py-12 text-gray-500">Temporarily unable to fetch news feed. Please try again.</div>';
+    }
+  } finally {
+    const icon = document.getElementById('news-refresh-icon');
+    if (icon) icon.classList.remove('fa-spin');
+    startNewsAutoRefresh();
+  }
+}
+
+async function refreshLiveNews(force = true) {
+  const icon = document.getElementById('news-refresh-icon');
+  if (icon) icon.classList.add('fa-spin');
+  try {
+    const r = await fetch(force ? '/news_feed?refresh=true' : '/news_feed');
+    _allNews = await r.json();
+    _newsLastUpdated = new Date();
+    updateNewsCountdown();
+    applyNewsFilters();
+    toast('Live news feed updated successfully', 'success');
+  } catch (err) {
+    toast('Failed to refresh news', 'error');
+  } finally {
+    if (icon) icon.classList.remove('fa-spin');
+  }
+}
+
+function startNewsAutoRefresh() {
+  if (ST.newsInterval) clearInterval(ST.newsInterval);
+  // Auto-refresh news silently from backend every 30 seconds
+  ST.newsInterval = setInterval(() => {
+    if (ST.activeTab === 'news') {
+      loadNews(true);
+    }
+  }, 30000);
+}
+
+function updateNewsCountdown() {
+  const el = document.getElementById('news-last-updated-text');
+  if (!el || !_newsLastUpdated) return;
+  const timeStr = _newsLastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  el.textContent = `Live updated at ${timeStr} • Auto-refreshing every 30s`;
+}
+
+function searchNews(query) {
+  _newsSearchQuery = (query || '').toLowerCase().trim();
+  applyNewsFilters();
 }
 
 function filterNews(category, sentiment = null) {
-  document.querySelectorAll('.news-filter').forEach(b => { b.className = b.className.replace('bg-cyan-700 text-white', 'bg-gray-800 text-gray-400'); });
-  const btn = document.getElementById('nf-' + (category === 'all' ? 'all' : category));
-  if (btn) btn.className = btn.className.replace('bg-gray-800 text-gray-400', 'bg-cyan-700 text-white');
+  if (category !== null && category !== undefined) {
+    _newsCategory = category;
+    document.querySelectorAll('.news-filter').forEach(b => {
+      b.className = b.className.replace('bg-cyan-700 text-white shadow', 'bg-gray-800/90 text-gray-400');
+    });
+    const btn = document.getElementById('nf-' + category);
+    if (btn) {
+      btn.className = btn.className.replace('bg-gray-800/90 text-gray-400', 'bg-cyan-700 text-white shadow');
+    }
+  }
+
+  if (sentiment !== null && sentiment !== undefined) {
+    _newsSentiment = sentiment === 'all' ? null : sentiment;
+    const sentAll = document.getElementById('sent-all');
+    const sentPos = document.getElementById('sent-pos');
+    const sentNeg = document.getElementById('sent-neg');
+    if (sentAll && sentPos && sentNeg) {
+      sentAll.className = 'px-2.5 py-1 text-[11px] rounded-lg transition-all cursor-pointer ' + (_newsSentiment === null ? 'font-bold bg-gray-700 text-gray-100' : 'bg-gray-800/80 text-gray-400');
+      sentPos.className = 'px-2.5 py-1 text-[11px] rounded-lg transition-all flex items-center gap-1 cursor-pointer ' + (_newsSentiment === 'positive' ? 'font-bold bg-emerald-800 text-white ring-1 ring-emerald-400' : 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/50');
+      sentNeg.className = 'px-2.5 py-1 text-[11px] rounded-lg transition-all flex items-center gap-1 cursor-pointer ' + (_newsSentiment === 'negative' ? 'font-bold bg-red-800 text-white ring-1 ring-red-400' : 'bg-red-950/60 text-red-300 border border-red-800/50');
+    }
+  }
+
+  applyNewsFilters();
+}
+
+function applyNewsFilters() {
   let filtered = _allNews;
-  if (category !== 'all') filtered = filtered.filter(a => a.category === category);
-  if (sentiment) filtered = filtered.filter(a => a.sentiment === sentiment);
+  if (_newsCategory && _newsCategory !== 'all') {
+    filtered = filtered.filter(a => (a.category || '').toLowerCase() === _newsCategory.toLowerCase());
+  }
+  if (_newsSentiment) {
+    filtered = filtered.filter(a => a.sentiment === _newsSentiment);
+  }
+  if (_newsSearchQuery) {
+    filtered = filtered.filter(a =>
+      (a.title || '').toLowerCase().includes(_newsSearchQuery) ||
+      (a.summary || '').toLowerCase().includes(_newsSearchQuery) ||
+      (a.source || '').toLowerCase().includes(_newsSearchQuery) ||
+      (a.tags || []).some(t => t.toLowerCase().includes(_newsSearchQuery))
+    );
+  }
+  renderBreakingBanner(filtered);
   renderNews(filtered);
 }
 
+function renderBreakingBanner(articles) {
+  const bannerEl = document.getElementById('news-breaking-banner');
+  if (!bannerEl) return;
+  const breaking = articles.find(a => a.freshness === 'BREAKING') || articles[0];
+  if (!breaking) {
+    bannerEl.className = 'hidden';
+    return;
+  }
+  bannerEl.className = 'breaking-banner p-3.5 rounded-xl flex items-center gap-3.5 text-xs text-gray-200 transition-all';
+  bannerEl.innerHTML = `
+    <div class="flex items-center gap-2 flex-none">
+      <span class="px-2 py-0.5 rounded-md bg-emerald-500 text-gray-950 font-black text-[10px] tracking-wider flex items-center gap-1 shadow-sm">
+        <i class="fas fa-bolt text-[9px]"></i> BREAKING
+      </span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <a href="${breaking.url}" target="_blank" rel="noopener noreferrer" class="font-bold text-white hover:text-cyan-300 transition-colors truncate block">
+        ${breaking.title}
+      </a>
+      <p class="text-[11px] text-emerald-200/80 truncate mt-0.5">
+        ${breaking.summary.slice(0, 160)}
+      </p>
+    </div>
+    <div class="flex items-center gap-2 flex-none text-[11px] text-gray-400">
+      <span class="text-cyan-300 font-medium">${breaking.source}</span>
+      <span>•</span>
+      <span>${breaking.publishedAgo || breaking.date}</span>
+      <a href="${breaking.url}" target="_blank" rel="noopener noreferrer" class="ml-2 px-2.5 py-1 rounded bg-cyan-950 hover:bg-cyan-900 border border-cyan-800 text-cyan-300 font-semibold hover:text-white transition-all flex items-center gap-1">
+        <span>Read</span> <i class="fas fa-arrow-up-right-from-square text-[9px]"></i>
+      </a>
+    </div>
+  `;
+}
+
 function renderNews(articles) {
-  const el = document.getElementById('news-grid'); if (!el) return;
-  if (!articles.length) { el.innerHTML = '<div class="col-span-3 text-center py-12 text-gray-600">No articles found</div>'; return; }
-  el.innerHTML = articles.map(a => `
-    <div class="et-card news-card ${a.sentiment} flex flex-col">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${a.sentiment === 'positive' ? 'bg-emerald-900/50 text-emerald-300' : 'bg-red-900/50 text-red-300'}">${a.sentiment === 'positive' ? '🟢 Positive' : '🔴 Concerning'}</span>
-        <span class="text-[9px] px-2 py-0.5 bg-gray-800 rounded-full text-gray-400">${a.category}</span>
-        <span class="ml-auto text-[9px] text-gray-600">${a.region}</span>
-        ${a.freshness ? `<span class="text-[9px] px-1.5 py-0.5 bg-cyan-900/50 text-cyan-400 rounded-full font-bold animate-pulse">NEW</span>` : ''}
+  const el = document.getElementById('news-grid');
+  if (!el) return;
+  if (!articles.length) {
+    el.innerHTML = `
+      <div class="col-span-3 text-center py-16 bg-gray-900/40 rounded-xl border border-gray-800">
+        <i class="fas fa-newspaper text-3xl text-gray-600 mb-2"></i>
+        <h4 class="text-sm font-bold text-gray-300">No matching news articles found</h4>
+        <p class="text-xs text-gray-500 mt-1">Try resetting your filter or searching for another climate topic.</p>
+        <button onclick="filterNews('all', 'all')" class="mt-3 px-3 py-1.5 text-xs rounded-lg bg-cyan-900/60 text-cyan-300 hover:bg-cyan-800 border border-cyan-700/60 transition-all cursor-pointer">Clear Filters</button>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = articles.map(a => {
+    const isPositive = a.sentiment === 'positive';
+    return `
+    <div class="et-card news-card ${a.sentiment} flex flex-col p-4 rounded-xl border border-gray-800 hover:border-cyan-700/60 transition-all group">
+      <!-- HEADER ROW -->
+      <div class="flex items-center gap-2 mb-2.5 flex-wrap">
+        <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${isPositive ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/60' : 'bg-red-950 text-red-300 border border-red-800/60'}">
+          ${isPositive ? '🟢 Positive Impact' : '🔴 Climate Concern'}
+        </span>
+        <span class="text-[9px] px-2 py-0.5 bg-gray-800/90 border border-gray-700/50 rounded-full text-gray-300 font-medium">
+          ${a.category}
+        </span>
+        ${a.region ? `<span class="text-[9px] px-2 py-0.5 bg-cyan-950/70 border border-cyan-800/50 text-cyan-300 rounded-full font-medium"><i class="fas fa-location-dot text-[8px] mr-1"></i>${a.region}</span>` : ''}
+        
+        <div class="ml-auto flex items-center gap-1.5">
+          ${a.freshness === 'BREAKING' ? `
+            <span class="text-[9px] px-2 py-0.5 bg-emerald-500 text-gray-950 font-black rounded-full flex items-center gap-1 shadow-sm shadow-emerald-500/30 animate-pulse">
+              <i class="fas fa-bolt text-[8px]"></i> BREAKING
+            </span>
+          ` : a.freshness === 'LIVE' || a.isLive ? `
+            <span class="text-[9px] px-2 py-0.5 bg-cyan-950/90 text-cyan-300 border border-cyan-700/60 rounded-full font-bold flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span> LIVE
+            </span>
+          ` : ''}
+          <span class="text-[10px] text-gray-400 font-medium">${a.publishedAgo || a.date}</span>
+        </div>
       </div>
-      <h3 class="text-sm font-bold text-gray-100 mb-2 leading-snug">${a.title}</h3>
-      <p class="text-xs text-gray-400 flex-1 leading-relaxed">${a.summary}</p>
-      ${a.liveData ? `<div class="mt-2 p-1.5 bg-emerald-900/20 rounded border border-emerald-900/40 text-[9px] text-emerald-400"><i class="fas fa-satellite-dish mr-1"></i>Live: CO₂ ${a.liveData.co2ppm} ppm · Carbon €${a.liveData.carbonPrice}/t</div>` : ''}
-      <div class="mt-3 pt-2 border-t border-gray-800 flex items-center justify-between">
+
+      <!-- TITLE -->
+      <h3 class="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors mb-2 leading-snug">
+        <a href="${a.url}" target="_blank" rel="noopener noreferrer" class="hover:underline flex items-start justify-between gap-1.5">
+          <span>${a.title}</span>
+          <i class="fas fa-arrow-up-right-from-square text-[10px] text-gray-500 group-hover:text-cyan-400 flex-none mt-1"></i>
+        </a>
+      </h3>
+
+      <!-- SUMMARY -->
+      <p class="text-xs text-gray-400 flex-1 leading-relaxed line-clamp-3 mb-3">
+        ${a.summary}
+      </p>
+
+      <!-- LIVE TELEMETRY BADGE IF APPLICABLE -->
+      ${a.liveData ? `
+        <div class="mb-3 p-2 bg-emerald-950/30 rounded-lg border border-emerald-800/40 text-[10px] text-emerald-300 flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <i class="fas fa-satellite-dish text-emerald-400 animate-pulse"></i>
+            <span>Active Sensor Baseline:</span>
+          </span>
+          <span class="font-mono font-bold text-emerald-200">
+            CO₂ ${a.liveData.co2ppm} ppm • Carbon €${a.liveData.carbonPrice}/t
+          </span>
+        </div>
+      ` : ''}
+
+      <!-- FOOTER -->
+      <div class="pt-2.5 border-t border-gray-800/80 flex items-center justify-between text-[10px] text-gray-500">
         <div class="flex flex-wrap gap-1">
-          ${a.tags.slice(0, 3).map(tag => `<span class="text-[8px] px-1.5 py-0.5 bg-gray-800 text-gray-500 rounded">#${tag}</span>`).join('')}
+          ${(a.tags || []).slice(0, 3).map(tag => `<span class="px-1.5 py-0.5 bg-gray-800/80 text-gray-400 rounded text-[9px]">#${tag}</span>`).join('')}
         </div>
-        <div class="flex items-center gap-1.5 text-[9px] text-gray-500">
-          <span>${a.source}</span><span>·</span><span>${a.date}</span>
+        <div class="flex items-center gap-1.5 font-medium text-gray-400">
+          <i class="fas fa-globe text-[9px] text-gray-500"></i>
+          <span>${a.source || 'Global Feed'}</span>
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ════════════════════════════════════════════════════════════════════════════

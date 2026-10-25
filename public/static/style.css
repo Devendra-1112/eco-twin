@@ -568,11 +568,23 @@ input[type=number]:focus, textarea:focus, select:focus {
 /* ─── News Cards ─────────────────────────────────────────────── */
 .news-card {
   border-left: 3px solid transparent;
-  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+  transition: all 0.25s ease;
+  position: relative;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(12px);
 }
-.news-card.positive { border-color: rgba(16,185,129,0.5); }
-.news-card.negative { border-color: rgba(239,68,68,0.5); }
-.news-card:hover { background: rgba(34,211,238,0.025); transform: translateX(2px); }
+.news-card.positive { border-left-color: rgba(16,185,129,0.7); }
+.news-card.negative { border-left-color: rgba(239,68,68,0.7); }
+.news-card:hover {
+  background: rgba(30, 41, 59, 0.7);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.12);
+}
+.breaking-banner {
+  background: linear-gradient(135deg, rgba(6, 78, 59, 0.55), rgba(8, 51, 68, 0.65));
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+}
 
 /* ─── Data Bars ─────────────────────────────────────────────── */
 .metric-bar {
